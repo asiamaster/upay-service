@@ -79,6 +79,7 @@ public class PaymentPlatformController {
     }
 
     private ApplicationPermit checkAccessPermission(RequestContext context, MessageEnvelop envelop) {
+        AssertUtils.notNull(envelop.getAppId(), "appId missed");
         ApplicationPermit application = accessPermitService.loadApplicationPermit(envelop.getAppId());
 
         // 校验应用访问权限, 暂时不校验商户状态
