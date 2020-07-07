@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.diligrp.xtrade.upay.trade.dao.ITradePaymentDao">
+    <resultMap id="TradePaymentMap" type="com.diligrp.xtrade.upay.trade.model.TradePayment">
+        <id column="id" property="id"/>
+        <result column="payment_id" property="paymentId"/>
+        <result column="trade_id" property="tradeId"/>
+        <result column="channel_id" property="channelId"/>
+        <result column="account_id" property="accountId"/>
+        <result column="business_id" property="businessId"/>
+        <result column="name" property="name"/>
+        <result column="card_no" property="cardNo"/>
+        <result column="amount" property="amount"/>
+        <result column="fee" property="fee"/>
+        <result column="state" property="state"/>
+        <result column="description" property="description"/>
+        <result column="version" property="version"/>
+        <result column="created_time" property="createdTime"/>
+        <result column="modified_time" property="modifiedTime"/>
+    </resultMap>
+
+    <insert id="insertTradePayment" parameterType="com.diligrp.xtrade.upay.trade.model.TradePayment">
+        INSERT INTO upay_trade_payment(payment_id, trade_id, channel_id, account_id, business_id, name, card_no, amount, fee,
+            state, description, version, created_time, modified_time)
+        VALUES (#{paymentId}, #{tradeId}, #{channelId}, #{accountId}, #{businessId}, #{name}, #{cardNo}, #{amount}, #{fee},
+            #{state}, #{description}, #{version}, #{createdTime}, #{modifiedTime})
+    </insert>
+
+    <select id="findTradePaymentById" parameterType="string" resultMap="TradePaymentMap">
+        SELECT * FROM upay_trade_payment WHERE payment_id = #{paymentId}
+    </select>
+
+    <select id="findTradePayments" parameterType="string" resultMap="TradePaymentMap">
+        SELECT * FROM upay_trade_payment WHERE trade_id = #{tradeId} ORDER BY ID
+    </select>
+
+    <select id="findOneTradePayment" parameterType="string" resultMap="TradePaymentMap">
+        SELECT * FROM upay_trade_payment WHERE trade_id = #{tradeId} ORDER BY ID
+    </select>
+
+    <update id="compareAndSetState" parameterType="com.diligrp.xtrade.upay.trade.domain.PaymentStateDto">
+        UPDATE upay_trade_payment SET version = version + 1
+        <if test="amount != null">
+            , amount = #{amount}
+        </if>
+        <if test="fee != null">
+            , fee = #{fee}
+        </if>
+        <if test="state != null">
+            , state = #{state}
+        </if>
+        <if test="modifiedTime != null">
+            , modified_time = #{modifiedTime}
+        </if>
+        WHERE payment_id = #{paymentId} AND version = #{version}
+    </update>
+</mapper>

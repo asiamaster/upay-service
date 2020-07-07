@@ -1,0 +1,8 @@
+group = 'com.diligrp'
+archivesBaseName = 'upay-core'
+
+jar.enabled = true
+bootJar.enabled = false
+
+dependencies {
+}

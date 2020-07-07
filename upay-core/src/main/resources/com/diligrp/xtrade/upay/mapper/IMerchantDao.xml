@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.diligrp.xtrade.upay.core.dao.IMerchantDao">
+    <resultMap id="ApplicationMap" type="com.diligrp.xtrade.upay.core.model.Application">
+        <result column="id" property="id"/>
+        <result column="app_id" property="appId"/>
+        <result column="mch_id" property="mchId"/>
+        <result column="name" property="name"/>
+        <result column="access_token" property="accessToken"/>
+        <result column="private_key" property="privateKey"/>
+        <result column="public_key" property="publicKey"/>
+        <result column="created_time" property="createdTime"/>
+        <result column="modified_time" property="modifiedTime"/>
+    </resultMap>
+
+    <resultMap id="MerchantMap" type="com.diligrp.xtrade.upay.core.model.Merchant">
+        <result column="id" property="id"/>
+        <result column="mch_id" property="mchId"/>
+        <result column="code" property="code"/>
+        <result column="name" property="name"/>
+        <result column="profit_account" property="profitAccount"/>
+        <result column="vouch_account" property="vouchAccount"/>
+        <result column="pledge_account" property="pledgeAccount"/>
+        <result column="address" property="address"/>
+        <result column="contact" property="contact"/>
+        <result column="mobile" property="mobile"/>
+        <result column="private_key" property="privateKey"/>
+        <result column="public_key" property="publicKey"/>
+        <result column="state" property="state"/>
+        <result column="created_time" property="createdTime"/>
+        <result column="modified_time" property="modifiedTime"/>
+    </resultMap>
+
+    <select id="findApplicationById" parameterType="long" resultMap="ApplicationMap">
+        SELECT * FROM upay_application WHERE app_id = #{appId}
+    </select>
+
+    <select id="findMerchantById" parameterType="long" resultMap="MerchantMap">
+        SELECT * FROM upay_merchant WHERE mch_id = #{mchId}
+    </select>
+    
+    <insert id="insertMerchant" parameterType="com.diligrp.xtrade.upay.core.model.Merchant">
+        INSERT INTO upay_merchant(mch_id, code, name, profit_account, vouch_account, pledge_account,
+            address, contact, mobile, private_key, public_key, state, created_time)
+        VALUES
+            (#{mchId}, #{code}, #{name}, #{profitAccount}, #{vouchAccount}, #{pledgeAccount},
+             #{address}, #{contact}, #{mobile}, #{privateKey}, #{publicKey}, #{state}, #{createdTime})
+    </insert>
+
+    <insert id="insertApplication" parameterType="com.diligrp.xtrade.upay.core.model.Application">
+        INSERT INTO upay_application(app_id, mch_id, name, access_token, private_key, public_key, created_time)
+        VALUES (#{appId}, #{mchId}, #{name}, #{accessToken}, #{privateKey}, #{publicKey}, #{createdTime})
+    </insert>
+</mapper>

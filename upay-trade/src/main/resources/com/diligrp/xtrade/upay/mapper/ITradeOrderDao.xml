@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.diligrp.xtrade.upay.trade.dao.ITradeOrderDao">
+    <resultMap id="TradeOrderMap" type="com.diligrp.xtrade.upay.trade.model.TradeOrder">
+        <id column="id" property="id"/>
+        <result column="mch_id" property="mchId"/>
+        <result column="app_id" property="appId"/>
+        <result column="trade_id" property="tradeId"/>
+        <result column="type" property="type"/>
+        <result column="serial_no" property="serialNo"/>
+        <result column="cycle_no" property="cycleNo"/>
+        <result column="account_id" property="accountId"/>
+        <result column="business_id" property="businessId"/>
+        <result column="name" property="name"/>
+        <result column="amount" property="amount"/>
+        <result column="max_amount" property="maxAmount"/>
+        <result column="fee" property="fee"/>
+        <result column="state" property="state"/>
+        <result column="description" property="description"/>
+        <result column="version" property="version"/>
+        <result column="created_time" property="createdTime"/>
+        <result column="modified_time" property="modifiedTime"/>
+    </resultMap>
+
+    <insert id="insertTradeOrder" parameterType="com.diligrp.xtrade.upay.trade.model.TradeOrder">
+        INSERT INTO upay_trade_order(mch_id, app_id, trade_id, type, serial_no, cycle_no, account_id, business_id, name,
+            amount, max_amount, fee, state, description, version, created_time, modified_time)
+        VALUES (#{mchId}, #{appId}, #{tradeId}, #{type}, #{serialNo}, #{cycleNo}, #{accountId}, #{businessId}, #{name},
+            #{amount}, #{maxAmount}, #{fee}, #{state}, #{description}, #{version}, #{createdTime}, #{modifiedTime})
+    </insert>
+
+    <select id="findTradeOrderById" parameterType="string" resultMap="TradeOrderMap">
+        SELECT * FROM upay_trade_order WHERE trade_id = #{tradeId}
+    </select>
+
+    <update id="compareAndSetState" parameterType="com.diligrp.xtrade.upay.trade.domain.TradeStateDto">
+        UPDATE upay_trade_order SET version = version + 1
+        <if test="amount != null">
+            , amount = #{amount}
+        </if>
+        <if test="fee != null">
+            , fee = #{fee}
+        </if>
+        <if test="state != null">
+            , state = #{state}
+        </if>
+        <if test="modifiedTime != null">
+            , modified_time = #{modifiedTime}
+        </if>
+        WHERE
+          trade_id = #{tradeId} AND version = #{version}
+    </update>
+</mapper>

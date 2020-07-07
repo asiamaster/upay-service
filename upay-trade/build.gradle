@@ -1,0 +1,9 @@
+group = 'com.diligrp'
+archivesBaseName = 'upay-trade'
+
+jar.enabled = true
+bootJar.enabled = false
+
+dependencies {
+    api project(':upay-channel')
+}

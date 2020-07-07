@@ -1,0 +1,2 @@
+rootProject.name = 'upay-service'
+include 'upay-core', 'upay-channel', 'upay-trade', 'upay-boss'

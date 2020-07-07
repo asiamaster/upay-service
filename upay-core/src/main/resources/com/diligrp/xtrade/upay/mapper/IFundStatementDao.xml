@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.diligrp.xtrade.upay.core.dao.IFundStatementDao">
+    <resultMap id="FundStatementMap" type="com.diligrp.xtrade.upay.core.model.FundStatement">
+        <id column="id" property="id"/>
+        <result column="payment_id" property="paymentId"/>
+        <result column="account_id" property="accountId"/>
+        <result column="business_id" property="businessId"/>
+        <result column="trade_type" property="tradeType"/>
+        <result column="action" property="action"/>
+        <result column="balance" property="balance"/>
+        <result column="amount" property="amount"/>
+        <result column="type" property="type"/>
+        <result column="type_name" property="typeName"/>
+        <result column="description" property="description"/>
+        <result column="created_time" property="createdTime"/>
+    </resultMap>
+
+    <insert id="insertFundStatements" parameterType="java.util.List">
+        INSERT INTO upay_fund_statement(payment_id, account_id, business_id, trade_type, action, balance,
+            amount, type, type_name, description, created_time)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.paymentId}, #{item.accountId}, #{item.businessId}, #{item.tradeType}, #{item.action}, #{item.balance},
+             #{item.amount}, #{item.type}, #{item.typeName}, #{item.description}, #{item.createdTime})
+        </foreach>
+    </insert>
+</mapper>

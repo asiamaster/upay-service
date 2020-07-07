@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.diligrp.xtrade.upay.trade.dao.IRefundPaymentDao">
+    <resultMap id="RefundPaymentMap" type="com.diligrp.xtrade.upay.trade.model.RefundPayment">
+        <id column="id" property="id"/>
+        <result column="payment_id" property="paymentId"/>
+        <result column="type" property="type"/>
+        <result column="trade_id" property="tradeId"/>
+        <result column="trade_type" property="tradeType"/>
+        <result column="amount" property="amount"/>
+        <result column="fee" property="fee"/>
+        <result column="state" property="state"/>
+        <result column="description" property="description"/>
+        <result column="version" property="version"/>
+        <result column="created_time" property="createdTime"/>
+        <result column="modified_time" property="modifiedTime"/>
+    </resultMap>
+
+    <insert id="insertRefundPayment" parameterType="com.diligrp.xtrade.upay.trade.model.RefundPayment">
+        INSERT INTO upay_refund_payment(payment_id, type, trade_id, trade_type, amount, fee, state,
+            description, version, created_time, modified_time)
+        VALUES (#{paymentId}, #{type}, #{tradeId}, #{tradeType}, #{amount}, #{fee}, #{state},
+            #{description}, #{version}, #{createdTime}, #{modifiedTime})
+    </insert>
+
+    <select id="findRefundPaymentById" parameterType="string" resultMap="RefundPaymentMap">
+        SELECT * FROM upay_refund_payment WHERE payment_id = #{paymentId}
+    </select>
+
+    <select id="findRefundPayments" parameterType="string" resultMap="RefundPaymentMap">
+        SELECT * FROM upay_trade_payment WHERE trade_id = #{tradeId} ORDER BY ID
+    </select>
+</mapper>

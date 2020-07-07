@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.diligrp.xtrade.upay.channel.dao.IFrozenOrderDao">
+    <resultMap id="FrozenOrderMap" type="com.diligrp.xtrade.upay.channel.model.FrozenOrder">
+        <id column="id" property="id"/>
+        <result column="frozen_id" property="frozenId"/>
+        <result column="payment_id" property="paymentId"/>
+        <result column="account_id" property="accountId"/>
+        <result column="business_id" property="businessId"/>
+        <result column="name" property="name"/>
+        <result column="type" property="type"/>
+        <result column="amount" property="amount"/>
+        <result column="state" property="state"/>
+        <result column="description" property="description"/>
+        <result column="version" property="version"/>
+        <result column="created_time" property="createdTime"/>
+        <result column="modified_time" property="modifiedTime"/>
+    </resultMap>
+
+    <insert id="insertFrozenOrder" parameterType="com.diligrp.xtrade.upay.channel.model.FrozenOrder">
+        INSERT INTO upay_frozen_order(frozen_id, payment_id, account_id, business_id, name, type, amount, state,
+            description, version, created_time, modified_time)
+        VALUES
+          (#{frozenId}, #{paymentId}, #{accountId}, #{businessId}, #{name}, #{type}, #{amount}, #{state},
+          #{description}, #{version}, #{createdTime}, #{modifiedTime})
+    </insert>
+
+    <select id="findFrozenOrderById" parameterType="long" resultMap="FrozenOrderMap">
+        SELECT * FROM upay_frozen_order WHERE frozen_id = #{frozenId}
+    </select>
+
+    <select id="findFrozenOrderByPaymentId" parameterType="string" resultMap="FrozenOrderMap">
+        SELECT * FROM upay_frozen_order WHERE payment_id = #{paymentId}
+    </select>
+
+    <update id="compareAndSetState" parameterType="com.diligrp.xtrade.upay.channel.domain.FrozenStateDto">
+        UPDATE upay_frozen_order SET version = version + 1
+        <if test="state != null">
+            , state = #{state}
+        </if>
+        <if test="modifiedTime != null">
+            , modified_time = #{modifiedTime}
+        </if>
+        WHERE frozen_id = #{frozenId} AND version = #{version}
+    </update>
+</mapper>

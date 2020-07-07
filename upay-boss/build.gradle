@@ -1,0 +1,15 @@
+group = 'com.diligrp'
+archivesBaseName = 'upay-boss'
+
+bootJar {
+    archiveBaseName = 'upay-service'
+    enabled = true
+}
+
+dependencies {
+    api project(':upay-trade')
+    implementation 'com.alibaba.cloud:spring-cloud-starter-alibaba-nacos-discovery:2.2.0.RELEASE'
+    implementation 'com.alibaba.cloud:spring-cloud-starter-alibaba-nacos-config:2.2.0.RELEASE'
+
+    runtimeOnly 'mysql:mysql-connector-java'
+}
