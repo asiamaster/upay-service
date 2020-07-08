@@ -3,7 +3,6 @@ package com.diligrp.xtrade.upay.trade.service.impl;
 import com.diligrp.xtrade.shared.exception.ServiceAccessException;
 import com.diligrp.xtrade.shared.sequence.ISerialKeyGenerator;
 import com.diligrp.xtrade.shared.sequence.KeyGeneratorManager;
-import com.diligrp.xtrade.shared.util.ObjectUtils;
 import com.diligrp.xtrade.upay.channel.domain.AccountChannel;
 import com.diligrp.xtrade.upay.channel.domain.IFundTransaction;
 import com.diligrp.xtrade.upay.channel.service.IAccountChannelService;
@@ -160,13 +159,9 @@ public class FeePaymentServiceImpl implements IPaymentService {
             throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "撤销金额与支付金额不一致");
         }
 
-        // 撤销交易，如果有密码则校验密码，无密码则直接撤销
+        // 撤销交易，无须验证密码直接撤销
         LocalDateTime now = LocalDateTime.now();
-        if (ObjectUtils.isNotEmpty(cancel.getPassword())) {
-            accountChannelService.checkTradePermission(trade.getAccountId(), cancel.getPassword(), 5);
-        } else {
-            accountChannelService.checkTradePermission(trade.getAccountId());
-        }
+        accountChannelService.checkTradePermission(trade.getAccountId());
         // 获取交易订单中的商户收益账号信息，并处理商户退款
         MerchantPermit merchant = merchantDao.findMerchantById(trade.getMchId()).map(mer -> MerchantPermit.of(
             mer.getMchId(), mer.getProfitAccount(), mer.getVouchAccount(), mer.getPledgeAccount(), mer.getPrivateKey(),
