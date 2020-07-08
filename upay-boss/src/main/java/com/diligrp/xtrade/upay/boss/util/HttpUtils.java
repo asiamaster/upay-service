@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.Enumeration;
@@ -29,6 +30,18 @@ public final class HttpUtils {
         }
 
         return payload.toString();
+    }
+
+    public static final void sendResponse(HttpServletResponse response, String payload) {
+        try {
+            response.setContentType(Constants.CONTENT_TYPE);
+            byte[] responseBytes = payload.getBytes(Constants.CHARSET_UTF8);
+            response.setContentLength(responseBytes.length);
+            response.getOutputStream().write(responseBytes);
+            response.flushBuffer();
+        } catch (IOException iex) {
+            LOG.error("Failed to write data packet back");
+        }
     }
 
     public static RequestContext requestContext(HttpServletRequest request) {

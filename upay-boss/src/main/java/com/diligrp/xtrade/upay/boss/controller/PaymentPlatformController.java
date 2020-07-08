@@ -7,6 +7,7 @@ import com.diligrp.xtrade.shared.exception.MessageEnvelopException;
 import com.diligrp.xtrade.shared.exception.ServiceAccessException;
 import com.diligrp.xtrade.shared.sapi.ICallableServiceManager;
 import com.diligrp.xtrade.shared.util.AssertUtils;
+import com.diligrp.xtrade.shared.util.JsonUtils;
 import com.diligrp.xtrade.shared.util.ObjectUtils;
 import com.diligrp.xtrade.upay.boss.util.Constants;
 import com.diligrp.xtrade.upay.boss.util.HttpUtils;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * 支付服务控制器
@@ -28,6 +30,7 @@ import javax.servlet.http.HttpServletRequest;
 @RestController
 @RequestMapping("/payment/api")
 public class PaymentPlatformController {
+
 
     private Logger LOG = LoggerFactory.getLogger(this.getClass());
 
@@ -38,48 +41,65 @@ public class PaymentPlatformController {
     private IAccessPermitService accessPermitService;
 
     @RequestMapping(value = "/gateway.do")
-    public Message<?> gateway(HttpServletRequest request) {
+    public void gateway(HttpServletRequest request, HttpServletResponse response) {
+        Message<?> result = null;
+        ApplicationPermit application = null;
+        boolean signCheck = false;
+
         try {
             String payload = HttpUtils.httpBody(request);
             LOG.debug("payment request received, http body: {}", payload);
-            AssertUtils.notEmpty(payload, "payment request payload missed");
 
             RequestContext context = HttpUtils.requestContext(request);
             String service = context.getString(Constants.PARAM_SERVICE);
             Long appId = context.getLong(Constants.PARAM_APPID);
             String accessToken = context.getString(Constants.PARAM_ACCESS_TOKEN);
-            // 数据签名验签参数 - 默认utf8编码
             String signature = context.getString(Constants.PARAM_SIGNATURE);
             String charset = context.getString(Constants.PARAM_CHARSET);
+            signCheck = ObjectUtils.isNotEmpty(signature);
+
+            AssertUtils.notNull(appId, "appId missed");
+            AssertUtils.notEmpty(service, "service missed");
+            AssertUtils.notEmpty(payload, "payment request payload missed");
+
             MessageEnvelop envelop = MessageEnvelop.of(appId, service, accessToken, payload, signature, charset);
-            ApplicationPermit application = checkAccessPermission(context, envelop);
-            // 如果应用配置了调用方的公钥信息，则进行数据验签
-            if (Constants.DATA_VERIFY_ENABLED && ObjectUtils.isNotEmpty(application.getPublicKey())) {
+            application = checkAccessPermission(context, envelop);
+            // 开发阶段: 提供签名信息才进行数据验签
+            if (signCheck) {
                 envelop.unpackEnvelop(application.getPublicKey());
             }
-
-            // TODO:如果设置了商户的私钥，则还需对数据进行签名
-            return callableServiceManager.callService(context, envelop);
+            result = callableServiceManager.callService(context, envelop);
         } catch (IllegalArgumentException iex) {
             LOG.error(iex.getMessage());
-            return Message.failure(ErrorCode.ILLEGAL_ARGUMENT_ERROR, iex.getMessage());
+            result = Message.failure(ErrorCode.ILLEGAL_ARGUMENT_ERROR, iex.getMessage());
         } catch (ServiceAccessException sex) {
             LOG.error("Payment service not available exception", sex);
-            return Message.failure(ErrorCode.SERVICE_NOT_AVAILABLE, sex.getMessage());
+            result = Message.failure(ErrorCode.SERVICE_NOT_AVAILABLE, sex.getMessage());
         } catch (MessageEnvelopException mex) {
-            LOG.error("Payment service data exception", mex);
-            return Message.failure(ErrorCode.UNAUTHORIZED_ACCESS_ERROR, mex.getMessage());
+            LOG.error("Payment service data verify exception", mex);
+            result = Message.failure(ErrorCode.UNAUTHORIZED_ACCESS_ERROR, mex.getMessage());
         } catch (PaymentServiceException pex) {
             LOG.error("Payment service process exception", pex);
-            return Message.failure(pex.getCode(), pex.getMessage());
+            result = Message.failure(pex.getCode(), pex.getMessage());
         } catch (Throwable ex) {
             LOG.error("Payment service unknown exception", ex);
-            return Message.failure(ErrorCode.SYSTEM_UNKNOWN_ERROR, ex.getMessage());
+            result = Message.failure(ErrorCode.SYSTEM_UNKNOWN_ERROR, ex.getMessage());
         }
+
+        // 处理数据签名: 忽略签名失败，签名失败时调用方会验签失败
+        MessageEnvelop reply = MessageEnvelop.of(null, JsonUtils.toJsonString(result));
+        try { // 开发阶段: 调用方提供签名信息才进行返回数据签名
+            if (signCheck && application != null) {
+                reply.packEnvelop(application.getMerchant().getPrivateKey());
+                response.addHeader(Constants.PARAM_SIGNATURE, reply.getSignature());
+            }
+        } catch (Exception ex) {
+            LOG.error("Payment service data sign exception", ex.getMessage());
+        }
+        HttpUtils.sendResponse(response, reply.getPayload());
     }
 
     private ApplicationPermit checkAccessPermission(RequestContext context, MessageEnvelop envelop) {
-        AssertUtils.notNull(envelop.getAppId(), "appId missed");
         ApplicationPermit application = accessPermitService.loadApplicationPermit(envelop.getAppId());
 
         // 校验应用访问权限, 暂时不校验商户状态

@@ -14,7 +14,9 @@ public final class Constants {
 
     public final static String PARAM_CHARSET = "charset";
 
-    public final static String PARAM_PERMIT_SERVICE = "payment.permit.register";
+    public final static String CHARSET_UTF8 = "utf-8";
 
-    public final static boolean DATA_VERIFY_ENABLED = false;
+    public final static String CONTENT_TYPE = "application/json;charset=UTF-8";
+
+    public final static String PARAM_PERMIT_SERVICE = "payment.permit.register";
 }
