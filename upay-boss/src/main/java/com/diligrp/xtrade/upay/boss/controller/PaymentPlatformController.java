@@ -31,7 +31,6 @@ import javax.servlet.http.HttpServletResponse;
 @RequestMapping("/payment/api")
 public class PaymentPlatformController {
 
-
     private Logger LOG = LoggerFactory.getLogger(this.getClass());
 
     @Resource
