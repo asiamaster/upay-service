@@ -233,17 +233,14 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
         if (trade.getState() == TradeState.SUCCESS.getCode()) {
             return super.cancel(trade, cancel);
         }
-        if (!trade.getAccountId().equals(cancel.getAccountId())) {
-            throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "撤销账号不一致");
-        }
 
         // "预授权交易"不存在组合支付的情况，因此一个交易订单只对应一条支付记录
         Optional<TradePayment> paymentOpt = tradePaymentDao.findOneTradePayment(trade.getTradeId());
         TradePayment payment = paymentOpt.orElseThrow(() -> new TradePaymentException(ErrorCode.OBJECT_NOT_FOUND, "支付记录不存在"));
 
-        // 撤销交易，无须验证密码直接撤销
+        // 撤销预授权，需验证买方账户状态无须验证密码
         LocalDateTime when = LocalDateTime.now();
-        accountChannelService.checkTradePermission(trade.getAccountId());
+        accountChannelService.checkTradePermission(payment.getAccountId());
         Optional<FrozenOrder> orderOpt = frozenOrderDao.findFrozenOrderByPaymentId(payment.getPaymentId());
         FrozenOrder order = orderOpt.orElseThrow(() -> new TradePaymentException(ErrorCode.OBJECT_NOT_FOUND, "冻结订单不存在"));
         if (order.getState() != FrozenState.FROZEN.getCode()) {

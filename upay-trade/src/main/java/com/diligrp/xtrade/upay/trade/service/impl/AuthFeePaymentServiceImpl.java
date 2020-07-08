@@ -216,9 +216,6 @@ public class AuthFeePaymentServiceImpl extends FeePaymentServiceImpl implements 
         if (trade.getState() == TradeState.SUCCESS.getCode()) {
             return super.cancel(trade, cancel);
         }
-        if (!trade.getAccountId().equals(cancel.getAccountId())) {
-            throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "退款账号不一致");
-        }
 
         // "预授权缴费"不存在组合支付的情况, 因此一个交易订单只对应一条支付记录
         Optional<TradePayment> paymentOpt = tradePaymentDao.findOneTradePayment(trade.getTradeId());
@@ -226,7 +223,7 @@ public class AuthFeePaymentServiceImpl extends FeePaymentServiceImpl implements 
         if (!payment.getAccountId().equals(cancel.getAccountId())) {
             throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "缴费资金账号不一致");
         }
-        // 撤销交易，如果有密码则校验密码，无密码则直接撤销
+        // 撤销预授权，需验证缴费账户状态无须验证密码
         LocalDateTime when = LocalDateTime.now();
         accountChannelService.checkTradePermission(trade.getAccountId());
         Optional<FrozenOrder> orderOpt = frozenOrderDao.findFrozenOrderByPaymentId(payment.getPaymentId());

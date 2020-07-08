@@ -102,9 +102,6 @@ public class TradeServiceComponent {
     public TransactionStatus cancel(ServiceRequest<RefundRequest> request) {
         RefundRequest cancel = request.getData();
         AssertUtils.notEmpty(cancel.getTradeId(), "tradeId missed");
-        AssertUtils.notNull(cancel.getAccountId(), "accountId missed");
-        // 撤销交易，如果有密码则校验密码，无密码则直接撤销
-//        AssertUtils.notEmpty(cancel.getPassword(), "password missed");
 
         ApplicationPermit application = request.getContext().getObject(ApplicationPermit.class.getName(), ApplicationPermit.class);
         PaymentResult result = paymentPlatformService.cancel(application, cancel);

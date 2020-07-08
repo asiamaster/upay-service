@@ -146,9 +146,6 @@ public class FeePaymentServiceImpl implements IPaymentService {
         if (trade.getState() != TradeState.SUCCESS.getCode()) {
             throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "无效的交易状态，不能进行撤销操作");
         }
-        if (!trade.getAccountId().equals(cancel.getAccountId())) {
-            throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "退款账号不一致");
-        }
 
         // "缴费"不存在组合支付的情况，因此一个交易订单只对应一条支付记录
         Optional<TradePayment> paymentOpt = tradePaymentDao.findOneTradePayment(trade.getTradeId());
@@ -159,7 +156,7 @@ public class FeePaymentServiceImpl implements IPaymentService {
             throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "撤销金额与支付金额不一致");
         }
 
-        // 撤销交易，无须验证密码直接撤销
+        // 撤销缴费，需验证缴费账户状态无须验证密码
         LocalDateTime now = LocalDateTime.now();
         accountChannelService.checkTradePermission(trade.getAccountId());
         // 获取交易订单中的商户收益账号信息，并处理商户退款

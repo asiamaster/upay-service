@@ -159,15 +159,12 @@ public class TradePaymentServiceImpl implements IPaymentService {
         if (trade.getState() != TradeState.SUCCESS.getCode()) {
             throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "无效的交易状态，不能进行撤销操作");
         }
-        if (!trade.getAccountId().equals(cancel.getAccountId())) {
-            throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "退款账号不一致");
-        }
 
         // "即时交易"业务不存在组合支付的情况，因此一个交易订单只对应一条支付记录
         Optional<TradePayment> paymentOpt = tradePaymentDao.findOneTradePayment(trade.getTradeId());
         TradePayment payment = paymentOpt.orElseThrow(() -> new TradePaymentException(ErrorCode.OBJECT_NOT_FOUND, "支付记录不存在"));
 
-        // 撤销交易，无须验证密码直接撤销
+        // 撤销交易，需验证退款方账户状态无须验证密码
         LocalDateTime now = LocalDateTime.now();
         accountChannelService.checkTradePermission(trade.getAccountId());
         MerchantPermit merchant = merchantDao.findMerchantById(trade.getMchId()).map(mer -> MerchantPermit.of(
