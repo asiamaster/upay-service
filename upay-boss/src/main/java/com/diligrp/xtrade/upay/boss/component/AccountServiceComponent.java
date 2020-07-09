@@ -4,9 +4,9 @@ import com.diligrp.xtrade.shared.domain.ServiceRequest;
 import com.diligrp.xtrade.shared.sapi.CallableComponent;
 import com.diligrp.xtrade.shared.util.AssertUtils;
 import com.diligrp.xtrade.upay.boss.domain.AccountId;
+import com.diligrp.xtrade.upay.channel.service.IAccountChannelService;
 import com.diligrp.xtrade.upay.core.domain.ApplicationPermit;
 import com.diligrp.xtrade.upay.core.domain.RegisterAccount;
-import com.diligrp.xtrade.upay.core.service.IFundAccountService;
 import com.diligrp.xtrade.upay.core.type.AccountType;
 
 import javax.annotation.Resource;
@@ -18,7 +18,7 @@ import javax.annotation.Resource;
 public class AccountServiceComponent {
 
     @Resource
-    private IFundAccountService fundAccountService;
+    private IAccountChannelService accountChannelService;
 
     /**
      * 注册资金账号
@@ -35,7 +35,7 @@ public class AccountServiceComponent {
         AssertUtils.isTrue(account.getType() != AccountType.MERCHANT.getCode(), "不能注册商户账号");
 
         ApplicationPermit application = request.getContext().getObject(ApplicationPermit.class.getName(), ApplicationPermit.class);
-        long accountId = fundAccountService.createFundAccount(application.getMerchant().getMchId(), account);
+        long accountId = accountChannelService.registerFundAccount(application.getMerchant().getMchId(), account);
         return AccountId.of(accountId);
     }
 
@@ -45,7 +45,7 @@ public class AccountServiceComponent {
     public void freeze(ServiceRequest<AccountId> request) {
         AccountId accountId = request.getData();
         AssertUtils.notNull(accountId.getAccountId(), "accountId missed");
-        fundAccountService.freezeFundAccount(accountId.getAccountId());
+        accountChannelService.freezeFundAccount(accountId.getAccountId());
     }
 
     /**
@@ -54,7 +54,7 @@ public class AccountServiceComponent {
     public void unfreeze(ServiceRequest<AccountId> request) {
         AccountId accountId = request.getData();
         AssertUtils.notNull(accountId.getAccountId(), "accountId missed");
-        fundAccountService.unfreezeFundAccount(accountId.getAccountId());
+        accountChannelService.unfreezeFundAccount(accountId.getAccountId());
     }
 
     /**
@@ -63,6 +63,6 @@ public class AccountServiceComponent {
     public void unregister(ServiceRequest<AccountId> request) {
         AccountId accountId = request.getData();
         AssertUtils.notNull(accountId.getAccountId(), "accountId missed");
-        fundAccountService.unregisterFundAccount(accountId.getAccountId());
+        accountChannelService.unregisterFundAccount(accountId.getAccountId());
     }
 }

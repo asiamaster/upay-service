@@ -1,7 +1,10 @@
 package com.diligrp.xtrade.upay.channel.service;
 
+import com.diligrp.xtrade.upay.channel.domain.FreezeFundDto;
 import com.diligrp.xtrade.upay.channel.domain.IFundTransaction;
+import com.diligrp.xtrade.upay.core.domain.RegisterAccount;
 import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
+import com.diligrp.xtrade.upay.core.model.AccountFund;
 import com.diligrp.xtrade.upay.core.model.FundAccount;
 
 /**
@@ -9,9 +12,44 @@ import com.diligrp.xtrade.upay.core.model.FundAccount;
  */
 public interface IAccountChannelService {
     /**
+     * 平台渠道注册资金账号
+     */
+    long registerFundAccount(Long mchId, RegisterAccount account);
+
+    /**
+     * 平台注销资金账号
+     */
+    void unregisterFundAccount(Long accountId);
+
+    /**
      * 提交资金事务
      */
     TransactionStatus submit(IFundTransaction transaction);
+
+    /**
+     * 冻结平台账号
+     */
+    void freezeFundAccount(Long accountId);
+
+    /**
+     * 解冻平台账号
+     */
+    void unfreezeFundAccount(Long accountId);
+
+    /**
+     * 人工/系统冻结平台账户资金
+     */
+    long freezeAccountFund(FreezeFundDto request);
+
+    /**
+     * 人工/系统解冻平台账户资金
+     */
+    void unfreezeAccountFund(Long frozenId);
+
+    /**
+     * 查询平台账户资金信息
+     */
+    AccountFund queryAccountFund(Long accountId);
 
     /**
      * 检查交易权限：账户状态、交易密码

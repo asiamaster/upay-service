@@ -7,11 +7,9 @@ import com.diligrp.xtrade.upay.boss.domain.AccountId;
 import com.diligrp.xtrade.upay.boss.domain.FrozenId;
 import com.diligrp.xtrade.upay.boss.domain.FundBalance;
 import com.diligrp.xtrade.upay.channel.domain.FreezeFundDto;
-import com.diligrp.xtrade.upay.channel.service.IFrozenOrderService;
+import com.diligrp.xtrade.upay.channel.service.IAccountChannelService;
 import com.diligrp.xtrade.upay.channel.type.FrozenType;
-import com.diligrp.xtrade.upay.core.ErrorCode;
-import com.diligrp.xtrade.upay.core.exception.FundAccountException;
-import com.diligrp.xtrade.upay.core.service.IFundAccountService;
+import com.diligrp.xtrade.upay.core.model.AccountFund;
 
 import javax.annotation.Resource;
 
@@ -22,10 +20,7 @@ import javax.annotation.Resource;
 public class FundServiceComponent {
 
     @Resource
-    private IFrozenOrderService frozenOrderService;
-
-    @Resource
-    private IFundAccountService fundAccountService;
+    private IAccountChannelService accountChannelService;
 
     /**
      * 系统冻结资金
@@ -36,7 +31,7 @@ public class FundServiceComponent {
         AssertUtils.notNull(freezeFund.getBusinessId(), "businessId missed");
         AssertUtils.notNull(freezeFund.getAmount(), "amount missed");
         freezeFund.setType(FrozenType.SYSTEM_FROZEN.getCode());
-        Long id = frozenOrderService.freeze(freezeFund);
+        Long id = accountChannelService.freezeAccountFund(freezeFund);
         return FrozenId.of(id);
     }
 
@@ -46,7 +41,7 @@ public class FundServiceComponent {
     public void unfreeze(ServiceRequest<FrozenId> request) {
         FrozenId frozenId = request.getData();
         AssertUtils.notNull(frozenId.getFrozenId(), "frozenId missed");
-        frozenOrderService.unfreeze(frozenId.getFrozenId());
+        accountChannelService.unfreezeAccountFund(frozenId.getFrozenId());
     }
 
     /**
@@ -56,8 +51,7 @@ public class FundServiceComponent {
         AccountId accountId = request.getData();
         AssertUtils.notNull(accountId.getAccountId(), "accountId missed");
 
-        return fundAccountService.findAccountFundById(accountId.getAccountId())
-            .map(fund -> FundBalance.of(fund.getAccountId(), fund.getBalance(), fund.getFrozenAmount()))
-            .orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
+        AccountFund accountFund = accountChannelService.queryAccountFund(accountId.getAccountId());
+        return FundBalance.of(accountFund.getAccountId(), accountFund.getBalance(), accountFund.getFrozenAmount());
     }
 }
