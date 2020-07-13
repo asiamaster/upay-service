@@ -26,6 +26,6 @@ public class TradePermissionComponent {
         AssertUtils.notNull(permission.getAccountId(), "accountId missed");
         AssertUtils.notEmpty(permission.getPassword(), "password missed");
 
-        accountChannelService.checkTradePermission(permission.getAccountId(), permission.getPassword(), 5);
+        accountChannelService.checkTradePermission(permission.getAccountId(), permission.getPassword(), 3);
     }
 }

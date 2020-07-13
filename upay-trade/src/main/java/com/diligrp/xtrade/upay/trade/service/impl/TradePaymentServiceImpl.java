@@ -92,7 +92,7 @@ public class TradePaymentServiceImpl implements IPaymentService {
 
         // 处理买家付款和买家佣金
         LocalDateTime now = LocalDateTime.now();
-        FundAccount fromAccount = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), 5);
+        FundAccount fromAccount = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
         ISerialKeyGenerator keyGenerator = keyGeneratorManager.getSerialKeyGenerator(SequenceKey.PAYMENT_ID);
         String paymentId = keyGenerator.nextSerialNo(new PaymentDatedIdStrategy(trade.getType()));
         AccountChannel fromChannel = AccountChannel.of(paymentId, payment.getAccountId(), payment.getBusinessId());

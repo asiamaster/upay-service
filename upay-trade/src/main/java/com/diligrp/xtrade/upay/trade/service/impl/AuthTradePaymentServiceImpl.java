@@ -96,7 +96,7 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
 
         // 冻结资金
         LocalDateTime now = LocalDateTime.now();
-        FundAccount fromAccount = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), 5);
+        FundAccount fromAccount = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
         ISerialKeyGenerator keyGenerator = keyGeneratorManager.getSerialKeyGenerator(SequenceKey.PAYMENT_ID);
         String paymentId = keyGenerator.nextSerialNo(new PaymentDatedIdStrategy(trade.getType()));
         AccountChannel channel = AccountChannel.of(paymentId, payment.getAccountId(), payment.getBusinessId());
@@ -156,7 +156,7 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
 
         // 获取商户收益账号信息
         LocalDateTime now = LocalDateTime.now();
-        accountChannelService.checkTradePermission(payment.getAccountId(), confirm.getPassword(), 5);
+        accountChannelService.checkTradePermission(payment.getAccountId(), confirm.getPassword(), -1);
         MerchantPermit merchant = merchantDao.findMerchantById(trade.getMchId()).map(mer -> MerchantPermit.of(
             mer.getMchId(), mer.getProfitAccount(), mer.getVouchAccount(), mer.getPledgeAccount(), mer.getPrivateKey(),
             mer.getPublicKey())).orElseThrow(() -> new ServiceAccessException(ErrorCode.OBJECT_NOT_FOUND, "商户信息未注册"));

@@ -95,7 +95,7 @@ public class FeePaymentServiceImpl implements IPaymentService {
         // 处理账户余额缴费
         TransactionStatus status = null;
         LocalDateTime now = LocalDateTime.now();
-        accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), 5);
+        accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
         ISerialKeyGenerator keyGenerator = keyGeneratorManager.getSerialKeyGenerator(SequenceKey.PAYMENT_ID);
         String paymentId = keyGenerator.nextSerialNo(new PaymentDatedIdStrategy(trade.getType()));
         if (payment.getChannelId() == ChannelType.ACCOUNT.getCode()) {

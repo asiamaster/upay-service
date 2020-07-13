@@ -78,7 +78,7 @@ public class WithdrawPaymentServiceImpl implements IPaymentService {
 
         // 处理个人提现
         LocalDateTime now = LocalDateTime.now();
-        accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), 5);
+        accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
         ISerialKeyGenerator keyGenerator = keyGeneratorManager.getSerialKeyGenerator(SequenceKey.PAYMENT_ID);
         String paymentId = keyGenerator.nextSerialNo(new PaymentDatedIdStrategy(trade.getType()));
         AccountChannel channel = AccountChannel.of(paymentId, trade.getAccountId(), trade.getBusinessId());
