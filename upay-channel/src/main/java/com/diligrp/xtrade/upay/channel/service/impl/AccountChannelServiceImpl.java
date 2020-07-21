@@ -7,6 +7,7 @@ import com.diligrp.xtrade.shared.util.AssertUtils;
 import com.diligrp.xtrade.shared.util.DateUtils;
 import com.diligrp.xtrade.shared.util.ObjectUtils;
 import com.diligrp.xtrade.upay.channel.domain.FreezeFundDto;
+import com.diligrp.xtrade.upay.channel.domain.FrozenStatus;
 import com.diligrp.xtrade.upay.channel.domain.IFundTransaction;
 import com.diligrp.xtrade.upay.channel.exception.PaymentChannelException;
 import com.diligrp.xtrade.upay.channel.service.IAccountChannelService;
@@ -110,7 +111,7 @@ public class AccountChannelServiceImpl implements IAccountChannelService {
      * 人工/系统冻结使用
      */
     @Override
-    public long freezeAccountFund(FreezeFundDto request) {
+    public FrozenStatus freezeAccountFund(FreezeFundDto request) {
         return frozenOrderService.freeze(request);
     }
 
@@ -120,8 +121,8 @@ public class AccountChannelServiceImpl implements IAccountChannelService {
      * 人工/系统解冻资金使用
      */
     @Override
-    public void unfreezeAccountFund(Long frozenId) {
-        frozenOrderService.unfreeze(frozenId);
+    public FrozenStatus unfreezeAccountFund(Long frozenId) {
+        return frozenOrderService.unfreeze(frozenId);
     }
 
     /**

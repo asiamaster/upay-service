@@ -80,7 +80,7 @@ public class TransferPaymentServiceImpl implements IPaymentService {
         AccountChannel toChannel = AccountChannel.of(paymentId, trade.getAccountId(), trade.getBusinessId());
         IFundTransaction toTransaction = toChannel.openTransaction(trade.getType(), now);
         toTransaction.income(trade.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName());
-        accountChannelService.submit(toTransaction);
+        status.setRelation(accountChannelService.submit(toTransaction));
 
         TradeStateDto tradeState = TradeStateDto.of(trade.getTradeId(), TradeState.SUCCESS.getCode(),
             trade.getVersion(), now);

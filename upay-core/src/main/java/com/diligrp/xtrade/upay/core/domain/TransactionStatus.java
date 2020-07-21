@@ -13,10 +13,16 @@ public class TransactionStatus {
     private Long balance;
     // 操作金额-分(正值 负值)
     private Long amount;
+    // 冻结期初余额
+    private Long frozenBalance;
+    // 冻结解冻金额(正值 负值)
+    private Long frozenAmount;
     // 发生时间
     private LocalDateTime when;
     // 收支明细
     private List<FundStream> streams;
+    // 关联的资金事务-即时交易时会涉及两个资金事务(买/卖方)
+    private TransactionStatus relation;
 
     public Long getAccountId() {
         return accountId;
@@ -42,6 +48,22 @@ public class TransactionStatus {
         this.amount = amount;
     }
 
+    public Long getFrozenBalance() {
+        return frozenBalance;
+    }
+
+    public void setFrozenBalance(Long frozenBalance) {
+        this.frozenBalance = frozenBalance;
+    }
+
+    public Long getFrozenAmount() {
+        return frozenAmount;
+    }
+
+    public void setFrozenAmount(Long frozenAmount) {
+        this.frozenAmount = frozenAmount;
+    }
+
     public LocalDateTime getWhen() {
         return when;
     }
@@ -58,11 +80,22 @@ public class TransactionStatus {
         this.streams = streams;
     }
 
-    public static TransactionStatus of(Long accountId, Long balance, Long amount, LocalDateTime when) {
+    public TransactionStatus getRelation() {
+        return relation;
+    }
+
+    public void setRelation(TransactionStatus relation) {
+        this.relation = relation;
+    }
+
+    public static TransactionStatus of(Long accountId, Long balance, Long amount, Long frozenBalance,
+                                       Long frozenAmount, LocalDateTime when) {
         TransactionStatus status = new TransactionStatus();
         status.setAccountId(accountId);
         status.setBalance(balance);
         status.setAmount(amount);
+        status.setFrozenBalance(frozenBalance);
+        status.setFrozenAmount(frozenAmount);
         status.setWhen(when);
         return status;
     }

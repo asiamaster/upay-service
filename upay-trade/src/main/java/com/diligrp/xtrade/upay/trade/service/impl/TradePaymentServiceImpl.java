@@ -110,7 +110,7 @@ public class TradePaymentServiceImpl implements IPaymentService {
         fees.stream().filter(Fee::forSeller).forEach(fee -> {
             toTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName());
         });
-        accountChannelService.submit(toTransaction);
+        status.setRelation(accountChannelService.submit(toTransaction));
 
         // 处理商户收益
         if (!fees.isEmpty()) {
@@ -191,7 +191,7 @@ public class TradePaymentServiceImpl implements IPaymentService {
             toTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName());
         });
         toTransaction.income(trade.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName());
-        accountChannelService.submit(toTransaction);
+        status.setRelation(accountChannelService.submit(toTransaction));
 
         // 处理商户退佣金
         if (!fees.isEmpty()) {

@@ -178,7 +178,7 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
         fees.stream().filter(Fee::forSeller).forEach(fee -> {
             toTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName());
         });
-        accountChannelService.submit(toTransaction);
+        status.setRelation(accountChannelService.submit(toTransaction));
 
         // 处理商户收益
         if (!fees.isEmpty()) {

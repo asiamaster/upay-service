@@ -7,6 +7,7 @@ import com.diligrp.xtrade.upay.boss.domain.AccountId;
 import com.diligrp.xtrade.upay.boss.domain.FrozenId;
 import com.diligrp.xtrade.upay.boss.domain.FundBalance;
 import com.diligrp.xtrade.upay.channel.domain.FreezeFundDto;
+import com.diligrp.xtrade.upay.channel.domain.FrozenStatus;
 import com.diligrp.xtrade.upay.channel.service.IAccountChannelService;
 import com.diligrp.xtrade.upay.channel.type.FrozenType;
 import com.diligrp.xtrade.upay.core.model.AccountFund;
@@ -25,23 +26,22 @@ public class FundServiceComponent {
     /**
      * 系统冻结资金
      */
-    public FrozenId freeze(ServiceRequest<FreezeFundDto> request) {
+    public FrozenStatus freeze(ServiceRequest<FreezeFundDto> request) {
         FreezeFundDto freezeFund = request.getData();
         AssertUtils.notNull(freezeFund.getAccountId(), "accountId missed");
         AssertUtils.notNull(freezeFund.getBusinessId(), "businessId missed");
         AssertUtils.notNull(freezeFund.getAmount(), "amount missed");
         freezeFund.setType(FrozenType.SYSTEM_FROZEN.getCode());
-        Long id = accountChannelService.freezeAccountFund(freezeFund);
-        return FrozenId.of(id);
+        return accountChannelService.freezeAccountFund(freezeFund);
     }
 
     /**
      * 系统解冻资金
      */
-    public void unfreeze(ServiceRequest<FrozenId> request) {
+    public FrozenStatus unfreeze(ServiceRequest<FrozenId> request) {
         FrozenId frozenId = request.getData();
         AssertUtils.notNull(frozenId.getFrozenId(), "frozenId missed");
-        accountChannelService.unfreezeAccountFund(frozenId.getFrozenId());
+        return accountChannelService.unfreezeAccountFund(frozenId.getFrozenId());
     }
 
     /**

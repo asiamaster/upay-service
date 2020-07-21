@@ -6,6 +6,7 @@ import com.diligrp.xtrade.upay.channel.dao.IFrozenOrderDao;
 import com.diligrp.xtrade.upay.channel.domain.AccountChannel;
 import com.diligrp.xtrade.upay.channel.domain.FreezeFundDto;
 import com.diligrp.xtrade.upay.channel.domain.FrozenStateDto;
+import com.diligrp.xtrade.upay.channel.domain.FrozenStatus;
 import com.diligrp.xtrade.upay.channel.domain.IFundTransaction;
 import com.diligrp.xtrade.upay.channel.exception.PaymentChannelException;
 import com.diligrp.xtrade.upay.channel.model.FrozenOrder;
@@ -15,6 +16,7 @@ import com.diligrp.xtrade.upay.channel.type.FrozenState;
 import com.diligrp.xtrade.upay.channel.type.FrozenType;
 import com.diligrp.xtrade.upay.core.ErrorCode;
 import com.diligrp.xtrade.upay.core.dao.IFundAccountDao;
+import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
 import com.diligrp.xtrade.upay.core.model.FundAccount;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
 import org.springframework.stereotype.Service;
@@ -50,7 +52,7 @@ public class FrozenOrderServiceImpl implements IFrozenOrderService {
      */
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
-    public long freeze(FreezeFundDto request) {
+    public FrozenStatus freeze(FreezeFundDto request) {
         Optional<FrozenType> frozenTypeOpt = FrozenType.getType(request.getType());
         frozenTypeOpt.orElseThrow(() -> new PaymentChannelException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "不支持此冻结类型"));
         Optional<FundAccount> accountOpt = fundAccountDao.findFundAccountById(request.getAccountId());
@@ -61,7 +63,7 @@ public class FrozenOrderServiceImpl implements IFrozenOrderService {
         AccountChannel channel = AccountChannel.of(null, request.getAccountId(), request.getBusinessId());
         IFundTransaction transaction = channel.openTransaction(FrozenState.FROZEN.getCode(), now);
         transaction.freeze(request.getAmount());
-        accountChannelService.submit(transaction);
+        TransactionStatus status = accountChannelService.submit(transaction);
 
         // 创建冻结资金订单
         IKeyGenerator keyGenerator = keyGeneratorManager.getKeyGenerator(SequenceKey.FROZEN_ID);
@@ -70,7 +72,7 @@ public class FrozenOrderServiceImpl implements IFrozenOrderService {
             .businessId(request.getBusinessId()).name(account.getName()).type(request.getType()).amount(request.getAmount())
             .state(FrozenState.FROZEN.getCode()).description(request.getDescription()).version(0).createdTime(now).build();
         frozenOrderDao.insertFrozenOrder(frozenOrder);
-        return frozenId;
+        return FrozenStatus.of(frozenId, status);
     }
 
     /**
@@ -80,7 +82,7 @@ public class FrozenOrderServiceImpl implements IFrozenOrderService {
      */
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
-    public void unfreeze(Long frozenId) {
+    public FrozenStatus unfreeze(Long frozenId) {
         Optional<FrozenOrder> orderOpt = frozenOrderDao.findFrozenOrderById(frozenId);
         FrozenOrder order = orderOpt.orElseThrow(() -> new PaymentChannelException(ErrorCode.OBJECT_NOT_FOUND, "冻结订单不存在"));
         if (order.getState() != FrozenState.FROZEN.getCode()) {
@@ -94,12 +96,13 @@ public class FrozenOrderServiceImpl implements IFrozenOrderService {
         AccountChannel channel = AccountChannel.of(null, order.getAccountId(), order.getBusinessId());
         IFundTransaction transaction = channel.openTransaction(FrozenState.UNFROZEN.getCode(), now);
         transaction.unfreeze(order.getAmount());
-        accountChannelService.submit(transaction);
+        TransactionStatus status = accountChannelService.submit(transaction);
 
         FrozenStateDto updateState = FrozenStateDto.of(frozenId, FrozenState.UNFROZEN.getCode(),
             order.getVersion(), now);
         if (frozenOrderDao.compareAndSetState(updateState) <= 0) {
             throw new PaymentChannelException(ErrorCode.DATA_CONCURRENT_UPDATED, "系统忙，请稍后再试");
         }
+        return FrozenStatus.of(frozenId, status);
     }
 }

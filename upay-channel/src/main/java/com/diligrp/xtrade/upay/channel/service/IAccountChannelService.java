@@ -1,6 +1,7 @@
 package com.diligrp.xtrade.upay.channel.service;
 
 import com.diligrp.xtrade.upay.channel.domain.FreezeFundDto;
+import com.diligrp.xtrade.upay.channel.domain.FrozenStatus;
 import com.diligrp.xtrade.upay.channel.domain.IFundTransaction;
 import com.diligrp.xtrade.upay.core.domain.RegisterAccount;
 import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
@@ -39,12 +40,12 @@ public interface IAccountChannelService {
     /**
      * 人工/系统冻结平台账户资金
      */
-    long freezeAccountFund(FreezeFundDto request);
+    FrozenStatus freezeAccountFund(FreezeFundDto freezeAccountFundrequest);
 
     /**
      * 人工/系统解冻平台账户资金
      */
-    void unfreezeAccountFund(Long frozenId);
+    FrozenStatus unfreezeAccountFund(Long frozenId);
 
     /**
      * 查询平台账户资金信息
