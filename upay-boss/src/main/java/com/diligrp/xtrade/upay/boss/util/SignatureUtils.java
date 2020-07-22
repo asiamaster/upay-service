@@ -62,10 +62,4 @@ public final class SignatureUtils {
         KeyFactory keyFactory = KeyFactory.getInstance(KEY_ALGORITHM);
         return keyFactory.generatePublic(keySpec);
     }
-
-    public static void main(String[] args) throws Exception {
-        String[] keyPair = RsaCipher.generateRSAKeyPair();
-        String sign = sign("abcd1234", keyPair[0]);
-        System.out.println(verify("abcd1234", sign, keyPair[1]));
-    }
 }

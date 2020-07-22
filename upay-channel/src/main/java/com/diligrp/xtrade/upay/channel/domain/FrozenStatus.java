@@ -9,7 +9,7 @@ public class FrozenStatus {
     // 冻结ID
     private Long frozenId;
     // 账户资金事务状态
-    private TransactionStatus status;
+    private TransactionStatus transaction;
 
     public Long getFrozenId() {
         return frozenId;
@@ -19,18 +19,18 @@ public class FrozenStatus {
         this.frozenId = frozenId;
     }
 
-    public TransactionStatus getStatus() {
-        return status;
+    public TransactionStatus getTransaction() {
+        return transaction;
     }
 
-    public void setStatus(TransactionStatus status) {
-        this.status = status;
+    public void setTransaction(TransactionStatus transaction) {
+        this.transaction = transaction;
     }
 
     public static FrozenStatus of(Long frozenId, TransactionStatus status) {
         FrozenStatus frozen = new FrozenStatus();
         frozen.setFrozenId(frozenId);
-        frozen.setStatus(status);
+        frozen.setTransaction(status);
         return frozen;
     }
 }
