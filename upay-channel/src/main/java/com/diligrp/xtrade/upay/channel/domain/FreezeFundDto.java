@@ -12,17 +12,10 @@ public class FreezeFundDto {
     private Integer type;
     // 冻结金额 - 分
     private Long amount;
+    // 扩展信息
+    private String extension;
     // 描述
     private String description;
-
-    public static FreezeFundDto of(Long accountId, Long businessId, Integer type, Long amount) {
-        FreezeFundDto frozenOrder = new FreezeFundDto();
-        frozenOrder.setAccountId(accountId);
-        frozenOrder.setBusinessId(businessId);
-        frozenOrder.setType(type);
-        frozenOrder.setAmount(amount);
-        return frozenOrder;
-    }
 
     public Long getAccountId() {
         return accountId;
@@ -54,6 +47,14 @@ public class FreezeFundDto {
 
     public void setAmount(Long amount) {
         this.amount = amount;
+    }
+
+    public String getExtension() {
+        return extension;
+    }
+
+    public void setExtension(String extension) {
+        this.extension = extension;
     }
 
     public String getDescription() {

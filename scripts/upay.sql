@@ -139,7 +139,7 @@ CREATE TABLE `upay_fund_statement` (
   `action` TINYINT UNSIGNED NOT NULL COMMENT '动作-收入 支出',
   `balance` BIGINT NOT NULL COMMENT '(前)余额-分',
   `amount` BIGINT NOT NULL COMMENT '金额-分(正值 负值)',
-  `type` TINYINT UNSIGNED NOT NULL COMMENT '资金类型',
+  `type` INT NOT NULL COMMENT '资金类型',
   `type_name` VARCHAR(80) COMMENT '费用描述',
   `description` VARCHAR(128) COMMENT '备注',
   `created_time` DATETIME COMMENT '创建时间',
@@ -250,7 +250,7 @@ CREATE TABLE `upay_payment_fee` (
   `payment_id` VARCHAR(40) NOT NULL COMMENT '支付ID',
   `use_for` TINYINT UNSIGNED COMMENT '费用用途',
   `amount` BIGINT NOT NULL COMMENT '金额-分',
-  `type` TINYINT UNSIGNED NOT NULL COMMENT '费用类型',
+  `type` INT NOT NULL COMMENT '费用类型',
   `type_name` VARCHAR(80) COMMENT '费用描述',
   `created_time` DATETIME COMMENT '创建时间',
   PRIMARY KEY (`id`),
@@ -264,6 +264,7 @@ CREATE TABLE `upay_payment_fee` (
 -- 资金类型包括账户资金、手续费和工本费等，余额balance为期初余额；
 -- 资金流水的交易类型标识由哪种业务产生，包括：充值、提现、交易等。
 -- 创建时间=冻结时间，修改时间=解冻时间，当交易冻结操作人信息为资金账号，否则外部传入
+-- 扩展信息用于存储业务系统额外信息，包括：冻结人、解冻人等，由业务系统定义数据格式
 -- --------------------------------------------------------------------
 DROP TABLE IF EXISTS `upay_frozen_order`;
 CREATE TABLE `upay_frozen_order` (
@@ -276,6 +277,7 @@ CREATE TABLE `upay_frozen_order` (
   `type` TINYINT UNSIGNED NOT NULL COMMENT '冻结类型-系统冻结 交易冻结',
   `amount` BIGINT NOT NULL COMMENT '金额-分',
   `state` TINYINT UNSIGNED NOT NULL COMMENT '冻结状态-冻结 解冻',
+  `extension` VARCHAR(200) COMMENT '扩展信息',
   `description` VARCHAR(128) COMMENT '备注',
   `version` INTEGER UNSIGNED NOT NULL COMMENT '数据版本号',
   `created_time` DATETIME COMMENT '创建时间',
@@ -283,7 +285,8 @@ CREATE TABLE `upay_frozen_order` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_frozen_order_frozenId` (`frozen_id`) USING BTREE,
   UNIQUE KEY `uk_frozen_order_paymentId` (`payment_id`) USING BTREE,
-  KEY `idx_frozen_order_accountId` (`account_id`, `type`) USING BTREE
+  KEY `idx_frozen_order_accountId` (`account_id`, `type`) USING BTREE,
+  KEY `idx_frozen_order_createdTime` (`created_time`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------------------

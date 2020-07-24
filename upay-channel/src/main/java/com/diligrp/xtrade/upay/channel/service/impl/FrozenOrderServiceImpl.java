@@ -1,10 +1,12 @@
 package com.diligrp.xtrade.upay.channel.service.impl;
 
+import com.diligrp.xtrade.shared.domain.PageMessage;
 import com.diligrp.xtrade.shared.sequence.IKeyGenerator;
 import com.diligrp.xtrade.shared.sequence.KeyGeneratorManager;
 import com.diligrp.xtrade.upay.channel.dao.IFrozenOrderDao;
 import com.diligrp.xtrade.upay.channel.domain.AccountChannel;
 import com.diligrp.xtrade.upay.channel.domain.FreezeFundDto;
+import com.diligrp.xtrade.upay.channel.domain.FrozenOrderQuery;
 import com.diligrp.xtrade.upay.channel.domain.FrozenStateDto;
 import com.diligrp.xtrade.upay.channel.domain.FrozenStatus;
 import com.diligrp.xtrade.upay.channel.domain.IFundTransaction;
@@ -25,6 +27,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -70,7 +74,8 @@ public class FrozenOrderServiceImpl implements IFrozenOrderService {
         long frozenId = keyGenerator.nextId();
         FrozenOrder frozenOrder = FrozenOrder.builder().frozenId(frozenId).paymentId(null).accountId(request.getAccountId())
             .businessId(request.getBusinessId()).name(account.getName()).type(request.getType()).amount(request.getAmount())
-            .state(FrozenState.FROZEN.getCode()).description(request.getDescription()).version(0).createdTime(now).build();
+            .extension(request.getExtension()).state(FrozenState.FROZEN.getCode()).description(request.getDescription())
+            .version(0).createdTime(now).build();
         frozenOrderDao.insertFrozenOrder(frozenOrder);
         return FrozenStatus.of(frozenId, status);
     }
@@ -104,5 +109,20 @@ public class FrozenOrderServiceImpl implements IFrozenOrderService {
             throw new PaymentChannelException(ErrorCode.DATA_CONCURRENT_UPDATED, "系统忙，请稍后再试");
         }
         return FrozenStatus.of(frozenId, status);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     *  分页查询冻结资金订单
+     */
+    @Override
+    public PageMessage<FrozenOrder> listFrozenOrders(FrozenOrderQuery query) {
+        List<FrozenOrder> frozenOrders = Collections.emptyList();
+        long total = frozenOrderDao.countFrozenOrders(query);
+        if (total > 0) {
+            frozenOrders = frozenOrderDao.listFrozenOrders(query);
+        }
+        return PageMessage.success(total, frozenOrders);
     }
 }

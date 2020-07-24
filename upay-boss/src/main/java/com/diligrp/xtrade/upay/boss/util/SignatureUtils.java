@@ -1,7 +1,5 @@
 package com.diligrp.xtrade.upay.boss.util;
 
-import com.diligrp.xtrade.shared.security.RsaCipher;
-
 import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.PublicKey;

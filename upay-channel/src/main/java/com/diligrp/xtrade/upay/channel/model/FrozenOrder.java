@@ -24,6 +24,8 @@ public class FrozenOrder extends BaseDo {
     private Long amount;
     // 状态-冻结 解冻
     private Integer state;
+    // 扩展信息
+    private String extension;
     // 备注
     private String description;
     // 数据版本号
@@ -93,6 +95,14 @@ public class FrozenOrder extends BaseDo {
         this.state = state;
     }
 
+    public String getExtension() {
+        return extension;
+    }
+
+    public void setExtension(String extension) {
+        this.extension = extension;
+    }
+
     public String getDescription() {
         return description;
     }
@@ -151,6 +161,11 @@ public class FrozenOrder extends BaseDo {
 
         public Builder state(Integer state) {
             FrozenOrder.this.state = state;
+            return this;
+        }
+
+        public Builder extension(String extension) {
+            FrozenOrder.this.extension = extension;
             return this;
         }
 
