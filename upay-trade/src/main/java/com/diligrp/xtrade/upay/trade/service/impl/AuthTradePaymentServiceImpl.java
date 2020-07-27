@@ -107,9 +107,9 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
         // 创建冻结资金订单
         long frozenId = keyGeneratorManager.getKeyGenerator(SequenceKey.FROZEN_ID).nextId();
         FrozenOrder frozenOrder = FrozenOrder.builder().frozenId(frozenId).paymentId(paymentId)
-            .accountId(payment.getAccountId()).name(fromAccount.getName()).type(FrozenType.TRADE_FROZEN.getCode())
-            .amount(trade.getAmount()).state(FrozenState.FROZEN.getCode()).description(null)
-            .version(0).createdTime(now).build();
+            .accountId(payment.getAccountId()).businessId(payment.getBusinessId()).name(fromAccount.getName())
+            .type(FrozenType.TRADE_FROZEN.getCode()).amount(trade.getAmount()).state(FrozenState.FROZEN.getCode())
+            .description(null).version(0).createdTime(now).build();
         frozenOrderDao.insertFrozenOrder(frozenOrder);
 
         // 冻结交易订单
