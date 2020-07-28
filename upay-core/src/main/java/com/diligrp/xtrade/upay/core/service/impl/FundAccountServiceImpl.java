@@ -70,8 +70,8 @@ public class FundAccountServiceImpl implements IFundAccountService {
             .state(AccountState.NORMAL.getCode()).mchId(mchId).version(0).createdTime(when).build();
         fundAccountDao.insertFundAccount(fundAccount);
 
-        AccountFund accountFund = AccountFund.builder().accountId(accountId).balance(0L).frozenAmount(0L).vouchAmount(0L)
-            .dailyAmount(0L).version(0).createdTime(when).build();
+        AccountFund accountFund = AccountFund.builder().accountId(accountId).balance(0L).frozenAmount(0L)
+            .vouchAmount(0L).version(0).createdTime(when).build();
         accountFundDao.insertAccountFund(accountFund);
         return accountId;
     }

@@ -113,7 +113,6 @@ CREATE TABLE `upay_account_fund` (
   `balance` BIGINT NOT NULL COMMENT '账户余额-分',
   `frozen_amount` BIGINT NOT NULL COMMENT '冻结金额-分',
   `vouch_amount` BIGINT NOT NULL COMMENT '担保金额-分',
-  `daily_amount` BIGINT NOT NULL COMMENT '日切金额-分',
   `version` INTEGER UNSIGNED NOT NULL COMMENT '数据版本号',
   `created_time` DATETIME COMMENT '创建时间',
   `modified_time` DATETIME COMMENT '修改时间',
@@ -145,7 +144,8 @@ CREATE TABLE `upay_fund_statement` (
   `created_time` DATETIME COMMENT '创建时间',
   PRIMARY KEY (`id`),
   KEY `idx_fund_stmt_paymentId` (`payment_id`) USING BTREE,
-  KEY `idx_fund_stmt_accountId` (`account_id`) USING BTREE
+  KEY `idx_fund_stmt_accountId` (`account_id`) USING BTREE,
+  KEY `idx_fund_stmt_createdTime` (`created_time`, `account_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------------------

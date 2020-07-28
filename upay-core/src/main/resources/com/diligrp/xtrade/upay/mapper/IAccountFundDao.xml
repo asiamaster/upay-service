@@ -9,17 +9,16 @@
         <result column="balance" property="balance"/>
         <result column="frozen_amount" property="frozenAmount"/>
         <result column="vouch_amount" property="vouchAmount"/>
-        <result column="daily_amount" property="dailyAmount"/>
         <result column="version" property="version"/>
         <result column="created_time" property="createdTime"/>
         <result column="modified_time" property="modifiedTime"/>
     </resultMap>
 
     <insert id="insertAccountFund" parameterType="com.diligrp.xtrade.upay.core.model.AccountFund">
-        INSERT INTO upay_account_fund(account_id, balance, frozen_amount, vouch_amount, daily_amount,
+        INSERT INTO upay_account_fund(account_id, balance, frozen_amount, vouch_amount,
             version, created_time, modified_time)
         VALUES
-          (#{accountId}, #{balance}, #{frozenAmount}, #{vouchAmount}, #{dailyAmount}, #{version},
+          (#{accountId}, #{balance}, #{frozenAmount}, #{vouchAmount}, #{version},
           #{createdTime}, #{modifiedTime})
     </insert>
 

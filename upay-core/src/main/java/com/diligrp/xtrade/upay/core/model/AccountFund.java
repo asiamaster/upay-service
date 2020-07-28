@@ -16,8 +16,6 @@ public class AccountFund extends BaseDo {
     private Long frozenAmount;
     // 担保金额-分
     private Long vouchAmount;
-    // 日切金额-分
-    private Long dailyAmount;
     // 数据版本号
     private Integer version;
 
@@ -53,14 +51,6 @@ public class AccountFund extends BaseDo {
         this.vouchAmount = vouchAmount;
     }
 
-    public Long getDailyAmount() {
-        return dailyAmount;
-    }
-
-    public void setDailyAmount(Long dailyAmount) {
-        this.dailyAmount = dailyAmount;
-    }
-
     public Integer getVersion() {
         return version;
     }
@@ -91,11 +81,6 @@ public class AccountFund extends BaseDo {
 
         public Builder vouchAmount(Long vouchAmount) {
             AccountFund.this.vouchAmount = vouchAmount;
-            return this;
-        }
-
-        public Builder dailyAmount(Long dailyAmount) {
-            AccountFund.this.dailyAmount = dailyAmount;
             return this;
         }
 
