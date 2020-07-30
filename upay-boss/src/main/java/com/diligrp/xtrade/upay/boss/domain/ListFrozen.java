@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
  */
 public class ListFrozen {
     // 页号
-    private Integer pageNum = 1;
+    private Integer pageNo = 1;
     // 每页记录数
     private Integer pageSize = 20;
     // 资金账号
@@ -22,12 +22,12 @@ public class ListFrozen {
     // 结束时间
     private LocalDateTime endTime;
 
-    public Integer getPageNum() {
-        return pageNum;
+    public Integer getPageNo() {
+        return pageNo;
     }
 
-    public void setPageNum(Integer pageNum) {
-        this.pageNum = pageNum;
+    public void setPageNo(Integer pageNo) {
+        this.pageNo = pageNo;
     }
 
     public Integer getPageSize() {

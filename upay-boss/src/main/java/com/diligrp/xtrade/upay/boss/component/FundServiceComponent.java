@@ -72,12 +72,12 @@ public class FundServiceComponent {
     public PageMessage<FrozenOrderDto> listFrozen(ServiceRequest<ListFrozen> request) {
         ListFrozen listFrozen = request.getData();
         AssertUtils.notNull(listFrozen.getAccountId(), "accountId missed");
-        AssertUtils.isTrue(listFrozen.getPageNum() > 0, "invalid pageNum");
+        AssertUtils.isTrue(listFrozen.getPageNo() > 0, "invalid pageNum");
         AssertUtils.isTrue(listFrozen.getPageSize() > 0, "invalid pageSize");
         // 只查询系统冻结记录
         FrozenOrderQuery query = FrozenOrderQuery.of(listFrozen.getAccountId(), FrozenType.SYSTEM_FROZEN.getCode(),
             listFrozen.getState(), listFrozen.getStartTime(), listFrozen.getEndTime());
-        query.from(listFrozen.getPageNum(), listFrozen.getPageSize());
+        query.from(listFrozen.getPageNo(), listFrozen.getPageSize());
         PageMessage<FrozenOrder> result = frozenOrderService.listFrozenOrders(query);
         // 转化查询结果
         List<FrozenOrderDto> frozenOrders = result.getData().stream().map(frozenOrder ->
