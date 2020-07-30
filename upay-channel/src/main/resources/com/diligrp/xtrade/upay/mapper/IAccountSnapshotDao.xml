@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.diligrp.xtrade.upay.channel.dao.IAccountSnapshotDao">
+    <resultMap id="DailySnapshotMap" type="com.diligrp.xtrade.upay.channel.model.DailySnapshot">
+        <id column="id" property="id"/>
+        <result column="account_id" property="accountId"/>
+        <result column="balance" property="balance"/>
+        <result column="frozen_amount" property="frozenAmount"/>
+        <result column="snapshot_on" property="snapshotOn"/>
+        <result column="created_time" property="createdTime"/>
+    </resultMap>
+
+    <resultMap id="SnapshotGuardMap" type="com.diligrp.xtrade.upay.channel.model.SnapshotGuard">
+        <id column="id" property="id"/>
+        <result column="snapshot_on" property="snapshotOn"/>
+        <result column="state" property="state"/>
+        <result column="created_time" property="createdTime"/>
+        <result column="modified_time" property="modifiedTime"/>
+    </resultMap>
+
+    <insert id="insertSnapshotGuard" parameterType="com.diligrp.xtrade.upay.channel.model.SnapshotGuard">
+        INSERT INTO upay_snapshot_guard(snapshot_on, state, created_time, modified_time)
+        VALUES (#{snapshotOn}, #{state}, #{createdTime}, #{modifiedTime})
+    </insert>
+
+    <select id="findSnapshotGuard" resultMap="SnapshotGuardMap">
+        SELECT * FROM upay_snapshot_guard WHERE snapshot_on = #{snapshotOn}
+        <if test="state != null">
+            AND state = #{state}
+        </if>
+    </select>
+
+    <select id="findLastSnapshotGuard" resultMap="SnapshotGuardMap">
+        <![CDATA[
+        SELECT * FROM upay_snapshot_guard WHERE snapshot_on < #{snapshotOn} AND state = #{state} ORDER BY snapshot_on DESC LIMIT 1
+        ]]>
+    </select>
+
+    <update id="updateSnapshotGuardState" parameterType="com.diligrp.xtrade.upay.channel.model.SnapshotGuard">
+        UPDATE upay_snapshot_guard SET state = #{state}, modified_time = #{modifiedTime} WHERE snapshot_on = #{snapshotOn}
+    </update>
+
+    <select id="listAccountSnapshot" parameterType="map" resultMap="DailySnapshotMap" resultSetType="FORWARD_ONLY" fetchSize="4000">
+        <![CDATA[
+        SELECT
+            account_id, SUM(balance) AS balance, SUM(frozen_amount) AS frozen_amount
+        FROM (
+            SELECT
+                account_id, balance, frozen_amount
+            FROM
+                upay_daily_snapshot
+            WHERE
+                snapshot_on = #{lastSnapshotOn}
+            UNION ALL
+            SELECT
+                account_id, SUM(amount) AS balance, 0 AS frozen_amount
+            FROM
+                upay_fund_statement
+            WHERE
+                created_time >= #{startOn} AND created_time < #{endOn}
+            GROUP BY account_id
+            UNION ALL
+            SELECT
+                account_id, 0 AS balance, SUM(amount) AS frozen_amount
+            FROM
+                upay_frozen_order
+            WHERE
+                created_time >= #{startOn} AND created_time < #{endOn}
+            GROUP BY account_id
+            UNION ALL
+            SELECT
+                account_id, 0 AS balance, SUM(-amount) AS frozen_amount
+            FROM
+                upay_frozen_order
+            WHERE
+                modified_time >= #{startOn} AND modified_time < #{endOn}
+            GROUP BY account_id
+        ) T
+        GROUP BY account_id
+        ]]>
+    </select>
+
+    <insert id="batchInsertDailySnapshot" parameterType="java.util.List">
+        INSERT INTO upay_daily_snapshot(account_id, balance, frozen_amount, snapshot_on, created_time)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.accountId}, #{item.balance}, #{item.frozenAmount}, #{item.snapshotOn}, #{item.createdTime})
+        </foreach>
+    </insert>
+</mapper>

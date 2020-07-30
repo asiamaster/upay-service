@@ -144,8 +144,8 @@ CREATE TABLE `upay_fund_statement` (
   `created_time` DATETIME COMMENT '创建时间',
   PRIMARY KEY (`id`),
   KEY `idx_fund_stmt_paymentId` (`payment_id`) USING BTREE,
-  KEY `idx_fund_stmt_accountId` (`account_id`) USING BTREE,
-  KEY `idx_fund_stmt_createdTime` (`created_time`, `account_id`) USING BTREE
+  KEY `idx_fund_stmt_accountId` (`account_id`, `created_time`) USING BTREE,
+  KEY `idx_fund_stmt_createdTime` (`created_time`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------------------
@@ -286,7 +286,38 @@ CREATE TABLE `upay_frozen_order` (
   UNIQUE KEY `uk_frozen_order_frozenId` (`frozen_id`) USING BTREE,
   UNIQUE KEY `uk_frozen_order_paymentId` (`payment_id`) USING BTREE,
   KEY `idx_frozen_order_accountId` (`account_id`, `type`) USING BTREE,
-  KEY `idx_frozen_order_createdTime` (`created_time`) USING BTREE
+  KEY `idx_frozen_order_createdTime` (`created_time`) USING BTREE,
+  KEY `idx_frozen_order_modifiedTime` (`modified_time`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------------------
+-- 资金余额快照表
+-- --------------------------------------------------------------------
+DROP TABLE IF EXISTS `upay_daily_snapshot`;
+CREATE TABLE `upay_daily_snapshot` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `account_id` BIGINT NOT NULL COMMENT '账号ID',
+  `balance` BIGINT NOT NULL COMMENT '余额-分',
+  `frozen_amount` BIGINT NOT NULL COMMENT '冻结金额-分',
+  `snapshot_on` DATE NOT NULL COMMENT '快照日期',
+  `created_time` DATETIME COMMENT '创建时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_daily_snapshot_accountId` (`account_id`, `snapshot_on`) USING BTREE,
+  KEY `idx_daily_snapshot_snapshotOn` (`snapshot_on`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------------------
+-- 快照监视表
+-- --------------------------------------------------------------------
+DROP TABLE IF EXISTS `upay_snapshot_guard`;
+CREATE TABLE `upay_snapshot_guard` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `snapshot_on` DATE NOT NULL COMMENT '快照日期',
+  `state` TINYINT UNSIGNED NOT NULL COMMENT '快照状态',
+  `created_time` DATETIME COMMENT '创建时间',
+  `modified_time` DATETIME COMMENT '修改时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_snapshot_guard_snapshotOn` (`snapshot_on`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------------------
