@@ -158,8 +158,9 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
         LocalDateTime now = LocalDateTime.now();
         accountChannelService.checkTradePermission(payment.getAccountId(), confirm.getPassword(), -1);
         MerchantPermit merchant = merchantDao.findMerchantById(trade.getMchId()).map(mer -> MerchantPermit.of(
-            mer.getMchId(), mer.getProfitAccount(), mer.getVouchAccount(), mer.getPledgeAccount(), mer.getPrivateKey(),
-            mer.getPublicKey())).orElseThrow(() -> new ServiceAccessException(ErrorCode.OBJECT_NOT_FOUND, "商户信息未注册"));
+            mer.getMchId(), mer.getCode(), mer.getProfitAccount(), mer.getVouchAccount(), mer.getPledgeAccount(),
+            mer.getPrivateKey(), mer.getPublicKey()))
+            .orElseThrow(() -> new ServiceAccessException(ErrorCode.OBJECT_NOT_FOUND, "商户信息未注册"));
 
         // 处理买家付款和买家佣金
         AccountChannel fromChannel = AccountChannel.of(payment.getPaymentId(), payment.getAccountId(), payment.getBusinessId());
