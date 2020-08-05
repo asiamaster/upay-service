@@ -55,8 +55,8 @@ public class AccessPermitServiceImpl implements IAccessPermitService {
                     Optional<Application> application = merchantDao.findApplicationById(appId);
                     permit = application.map(app -> {
                         MerchantPermit merchant = merchantDao.findMerchantById(app.getMchId())
-                            .map(mer -> MerchantPermit.of(mer.getMchId(), mer.getProfitAccount(), mer.getVouchAccount(),
-                                mer.getPledgeAccount(), mer.getPrivateKey(), mer.getPublicKey()))
+                            .map(mer -> MerchantPermit.of(mer.getMchId(), mer.getCode(), mer.getProfitAccount(),
+                                mer.getVouchAccount(), mer.getPledgeAccount(), mer.getPrivateKey(), mer.getPublicKey()))
                             .orElseThrow(() -> new ServiceAccessException(ErrorCode.OBJECT_NOT_FOUND, "商户信息未注册"));
                         return ApplicationPermit.of(app.getAppId(), app.getAccessToken(), app.getPrivateKey(),
                             app.getPublicKey(), merchant);
@@ -70,8 +70,9 @@ public class AccessPermitServiceImpl implements IAccessPermitService {
         /*Optional<Application> application = merchantDao.findApplicationById(appId);
         return application.map(app -> {
             MerchantPermit merchant = merchantDao.findMerchantById(app.getMchId()).map(mer -> MerchantPermit.of(
-                mer.getMchId(), mer.getProfitAccount(), mer.getVouchAccount(), mer.getPledgeAccount(), mer.getPrivateKey(),
-                mer.getPublicKey())).orElseThrow(() -> new ServiceAccessException(ErrorCode.OBJECT_NOT_FOUND, "商户信息未注册"));
+                mer.getMchId(), mer.getCode(), mer.getProfitAccount(), mer.getVouchAccount(), mer.getPledgeAccount(),
+                mer.getPrivateKey(), mer.getPublicKey()))
+                .orElseThrow(() -> new ServiceAccessException(ErrorCode.OBJECT_NOT_FOUND, "商户信息未注册"));
             return ApplicationPermit.of(app.getAppId(), app.getAccessToken(), app.getPrivateKey(), app.getPublicKey(), merchant);
         }).orElseThrow(() -> new ServiceAccessException(ErrorCode.OBJECT_NOT_FOUND, "应用信息未注册"));*/
     }
@@ -113,7 +114,7 @@ public class AccessPermitServiceImpl implements IAccessPermitService {
             .contact(request.getContact()).mobile(request.getMobile()).privateKey(keyPair[0]).publicKey(keyPair[1])
             .state(1).createdTime(now).build();
         merchantDao.insertMerchant(merchant);
-        return MerchantPermit.of(request.getMchId(), profileId, vouchId, pledgeId, keyPair[0], keyPair[1]);
+        return MerchantPermit.of(request.getMchId(), request.getCode(), profileId, vouchId, pledgeId, keyPair[0], keyPair[1]);
     }
 
     /**

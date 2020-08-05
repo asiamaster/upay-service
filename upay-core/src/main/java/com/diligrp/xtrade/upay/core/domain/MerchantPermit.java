@@ -6,6 +6,8 @@ package com.diligrp.xtrade.upay.core.domain;
 public class MerchantPermit {
     // 商户ID
     private Long mchId;
+    // 商户编码
+    private String code;
     // 收益账户
     private Long profitAccount;
     // 担保账户
@@ -23,6 +25,14 @@ public class MerchantPermit {
 
     public void setMchId(Long mchId) {
         this.mchId = mchId;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
     }
 
     public Long getProfitAccount() {
@@ -65,10 +75,11 @@ public class MerchantPermit {
         this.publicKey = publicKey;
     }
 
-    public static MerchantPermit of(Long mchId, Long profitAccount, Long vouchAccount, Long pledgeAccount,
+    public static MerchantPermit of(Long mchId, String code, Long profitAccount, Long vouchAccount, Long pledgeAccount,
                                     String privateKey, String publicKey) {
         MerchantPermit permit = new MerchantPermit();
         permit.setMchId(mchId);
+        permit.setCode(code);
         permit.setProfitAccount(profitAccount);
         permit.setVouchAccount(vouchAccount);
         permit.setPledgeAccount(pledgeAccount);

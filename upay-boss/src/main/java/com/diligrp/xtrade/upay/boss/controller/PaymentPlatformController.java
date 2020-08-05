@@ -15,6 +15,7 @@ import com.diligrp.xtrade.upay.core.ErrorCode;
 import com.diligrp.xtrade.upay.core.domain.ApplicationPermit;
 import com.diligrp.xtrade.upay.core.exception.PaymentServiceException;
 import com.diligrp.xtrade.upay.core.service.IAccessPermitService;
+import com.diligrp.xtrade.upay.core.service.IPaymentConfigService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -39,6 +40,9 @@ public class PaymentPlatformController {
     @Resource
     private IAccessPermitService accessPermitService;
 
+    @Resource
+    private IPaymentConfigService paymentConfigService;
+
     @RequestMapping(value = "/gateway.do")
     public void gateway(HttpServletRequest request, HttpServletResponse response) {
         Message<?> result = null;
@@ -55,7 +59,6 @@ public class PaymentPlatformController {
             String accessToken = context.getString(Constants.PARAM_ACCESS_TOKEN);
             String signature = context.getString(Constants.PARAM_SIGNATURE);
             String charset = context.getString(Constants.PARAM_CHARSET);
-            signCheck = ObjectUtils.isNotEmpty(signature);
 
             AssertUtils.notNull(appId, "appId missed");
             AssertUtils.notEmpty(service, "service missed");
@@ -63,7 +66,8 @@ public class PaymentPlatformController {
 
             MessageEnvelop envelop = MessageEnvelop.of(appId, service, accessToken, payload, signature, charset);
             application = checkAccessPermission(context, envelop);
-            // 开发阶段: 提供签名信息才进行数据验签
+            // 获取"接口数据签名验签"系统配置
+            signCheck = paymentConfigService.dataSignSwitch(application.getMerchant().getCode());
             if (signCheck) {
                 envelop.unpackEnvelop(application.getPublicKey());
             }
@@ -87,8 +91,8 @@ public class PaymentPlatformController {
 
         // 处理数据签名: 忽略签名失败，签名失败时调用方会验签失败
         MessageEnvelop reply = MessageEnvelop.of(null, JsonUtils.toJsonString(result));
-        try { // 开发阶段: 调用方提供签名信息才进行返回数据签名
-            if (signCheck && application != null) {
+        try {
+            if (signCheck) {
                 reply.packEnvelop(application.getMerchant().getPrivateKey());
                 response.addHeader(Constants.PARAM_SIGNATURE, reply.getSignature());
             }
