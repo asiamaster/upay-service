@@ -52,6 +52,13 @@ public enum ChannelType implements IEnumType {
     }
 
     /**
+     * 判断渠道是否可用于充值冲正业务-专为寿光处理网银充值退手续费的业务场景
+     */
+    public static boolean forDepositCorrect(int code) {
+        return code == E_BANK.getCode();
+    }
+
+    /**
      * 判断渠道是否可用于提现业务
      */
     public static boolean forWithdraw(int code) {
