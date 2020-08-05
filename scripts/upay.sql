@@ -16,6 +16,25 @@ CREATE TABLE `xtrade_sequence_key` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------------------
+-- 字典配置表
+-- 分组(group_code)管理参数配置，系统参数不允许用户编辑修改
+-- --------------------------------------------------------------------
+DROP TABLE IF EXISTS `upay_data_dictionary`;
+CREATE TABLE `upay_data_dictionary` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `type` TINYINT UNSIGNED NOT NULL COMMENT '类型-系统/用户参数',
+  `group_code` VARCHAR(40) NOT NULL COMMENT '组编码',
+  `code` VARCHAR(40) NOT NULL COMMENT '参数编码',
+  `name` VARCHAR(100) COMMENT '参数名称',
+  `value` VARCHAR(80) NOT NULL COMMENT '参数值',
+  `description` VARCHAR(200) COMMENT '备注',
+  `created_time` DATETIME COMMENT '创建时间',
+  `modified_time` DATETIME COMMENT '修改时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_data_dictionary_code` (`code`, `group_code`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------------------
 -- 商户表
 -- 说明：商户表用于维护接入支付的商户，提供商户各专项资金账号管理
 -- --------------------------------------------------------------------
