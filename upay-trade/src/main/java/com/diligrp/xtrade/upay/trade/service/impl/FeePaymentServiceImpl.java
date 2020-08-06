@@ -125,7 +125,7 @@ public class FeePaymentServiceImpl implements IPaymentService {
         TradePayment paymentDo = TradePayment.builder().paymentId(paymentId).tradeId(trade.getTradeId())
             .channelId(payment.getChannelId()).accountId(trade.getAccountId()).businessId(trade.getBusinessId())
             .name(trade.getName()).cardNo(null).amount(trade.getAmount()).fee(0L).state(PaymentState.SUCCESS.getCode())
-            .description(TradeType.FEE.getName()).version(0).createdTime(now).build();
+            .description(TradeType.PAY_FEE.getName()).version(0).createdTime(now).build();
         tradePaymentDao.insertTradePayment(paymentDo);
 
         List<PaymentFee> paymentFeeDos = fees.stream().map(fee ->
@@ -167,7 +167,7 @@ public class FeePaymentServiceImpl implements IPaymentService {
         ISerialKeyGenerator keyGenerator = keyGeneratorManager.getSerialKeyGenerator(SequenceKey.PAYMENT_ID);
         String paymentId = keyGenerator.nextSerialNo(new PaymentDatedIdStrategy(trade.getType()));
         AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), null);
-        IFundTransaction feeTransaction = merChannel.openTransaction(TradeType.CANCEL.getCode(), now);
+        IFundTransaction feeTransaction = merChannel.openTransaction(TradeType.CANCEL_TRADE.getCode(), now);
         fees.forEach(fee ->
             feeTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName())
         );
@@ -177,14 +177,14 @@ public class FeePaymentServiceImpl implements IPaymentService {
         TransactionStatus status = null;
         if (payment.getChannelId() == ChannelType.ACCOUNT.getCode()) {
             AccountChannel channel = AccountChannel.of(paymentId, trade.getAccountId(), trade.getBusinessId());
-            IFundTransaction transaction = channel.openTransaction(TradeType.CANCEL.getCode(), now);
+            IFundTransaction transaction = channel.openTransaction(TradeType.CANCEL_TRADE.getCode(), now);
             fees.forEach(fee ->
                 transaction.income(fee.getAmount(), fee.getType(), fee.getTypeName())
             );
             status = accountChannelService.submit(transaction);
         }
 
-        RefundPayment refund = RefundPayment.builder().paymentId(paymentId).type(TradeType.CANCEL.getCode())
+        RefundPayment refund = RefundPayment.builder().paymentId(paymentId).type(TradeType.CANCEL_TRADE.getCode())
             .tradeId(trade.getTradeId()).tradeType(trade.getType()).amount(totalFees).fee(0L)
             .state(TradeState.SUCCESS.getCode()).description(null).version(0).createdTime(now).build();
         refundPaymentDao.insertRefundPayment(refund);
@@ -204,6 +204,6 @@ public class FeePaymentServiceImpl implements IPaymentService {
 
     @Override
     public TradeType supportType() {
-        return TradeType.FEE;
+        return TradeType.PAY_FEE;
     }
 }

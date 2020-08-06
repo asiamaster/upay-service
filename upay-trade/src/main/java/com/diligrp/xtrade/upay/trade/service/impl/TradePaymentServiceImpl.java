@@ -178,7 +178,7 @@ public class TradePaymentServiceImpl implements IPaymentService {
         // 这样保证卖家先退款后收入佣金不会造成收支明细中期初余额出现负数（资金仍然是安全的）
         List<PaymentFee> fees = paymentFeeDao.findPaymentFees(payment.getPaymentId());
         AccountChannel fromChannel = AccountChannel.of(paymentId, trade.getAccountId(), trade.getBusinessId());
-        IFundTransaction fromTransaction = fromChannel.openTransaction(TradeType.CANCEL.getCode(), now);
+        IFundTransaction fromTransaction = fromChannel.openTransaction(TradeType.CANCEL_TRADE.getCode(), now);
         fromTransaction.outgo(trade.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName());
         fees.stream().filter(PaymentFee::forSeller).forEach(fee -> {
             fromTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName());
@@ -187,7 +187,7 @@ public class TradePaymentServiceImpl implements IPaymentService {
 
         // 处理买家收款和退佣金
         AccountChannel toChannel = AccountChannel.of(paymentId, payment.getAccountId(), payment.getBusinessId());
-        IFundTransaction toTransaction = toChannel.openTransaction(TradeType.CANCEL.getCode(), now);
+        IFundTransaction toTransaction = toChannel.openTransaction(TradeType.CANCEL_TRADE.getCode(), now);
         fees.stream().filter(PaymentFee::forBuyer).forEach(fee -> {
             toTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName());
         });
@@ -197,14 +197,14 @@ public class TradePaymentServiceImpl implements IPaymentService {
         // 处理商户退佣金
         if (!fees.isEmpty()) {
             AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), null);
-            IFundTransaction merTransaction = merChannel.openTransaction(TradeType.CANCEL.getCode(), now);
+            IFundTransaction merTransaction = merChannel.openTransaction(TradeType.CANCEL_TRADE.getCode(), now);
             fees.forEach(fee ->
                 merTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName())
             );
             accountChannelService.submit(merTransaction);
         }
 
-        RefundPayment refund = RefundPayment.builder().paymentId(paymentId).type(TradeType.CANCEL.getCode())
+        RefundPayment refund = RefundPayment.builder().paymentId(paymentId).type(TradeType.CANCEL_TRADE.getCode())
             .tradeId(trade.getTradeId()).tradeType(trade.getType()).amount(trade.getAmount()).fee(0L)
             .state(TradeState.SUCCESS.getCode()).description(null).version(0).createdTime(now).build();
         refundPaymentDao.insertRefundPayment(refund);

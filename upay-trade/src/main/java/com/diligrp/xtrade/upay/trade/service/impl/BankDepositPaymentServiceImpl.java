@@ -39,13 +39,13 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * 充值冲正业务：处理寿光市场"网银充值"退手续费的业务场景
+ * 网银充值业务：处理寿光市场"网银充值"退手续费的业务场景
  *
  * @author: brenthuang
  * @date: 2020/08/05
  */
-@Service("depositCorrectPaymentService")
-public class DepositCorrectPaymentServiceImpl implements IPaymentService {
+@Service("bankDepositPaymentService")
+public class BankDepositPaymentServiceImpl implements IPaymentService {
 
     @Resource
     private ITradePaymentDao tradePaymentDao;
@@ -70,7 +70,7 @@ public class DepositCorrectPaymentServiceImpl implements IPaymentService {
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public PaymentResult commit(TradeOrder trade, Payment payment) {
-        if (!ChannelType.forDepositCorrect(payment.getChannelId())) {
+        if (!ChannelType.forBankDeposit(payment.getChannelId())) {
             throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "不支持该渠道进行网银充值业务");
         }
         if (!trade.getAccountId().equals(payment.getAccountId())) {
@@ -80,7 +80,7 @@ public class DepositCorrectPaymentServiceImpl implements IPaymentService {
         Optional<List<Fee>> feesOpt = payment.getObjects(Fee.class.getName());
         List<Fee> fees = feesOpt.orElseGet(Collections::emptyList);
 
-        // 处理个人充值
+        // 处理网银充值
         LocalDateTime now = LocalDateTime.now();
         accountChannelService.checkTradePermission(payment.getAccountId());
         ISerialKeyGenerator keyGenerator = keyGeneratorManager.getSerialKeyGenerator(SequenceKey.PAYMENT_ID);
@@ -88,6 +88,7 @@ public class DepositCorrectPaymentServiceImpl implements IPaymentService {
         AccountChannel channel = AccountChannel.of(paymentId, trade.getAccountId(), trade.getBusinessId());
         IFundTransaction transaction = channel.openTransaction(trade.getType(), now);
         transaction.income(trade.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName());
+        // 网银充值退手续费
         fees.forEach(fee -> {
             transaction.income(fee.getAmount(), fee.getType(), fee.getTypeName());
         });
@@ -134,6 +135,6 @@ public class DepositCorrectPaymentServiceImpl implements IPaymentService {
 
     @Override
     public TradeType supportType() {
-        return TradeType.DEPOSIT_CORRECT;
+        return TradeType.BANK_DEPOSIT;
     }
 }
