@@ -61,4 +61,9 @@ public interface IAccountChannelService {
      * 检查交易权限：账户状态
      */
     FundAccount checkTradePermission(long accountId);
+
+    /**
+     * 重置交易密码: 不验证原密码
+     */
+    void resetTradePassword(long accountId, String password);
 }

@@ -33,4 +33,9 @@ public interface IFundAccountService {
      * 根据账号ID查询账户资金
      */
     Optional<AccountFund> findAccountFundById(Long accountId);
+
+    /**
+     * 重置账户交易密码
+     */
+    void resetTradePassword(long accountId, String password);
 }

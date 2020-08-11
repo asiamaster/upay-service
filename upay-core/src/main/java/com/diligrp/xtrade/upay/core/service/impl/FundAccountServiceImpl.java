@@ -144,4 +144,23 @@ public class FundAccountServiceImpl implements IFundAccountService {
     public Optional<AccountFund> findAccountFundById(Long accountId) {
         return accountFundDao.findAccountFundById(accountId);
     }
+
+
+    /**
+     * {@inheritDoc}
+     *
+     * 重置密码不验证原密码
+     */
+    @Override
+    @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
+    public void resetTradePassword(long accountId, String password) {
+        Optional<FundAccount> accountOpt = fundAccountDao.findFundAccountById(accountId);
+        FundAccount account = accountOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
+        accountOpt.ifPresent(AccountStateMachine::checkUpdateAccount);
+        String newPassword = PasswordUtils.encrypt(password, account.getSecretKey());
+        account.setLoginPwd(newPassword);
+        account.setPassword(newPassword);
+        account.setModifiedTime(LocalDateTime.now());
+        fundAccountDao.updateFundAccount(account);
+    }
 }

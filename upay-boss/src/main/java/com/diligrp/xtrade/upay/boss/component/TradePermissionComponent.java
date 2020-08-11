@@ -26,6 +26,19 @@ public class TradePermissionComponent {
         AssertUtils.notNull(permission.getAccountId(), "accountId missed");
         AssertUtils.notEmpty(permission.getPassword(), "password missed");
 
-        accountChannelService.checkTradePermission(permission.getAccountId(), permission.getPassword(), 3);
+        accountChannelService.checkTradePermission(permission.getAccountId(), permission.getPassword(), -1);
     }
+
+    /**
+     * 重置账户密码-不验证原密码
+     */
+    public void resetPwd(ServiceRequest<TradePermission> request) {
+        TradePermission permission = request.getData();
+
+        AssertUtils.notNull(permission.getAccountId(), "accountId missed");
+        AssertUtils.notEmpty(permission.getPassword(), "password missed");
+
+        accountChannelService.resetTradePassword(permission.getAccountId(), permission.getPassword());
+    }
+
 }

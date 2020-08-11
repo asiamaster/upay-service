@@ -23,4 +23,9 @@ public interface IFundAccountDao extends MybatisMapperSupport {
      * 修改资金账号状态，根据数据版本（乐观锁）判断记录是否被修改
      */
     Integer compareAndSetState(AccountStateDto accountState);
+
+    /**
+     * 修改资金账号信息
+     */
+    Integer updateFundAccount(FundAccount account);
 }

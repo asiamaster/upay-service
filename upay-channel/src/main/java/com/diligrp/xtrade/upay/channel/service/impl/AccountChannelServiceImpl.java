@@ -184,6 +184,14 @@ public class AccountChannelServiceImpl implements IAccountChannelService {
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void resetTradePassword(long accountId, String password) {
+        fundAccountService.resetTradePassword(accountId, password);
+    }
+
+    /**
      * Redis缓存获取某个账号密码错误次数，缓存系统失败则返回-1不限制密码错误次数
      */
     private Long incAndGetErrors(String cachedKey) {
