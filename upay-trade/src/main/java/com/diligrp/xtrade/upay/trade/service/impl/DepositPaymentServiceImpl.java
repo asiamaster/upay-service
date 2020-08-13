@@ -79,7 +79,7 @@ public class DepositPaymentServiceImpl implements IPaymentService {
 
         // 处理个人充值
         LocalDateTime now = LocalDateTime.now();
-        accountChannelService.checkTradePermission(payment.getAccountId());
+        accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
         ISerialKeyGenerator keyGenerator = keyGeneratorManager.getSerialKeyGenerator(SequenceKey.PAYMENT_ID);
         String paymentId = keyGenerator.nextSerialNo(new PaymentDatedIdStrategy(trade.getType()));
         AccountChannel channel = AccountChannel.of(paymentId, trade.getAccountId(), trade.getBusinessId());
