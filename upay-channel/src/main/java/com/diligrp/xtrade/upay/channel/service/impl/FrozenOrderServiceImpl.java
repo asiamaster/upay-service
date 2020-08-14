@@ -60,7 +60,8 @@ public class FrozenOrderServiceImpl implements IFrozenOrderService {
         Optional<FrozenType> frozenTypeOpt = FrozenType.getType(request.getType());
         frozenTypeOpt.orElseThrow(() -> new PaymentChannelException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "不支持此冻结类型"));
         Optional<FundAccount> accountOpt = fundAccountDao.findFundAccountById(request.getAccountId());
-        FundAccount account = accountOpt.orElseThrow(() -> new PaymentChannelException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
+        FundAccount account = accountOpt.orElseThrow(() -> new PaymentChannelException(ErrorCode.ACCOUNT_NOT_FOUND,
+            "资金账号不存在:" + request.getAccountId()));
 
         // 冻结资金
         LocalDateTime now = LocalDateTime.now();
