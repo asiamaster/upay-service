@@ -3,6 +3,7 @@ package com.diligrp.xtrade.upay.trade.service.impl;
 import com.diligrp.xtrade.shared.exception.ServiceAccessException;
 import com.diligrp.xtrade.shared.sequence.ISerialKeyGenerator;
 import com.diligrp.xtrade.shared.sequence.KeyGeneratorManager;
+import com.diligrp.xtrade.shared.util.ObjectUtils;
 import com.diligrp.xtrade.upay.channel.dao.IFrozenOrderDao;
 import com.diligrp.xtrade.upay.channel.domain.AccountChannel;
 import com.diligrp.xtrade.upay.channel.domain.FrozenStateDto;
@@ -86,9 +87,13 @@ public class AuthFeePaymentServiceImpl extends FeePaymentServiceImpl implements 
         if (!ChannelType.forPreAuthFee(payment.getChannelId())) {
             throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "不支持该渠道进行预授权缴费业务");
         }
-        if (!trade.getAccountId().equals(payment.getAccountId())) {
+        if (!ObjectUtils.equals(trade.getAccountId(), payment.getAccountId())) {
             throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "缴费资金账号不一致");
         }
+        if (!ObjectUtils.equals(trade.getBusinessId(), payment.getBusinessId())) {
+            throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "缴费业务账号不一致");
+        }
+
         Optional<List<Fee>> feesOpt = payment.getObjects(Fee.class.getName());
         feesOpt.ifPresent(fees -> { throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "预授权冻结不支持收取费用"); });
 

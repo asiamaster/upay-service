@@ -3,6 +3,7 @@ package com.diligrp.xtrade.upay.trade.service.impl;
 import com.diligrp.xtrade.shared.exception.ServiceAccessException;
 import com.diligrp.xtrade.shared.sequence.ISerialKeyGenerator;
 import com.diligrp.xtrade.shared.sequence.KeyGeneratorManager;
+import com.diligrp.xtrade.shared.util.ObjectUtils;
 import com.diligrp.xtrade.upay.channel.domain.AccountChannel;
 import com.diligrp.xtrade.upay.channel.domain.IFundTransaction;
 import com.diligrp.xtrade.upay.channel.service.IAccountChannelService;
@@ -80,8 +81,11 @@ public class FeePaymentServiceImpl implements IPaymentService {
         if (!ChannelType.forFee(payment.getChannelId())) {
             throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "不支持该渠道进行缴费业务");
         }
-        if (!trade.getAccountId().equals(payment.getAccountId())) {
-            throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "缴费账号不一致");
+        if (!ObjectUtils.equals(trade.getAccountId(), payment.getAccountId())) {
+            throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "缴费资金账号不一致");
+        }
+        if (!ObjectUtils.equals(trade.getBusinessId(), payment.getBusinessId())) {
+            throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "缴费业务账号不一致");
         }
 
         MerchantPermit merchant = payment.getObject(MerchantPermit.class.getName(), MerchantPermit.class);

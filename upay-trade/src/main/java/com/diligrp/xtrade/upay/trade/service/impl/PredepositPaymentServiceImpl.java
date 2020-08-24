@@ -2,6 +2,7 @@ package com.diligrp.xtrade.upay.trade.service.impl;
 
 import com.diligrp.xtrade.shared.sequence.ISerialKeyGenerator;
 import com.diligrp.xtrade.shared.sequence.KeyGeneratorManager;
+import com.diligrp.xtrade.shared.util.ObjectUtils;
 import com.diligrp.xtrade.upay.channel.domain.AccountChannel;
 import com.diligrp.xtrade.upay.channel.domain.IFundTransaction;
 import com.diligrp.xtrade.upay.channel.service.IAccountChannelService;
@@ -62,9 +63,13 @@ public class PredepositPaymentServiceImpl implements IPaymentService {
         if (!ChannelType.forDeposit(payment.getChannelId())) {
             throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "不支持该渠道进行预存款业务");
         }
-        if (!trade.getAccountId().equals(payment.getAccountId())) {
-            throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "预存款账号不一致");
+        if (!ObjectUtils.equals(trade.getAccountId(), payment.getAccountId())) {
+            throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "预存款资金账号不一致");
         }
+        if (!ObjectUtils.equals(trade.getBusinessId(), payment.getBusinessId())) {
+            throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "预存款业务账号不一致");
+        }
+
         Optional<List<Fee>> feesOpt = payment.getObjects(Fee.class.getName());
         feesOpt.ifPresent(fees -> { throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "预存款暂不支持收取费用"); });
 

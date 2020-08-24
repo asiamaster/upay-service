@@ -2,6 +2,7 @@ package com.diligrp.xtrade.upay.trade.service.impl;
 
 import com.diligrp.xtrade.shared.sequence.ISerialKeyGenerator;
 import com.diligrp.xtrade.shared.sequence.KeyGeneratorManager;
+import com.diligrp.xtrade.shared.util.ObjectUtils;
 import com.diligrp.xtrade.upay.channel.domain.AccountChannel;
 import com.diligrp.xtrade.upay.channel.domain.IFundTransaction;
 import com.diligrp.xtrade.upay.channel.service.IAccountChannelService;
@@ -70,9 +71,13 @@ public class WithdrawPaymentServiceImpl implements IPaymentService {
         if (!ChannelType.forWithdraw(payment.getChannelId())) {
             throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "不支持该渠道进行提现业务");
         }
-        if (!trade.getAccountId().equals(payment.getAccountId())) {
-            throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "提现账号不一致");
+        if (!ObjectUtils.equals(trade.getAccountId(), payment.getAccountId())) {
+            throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "提现资金账号不一致");
         }
+        if (!ObjectUtils.equals(trade.getBusinessId(), payment.getBusinessId())) {
+            throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "提现业务账号不一致");
+        }
+
         Optional<List<Fee>> feesOpt = payment.getObjects(Fee.class.getName());
         List<Fee> fees = feesOpt.orElseGet(Collections::emptyList);
 

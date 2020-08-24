@@ -102,6 +102,9 @@ public class PaymentPlatformController {
         HttpUtils.sendResponse(response, reply.getPayload());
     }
 
+    /**
+     * 检查接口访问权限，验证应用accessToken
+     */
     private ApplicationPermit checkAccessPermission(RequestContext context, MessageEnvelop envelop) {
         ApplicationPermit application = accessPermitService.loadApplicationPermit(envelop.getAppId());
 
