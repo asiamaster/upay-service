@@ -85,7 +85,7 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public PaymentResult commit(TradeOrder trade, Payment payment) {
-        if (!ChannelType.forTrade(ChannelType.ACCOUNT.getCode())) {
+        if (!ChannelType.forTrade(payment.getChannelId())) {
             throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "不支持该渠道进行预授权交易业务");
         }
         if (trade.getAccountId().equals(payment.getAccountId())) {
@@ -118,10 +118,10 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
         if (result == 0) {
             throw new TradePaymentException(ErrorCode.DATA_CONCURRENT_UPDATED, "系统正忙，请稍后重试");
         }
-        // 生成"待处理"支付的支付记录
+        // 生成"处理中"的支付记录
         TradePayment paymentDo = TradePayment.builder().paymentId(paymentId).tradeId(trade.getTradeId())
             .channelId(payment.getChannelId()).accountId(payment.getAccountId()).businessId(payment.getBusinessId())
-            .name(fromAccount.getName()).cardNo(null).amount(payment.getAmount()).fee(0L).state(PaymentState.PENDING.getCode())
+            .name(fromAccount.getName()).cardNo(null).amount(payment.getAmount()).fee(0L).state(PaymentState.PROCESSING.getCode())
             .description(TradeType.AUTH_TRADE.getName()).version(0).createdTime(now).build();
         tradePaymentDao.insertTradePayment(paymentDo);
 

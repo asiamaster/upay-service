@@ -116,10 +116,10 @@ public class AuthFeePaymentServiceImpl extends FeePaymentServiceImpl implements 
         if (result == 0) {
             throw new TradePaymentException(ErrorCode.DATA_CONCURRENT_UPDATED, "系统正忙，请稍后重试");
         }
-        // 生成"待处理"支付的支付记录
+        // 生成"处理中"的支付记录
         TradePayment paymentDo = TradePayment.builder().paymentId(paymentId).tradeId(trade.getTradeId())
             .channelId(payment.getChannelId()).accountId(trade.getAccountId()).businessId(trade.getBusinessId())
-            .name(trade.getName()).cardNo(null).amount(payment.getAmount()).fee(0L).state(PaymentState.PENDING.getCode())
+            .name(trade.getName()).cardNo(null).amount(payment.getAmount()).fee(0L).state(PaymentState.PROCESSING.getCode())
             .description(TradeType.AUTH_FEE.getName()).version(0).createdTime(now).build();
         tradePaymentDao.insertTradePayment(paymentDo);
 
