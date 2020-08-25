@@ -66,8 +66,7 @@ public class PaymentPlatformServiceImpl implements IPaymentPlatformService, Bean
         Optional<TradeType> tradeType = TradeType.getType(trade.getType());
         tradeType.orElseThrow(() -> new TradePaymentException(ErrorCode.TRADE_NOT_SUPPORTED, "不支持的交易类型"));
         Optional<FundAccount> accountOpt = fundAccountDao.findFundAccountById(trade.getAccountId());
-        FundAccount account = accountOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND,
-            "资金账号不存在:" + trade.getAccountId()));
+        FundAccount account = accountOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
 
         ISerialKeyGenerator keyGenerator = keyGeneratorManager.getSerialKeyGenerator(SequenceKey.TRADE_ID);
         String tradeId = keyGenerator.nextSerialNo(new TradeDatedIdStrategy(trade.getType()));
