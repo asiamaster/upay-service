@@ -53,6 +53,18 @@ public final class AccountStateMachine {
     }
 
     /**
+     * 校验是否可以解冻资金
+     */
+    public static void checkUnfreezeFund(FundAccount account) {
+        if (account.getState() == AccountState.VOID.getCode()) {
+            throw new FundAccountException(ErrorCode.INVALID_ACCOUNT_STATE, "资金账户已注销");
+        }
+        if (account.getState() == AccountState.FROZEN.getCode()) {
+            throw new FundAccountException(ErrorCode.INVALID_ACCOUNT_STATE, "资金账户已冻结");
+        }
+    }
+
+    /**
      * 校验是否可以注销账号资金
      */
     public static void unregisterFundCheck(AccountFund fund) {

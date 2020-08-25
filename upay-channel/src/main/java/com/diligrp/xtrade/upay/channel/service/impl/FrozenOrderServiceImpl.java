@@ -19,8 +19,10 @@ import com.diligrp.xtrade.upay.channel.type.FrozenType;
 import com.diligrp.xtrade.upay.core.ErrorCode;
 import com.diligrp.xtrade.upay.core.dao.IFundAccountDao;
 import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
+import com.diligrp.xtrade.upay.core.exception.FundAccountException;
 import com.diligrp.xtrade.upay.core.model.FundAccount;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
+import com.diligrp.xtrade.upay.core.util.AccountStateMachine;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -97,6 +99,9 @@ public class FrozenOrderServiceImpl implements IFrozenOrderService {
         if (order.getType() == FrozenType.TRADE_FROZEN.getCode()) {
             throw new PaymentChannelException(ErrorCode.OPERATION_NOT_ALLOWED, "不能解冻交易冻结的资金");
         }
+        Optional<FundAccount> accountOpt = fundAccountDao.findFundAccountById(order.getAccountId());
+        accountOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
+        accountOpt.ifPresent(AccountStateMachine::checkUnfreezeFund);
 
         LocalDateTime now = LocalDateTime.now();
         AccountChannel channel = AccountChannel.of(null, order.getAccountId(), order.getBusinessId());
