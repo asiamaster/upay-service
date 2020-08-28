@@ -1,7 +1,9 @@
 package com.diligrp.xtrade.upay.trade.service.impl;
 
+import com.diligrp.xtrade.shared.sequence.IKeyGenerator;
 import com.diligrp.xtrade.shared.sequence.ISerialKeyGenerator;
 import com.diligrp.xtrade.shared.sequence.KeyGeneratorManager;
+import com.diligrp.xtrade.shared.sequence.SnowflakeKeyManager;
 import com.diligrp.xtrade.shared.util.ObjectUtils;
 import com.diligrp.xtrade.upay.channel.domain.AccountChannel;
 import com.diligrp.xtrade.upay.channel.domain.IFundTransaction;
@@ -58,7 +60,7 @@ public class WithdrawPaymentServiceImpl implements IPaymentService {
     private IAccountChannelService accountChannelService;
 
     @Resource
-    private KeyGeneratorManager keyGeneratorManager;
+    private SnowflakeKeyManager snowflakeKeyManager;
 
     /**
      * {@inheritDoc}
@@ -84,8 +86,8 @@ public class WithdrawPaymentServiceImpl implements IPaymentService {
         // 处理个人提现
         LocalDateTime now = LocalDateTime.now();
         accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
-        ISerialKeyGenerator keyGenerator = keyGeneratorManager.getSerialKeyGenerator(SequenceKey.PAYMENT_ID);
-        String paymentId = keyGenerator.nextSerialNo(new PaymentDatedIdStrategy(trade.getType()));
+        IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
+        String paymentId = String.valueOf(keyGenerator.nextId());
         AccountChannel channel = AccountChannel.of(paymentId, trade.getAccountId(), trade.getBusinessId());
         IFundTransaction transaction = channel.openTransaction(trade.getType(), now);
         transaction.outgo(trade.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName());

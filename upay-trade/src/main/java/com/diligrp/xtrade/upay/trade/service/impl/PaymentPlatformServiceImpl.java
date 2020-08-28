@@ -1,7 +1,7 @@
 package com.diligrp.xtrade.upay.trade.service.impl;
 
-import com.diligrp.xtrade.shared.sequence.ISerialKeyGenerator;
-import com.diligrp.xtrade.shared.sequence.KeyGeneratorManager;
+import com.diligrp.xtrade.shared.sequence.IKeyGenerator;
+import com.diligrp.xtrade.shared.sequence.SnowflakeKeyManager;
 import com.diligrp.xtrade.upay.channel.type.ChannelType;
 import com.diligrp.xtrade.upay.core.ErrorCode;
 import com.diligrp.xtrade.upay.core.dao.IFundAccountDao;
@@ -26,7 +26,6 @@ import com.diligrp.xtrade.upay.trade.service.IPaymentPlatformService;
 import com.diligrp.xtrade.upay.trade.service.IPaymentService;
 import com.diligrp.xtrade.upay.trade.type.TradeState;
 import com.diligrp.xtrade.upay.trade.type.TradeType;
-import com.diligrp.xtrade.upay.trade.util.TradeDatedIdStrategy;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.stereotype.Service;
@@ -52,7 +51,7 @@ public class PaymentPlatformServiceImpl implements IPaymentPlatformService, Bean
     private ITradeOrderDao tradeOrderDao;
 
     @Resource
-    private KeyGeneratorManager keyGeneratorManager;
+    private SnowflakeKeyManager snowflakeKeyManager;
 
     private Map<TradeType, IPaymentService> services = new HashMap<>();
 
@@ -69,8 +68,8 @@ public class PaymentPlatformServiceImpl implements IPaymentPlatformService, Bean
         FundAccount account = accountOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND,
             "资金账号不存在:" + trade.getAccountId()));
 
-        ISerialKeyGenerator keyGenerator = keyGeneratorManager.getSerialKeyGenerator(SequenceKey.TRADE_ID);
-        String tradeId = keyGenerator.nextSerialNo(new TradeDatedIdStrategy(trade.getType()));
+        IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.TRADE_ID);
+        String tradeId = String.valueOf(keyGenerator.nextId());
         TradeOrder tradeOrder = TradeOrder.builder().mchId(application.getMerchant().getMchId()).appId(application.getAppId())
             .tradeId(tradeId).type(trade.getType()).serialNo(trade.getSerialNo()).cycleNo(trade.getCycleNo())
             .accountId(account.getAccountId()).businessId(trade.getBusinessId()).name(account.getName())

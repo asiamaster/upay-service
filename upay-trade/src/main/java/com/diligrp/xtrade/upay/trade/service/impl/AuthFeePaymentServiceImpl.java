@@ -1,8 +1,9 @@
 package com.diligrp.xtrade.upay.trade.service.impl;
 
 import com.diligrp.xtrade.shared.exception.ServiceAccessException;
-import com.diligrp.xtrade.shared.sequence.ISerialKeyGenerator;
+import com.diligrp.xtrade.shared.sequence.IKeyGenerator;
 import com.diligrp.xtrade.shared.sequence.KeyGeneratorManager;
+import com.diligrp.xtrade.shared.sequence.SnowflakeKeyManager;
 import com.diligrp.xtrade.shared.util.ObjectUtils;
 import com.diligrp.xtrade.upay.channel.dao.IFrozenOrderDao;
 import com.diligrp.xtrade.upay.channel.domain.AccountChannel;
@@ -37,7 +38,6 @@ import com.diligrp.xtrade.upay.trade.service.IPaymentService;
 import com.diligrp.xtrade.upay.trade.type.PaymentState;
 import com.diligrp.xtrade.upay.trade.type.TradeState;
 import com.diligrp.xtrade.upay.trade.type.TradeType;
-import com.diligrp.xtrade.upay.trade.util.PaymentDatedIdStrategy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -76,6 +76,9 @@ public class AuthFeePaymentServiceImpl extends FeePaymentServiceImpl implements 
     @Resource
     private KeyGeneratorManager keyGeneratorManager;
 
+    @Resource
+    private SnowflakeKeyManager snowflakeKeyManager;
+
     /**
      * {@inheritDoc}
      *
@@ -100,8 +103,8 @@ public class AuthFeePaymentServiceImpl extends FeePaymentServiceImpl implements 
         // 冻结资金
         LocalDateTime now = LocalDateTime.now();
         FundAccount account = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
-        ISerialKeyGenerator keyGenerator = keyGeneratorManager.getSerialKeyGenerator(SequenceKey.PAYMENT_ID);
-        String paymentId = keyGenerator.nextSerialNo(new PaymentDatedIdStrategy(trade.getType()));
+        IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
+        String paymentId = String.valueOf(keyGenerator.nextId());
         AccountChannel channel = AccountChannel.of(paymentId, payment.getAccountId(), payment.getBusinessId());
         IFundTransaction transaction = channel.openTransaction(FrozenState.FROZEN.getCode(), now);
         transaction.freeze(trade.getAmount());

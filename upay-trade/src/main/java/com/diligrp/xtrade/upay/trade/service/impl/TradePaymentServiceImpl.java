@@ -1,8 +1,8 @@
 package com.diligrp.xtrade.upay.trade.service.impl;
 
 import com.diligrp.xtrade.shared.exception.ServiceAccessException;
-import com.diligrp.xtrade.shared.sequence.ISerialKeyGenerator;
-import com.diligrp.xtrade.shared.sequence.KeyGeneratorManager;
+import com.diligrp.xtrade.shared.sequence.IKeyGenerator;
+import com.diligrp.xtrade.shared.sequence.SnowflakeKeyManager;
 import com.diligrp.xtrade.upay.channel.domain.AccountChannel;
 import com.diligrp.xtrade.upay.channel.domain.IFundTransaction;
 import com.diligrp.xtrade.upay.channel.service.IAccountChannelService;
@@ -33,7 +33,6 @@ import com.diligrp.xtrade.upay.trade.type.FundType;
 import com.diligrp.xtrade.upay.trade.type.PaymentState;
 import com.diligrp.xtrade.upay.trade.type.TradeState;
 import com.diligrp.xtrade.upay.trade.type.TradeType;
-import com.diligrp.xtrade.upay.trade.util.PaymentDatedIdStrategy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -70,7 +69,7 @@ public class TradePaymentServiceImpl implements IPaymentService {
     private IAccountChannelService accountChannelService;
 
     @Resource
-    private KeyGeneratorManager keyGeneratorManager;
+    private SnowflakeKeyManager snowflakeKeyManager;
 
     /**
      * {@inheritDoc}
@@ -93,8 +92,8 @@ public class TradePaymentServiceImpl implements IPaymentService {
         // 处理买家付款和买家佣金
         LocalDateTime now = LocalDateTime.now();
         FundAccount fromAccount = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
-        ISerialKeyGenerator keyGenerator = keyGeneratorManager.getSerialKeyGenerator(SequenceKey.PAYMENT_ID);
-        String paymentId = keyGenerator.nextSerialNo(new PaymentDatedIdStrategy(trade.getType()));
+        IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
+        String paymentId = String.valueOf(keyGenerator.nextId());
         AccountChannel fromChannel = AccountChannel.of(paymentId, payment.getAccountId(), payment.getBusinessId());
         IFundTransaction fromTransaction = fromChannel.openTransaction(trade.getType(), now);
         fromTransaction.outgo(trade.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName());
@@ -171,8 +170,8 @@ public class TradePaymentServiceImpl implements IPaymentService {
             mer.getMchId(), mer.getCode(), mer.getProfitAccount(), mer.getVouchAccount(), mer.getPledgeAccount(),
             mer.getPrivateKey(), mer.getPublicKey()))
             .orElseThrow(() -> new ServiceAccessException(ErrorCode.OBJECT_NOT_FOUND, "商户信息未注册"));
-        ISerialKeyGenerator keyGenerator = keyGeneratorManager.getSerialKeyGenerator(SequenceKey.PAYMENT_ID);
-        String paymentId = keyGenerator.nextSerialNo(new PaymentDatedIdStrategy(trade.getType()));
+        IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
+        String paymentId = String.valueOf(keyGenerator.nextId());
 
         // 处理卖家退款和退佣金，由于底层先产生收入明细后产生支出明细(FundActivity.compare)
         // 这样保证卖家先退款后收入佣金不会造成收支明细中期初余额出现负数（资金仍然是安全的）

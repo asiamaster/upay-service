@@ -1,7 +1,7 @@
 package com.diligrp.xtrade.upay.trade.service.impl;
 
-import com.diligrp.xtrade.shared.sequence.ISerialKeyGenerator;
-import com.diligrp.xtrade.shared.sequence.KeyGeneratorManager;
+import com.diligrp.xtrade.shared.sequence.IKeyGenerator;
+import com.diligrp.xtrade.shared.sequence.SnowflakeKeyManager;
 import com.diligrp.xtrade.upay.channel.domain.AccountChannel;
 import com.diligrp.xtrade.upay.channel.domain.IFundTransaction;
 import com.diligrp.xtrade.upay.channel.service.IAccountChannelService;
@@ -24,7 +24,6 @@ import com.diligrp.xtrade.upay.trade.type.FundType;
 import com.diligrp.xtrade.upay.trade.type.PaymentState;
 import com.diligrp.xtrade.upay.trade.type.TradeState;
 import com.diligrp.xtrade.upay.trade.type.TradeType;
-import com.diligrp.xtrade.upay.trade.util.PaymentDatedIdStrategy;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -48,7 +47,7 @@ public class TransferPaymentServiceImpl implements IPaymentService {
     private IAccountChannelService accountChannelService;
 
     @Resource
-    private KeyGeneratorManager keyGeneratorManager;
+    private SnowflakeKeyManager snowflakeKeyManager;
 
     /**
      * {@inheritDoc}
@@ -69,8 +68,8 @@ public class TransferPaymentServiceImpl implements IPaymentService {
         // 交易转出
         LocalDateTime now = LocalDateTime.now();
         FundAccount fromAccount = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
-        ISerialKeyGenerator keyGenerator = keyGeneratorManager.getSerialKeyGenerator(SequenceKey.PAYMENT_ID);
-        String paymentId = keyGenerator.nextSerialNo(new PaymentDatedIdStrategy(trade.getType()));
+        IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
+        String paymentId = String.valueOf(keyGenerator.nextId());
         AccountChannel fromChannel = AccountChannel.of(paymentId, payment.getAccountId(), payment.getBusinessId());
         IFundTransaction fromTransaction = fromChannel.openTransaction(trade.getType(), now);
         fromTransaction.outgo(trade.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName());
