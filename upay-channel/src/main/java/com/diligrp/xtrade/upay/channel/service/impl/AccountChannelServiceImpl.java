@@ -130,8 +130,7 @@ public class AccountChannelServiceImpl implements IAccountChannelService {
     @Override
     public AccountFund queryAccountFund(Long accountId) {
         Optional<AccountFund> accountFund = fundAccountService.findAccountFundById(accountId);;
-        return accountFund.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND,
-            "资金账号不存在:" + accountId));
+        return accountFund.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
     }
 
     /**
@@ -143,8 +142,7 @@ public class AccountChannelServiceImpl implements IAccountChannelService {
     public FundAccount checkTradePermission(long accountId, String password, int maxPwdErrors) {
         AssertUtils.notEmpty(password, "password missed");
         Optional<FundAccount> accountOpt = fundAccountDao.findFundAccountById(accountId);
-        FundAccount account = accountOpt.orElseThrow(() -> new PaymentChannelException(ErrorCode.ACCOUNT_NOT_FOUND,
-            "资金账号不存在:" + accountId));
+        FundAccount account = accountOpt.orElseThrow(() -> new PaymentChannelException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
         if (account.getState() != AccountState.NORMAL.getCode()) {
             throw new PaymentChannelException(ErrorCode.INVALID_ACCOUNT_STATE, "账户状态异常");
         }
@@ -178,8 +176,7 @@ public class AccountChannelServiceImpl implements IAccountChannelService {
     @Override
     public FundAccount checkTradePermission(long accountId) {
         Optional<FundAccount> accountOpt = fundAccountDao.findFundAccountById(accountId);
-        FundAccount account = accountOpt.orElseThrow(() -> new PaymentChannelException(ErrorCode.ACCOUNT_NOT_FOUND,
-            "资金账号不存在:" + accountId));
+        FundAccount account = accountOpt.orElseThrow(() -> new PaymentChannelException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
         if (account.getState() != AccountState.NORMAL.getCode()) {
             throw new PaymentChannelException(ErrorCode.INVALID_ACCOUNT_STATE, "账户状态异常");
         }

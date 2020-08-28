@@ -29,9 +29,9 @@ public class AccountServiceComponent {
         AssertUtils.notNull(account.getCustomerId(), "customerId missed");
         AssertUtils.notNull(account.getType(), "type missed");
         AssertUtils.notNull(account.getUseFor(), "useFor missed");
-        AssertUtils.notNull(account.getName(), "name missed");
-        AssertUtils.notNull(account.getMobile(), "mobile missed");
-        AssertUtils.notNull(account.getPassword(), "password missed");
+        AssertUtils.notEmpty(account.getName(), "name missed");
+        AssertUtils.notEmpty(account.getMobile(), "mobile missed");
+        AssertUtils.notEmpty(account.getPassword(), "password missed");
         AssertUtils.isTrue(account.getType() != AccountType.MERCHANT.getCode(), "不能注册商户账号");
 
         ApplicationPermit application = request.getContext().getObject(ApplicationPermit.class.getName(), ApplicationPermit.class);

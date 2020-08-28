@@ -83,8 +83,7 @@ public class FundAccountServiceImpl implements IFundAccountService {
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public void freezeFundAccount(Long accountId) {
         Optional<FundAccount> accountOpt = fundAccountDao.findFundAccountById(accountId);
-        accountOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND,
-            "资金账号不存在:" + accountId));
+        accountOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
         accountOpt.ifPresent(AccountStateMachine::freezeAccountCheck);
 
         AccountStateDto accountState = AccountStateDto.of(accountId, AccountState.FROZEN.getCode(),
@@ -102,8 +101,7 @@ public class FundAccountServiceImpl implements IFundAccountService {
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public void unfreezeFundAccount(Long accountId) {
         Optional<FundAccount> accountOpt = fundAccountDao.findFundAccountById(accountId);
-        accountOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND,
-            "资金账号不存在:" + accountId));
+        accountOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
         accountOpt.ifPresent(AccountStateMachine::unfreezeAccountCheck);
 
         AccountStateDto accountState = AccountStateDto.of(accountId, AccountState.NORMAL.getCode(),
@@ -121,8 +119,7 @@ public class FundAccountServiceImpl implements IFundAccountService {
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public void unregisterFundAccount(Long accountId) {
         Optional<FundAccount> accountOpt = fundAccountDao.findFundAccountById(accountId);
-        accountOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND,
-            "资金账号不存在:" + accountId));
+        accountOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
         accountOpt.ifPresent(AccountStateMachine::unregisterAccountCheck);
         Optional<AccountFund> fundOpt = accountFundDao.findAccountFundById(accountId);
         fundOpt.ifPresent(AccountStateMachine::unregisterFundCheck);
@@ -158,9 +155,8 @@ public class FundAccountServiceImpl implements IFundAccountService {
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public void resetTradePassword(long accountId, String password) {
         Optional<FundAccount> accountOpt = fundAccountDao.findFundAccountById(accountId);
-        FundAccount account = accountOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND,
-            "资金账号不存在:" + accountId));
-        accountOpt.ifPresent(AccountStateMachine::checkUpdateAccount);
+        FundAccount account = accountOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
+        accountOpt.ifPresent(AccountStateMachine::updateAccountCheck);
         String newPassword = PasswordUtils.encrypt(password, account.getSecretKey());
         account.setLoginPwd(newPassword);
         account.setPassword(newPassword);

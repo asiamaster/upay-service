@@ -40,22 +40,24 @@ public final class AccountStateMachine {
      * 校验是否可以注销资金账号
      */
     public static void unregisterAccountCheck(FundAccount account) {
-        // 删除资金状态暂时无限制, "*" -> "注销"
+        if (account.getState() == AccountState.FROZEN.getCode()) {
+            throw new FundAccountException(ErrorCode.INVALID_ACCOUNT_STATE, "资金账户已冻结");
+        }
     }
 
     /**
      * 校验是否可以修改账号信息
      */
-    public static void checkUpdateAccount(FundAccount account) {
+    public static void updateAccountCheck(FundAccount account) {
         if (account.getState() == AccountState.VOID.getCode()) {
             throw new FundAccountException(ErrorCode.INVALID_ACCOUNT_STATE, "资金账户已注销");
         }
     }
 
     /**
-     * 校验是否可以解冻资金
+     * 校验是否可以解冻或解冻资金
      */
-    public static void checkUnfreezeFund(FundAccount account) {
+    public static void frozenFundCheck(FundAccount account) {
         if (account.getState() == AccountState.VOID.getCode()) {
             throw new FundAccountException(ErrorCode.INVALID_ACCOUNT_STATE, "资金账户已注销");
         }
