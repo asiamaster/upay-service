@@ -124,7 +124,9 @@ public class AccountChannelServiceImpl implements IAccountChannelService {
      */
     @Override
     public AccountFund queryAccountFund(Long accountId) {
-        return fundAccountService.findAccountFundById(accountId);
+        FundAccount account = fundAccountService.findFundAccountById(accountId);
+        Long masterId = account.getParentId() == 0 ? account.getAccountId() : account.getParentId();
+        return fundAccountService.findAccountFundById(masterId);
     }
 
     /**
