@@ -140,7 +140,7 @@ public class FundAccountServiceImpl implements IFundAccountService {
 
         // 不能注销存在子账号的资金账号
         account.ifMasterAccount(act -> {
-            List<FundAccount> children = fundAccountDao.findFundAccountByParentId(account.getParentId());
+            List<FundAccount> children = fundAccountDao.findFundAccountByParentId(account.getAccountId());
             children.stream().forEach(AccountStateMachine::unregisterAccountByChildCheck);
         });
         AccountStateDto accountState = AccountStateDto.of(accountId, AccountState.VOID.getCode(),
