@@ -12,7 +12,6 @@
         <result column="serial_no" property="serialNo"/>
         <result column="cycle_no" property="cycleNo"/>
         <result column="account_id" property="accountId"/>
-        <result column="business_id" property="businessId"/>
         <result column="name" property="name"/>
         <result column="amount" property="amount"/>
         <result column="max_amount" property="maxAmount"/>
@@ -25,9 +24,9 @@
     </resultMap>
 
     <insert id="insertTradeOrder" parameterType="com.diligrp.xtrade.upay.trade.model.TradeOrder">
-        INSERT INTO upay_trade_order(mch_id, app_id, trade_id, type, serial_no, cycle_no, account_id, business_id, name,
+        INSERT INTO upay_trade_order(mch_id, app_id, trade_id, type, serial_no, cycle_no, account_id, name,
             amount, max_amount, fee, state, description, version, created_time, modified_time)
-        VALUES (#{mchId}, #{appId}, #{tradeId}, #{type}, #{serialNo}, #{cycleNo}, #{accountId}, #{businessId}, #{name},
+        VALUES (#{mchId}, #{appId}, #{tradeId}, #{type}, #{serialNo}, #{cycleNo}, #{accountId}, #{name},
             #{amount}, #{maxAmount}, #{fee}, #{state}, #{description}, #{version}, #{createdTime}, #{modifiedTime})
     </insert>
 

@@ -7,7 +7,7 @@
         <id column="id" property="id"/>
         <result column="payment_id" property="paymentId"/>
         <result column="account_id" property="accountId"/>
-        <result column="business_id" property="businessId"/>
+        <result column="child_id" property="childId"/>
         <result column="trade_type" property="tradeType"/>
         <result column="action" property="action"/>
         <result column="balance" property="balance"/>
@@ -19,11 +19,11 @@
     </resultMap>
 
     <insert id="insertFundStatements" parameterType="java.util.List">
-        INSERT INTO upay_fund_statement(payment_id, account_id, business_id, trade_type, action, balance,
+        INSERT INTO upay_fund_statement(payment_id, account_id, child_id, trade_type, action, balance,
             amount, type, type_name, description, created_time)
         VALUES
         <foreach collection="list" item="item" separator=",">
-            (#{item.paymentId}, #{item.accountId}, #{item.businessId}, #{item.tradeType}, #{item.action}, #{item.balance},
+            (#{item.paymentId}, #{item.accountId}, #{item.childId}, #{item.tradeType}, #{item.action}, #{item.balance},
              #{item.amount}, #{item.type}, #{item.typeName}, #{item.description}, #{item.createdTime})
         </foreach>
     </insert>

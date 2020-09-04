@@ -33,7 +33,6 @@ public class TradeServiceComponent {
         // 基本参数校验
         AssertUtils.notNull(trade.getType(), "type missed");
         AssertUtils.notNull(trade.getAccountId(), "accountId missed");
-        AssertUtils.notNull(trade.getBusinessId(), "businessId missed");
         AssertUtils.notNull(trade.getAmount(), "amount missed");
         AssertUtils.isTrue(trade.getAmount() > 0, "Invalid amount");
 
@@ -52,7 +51,6 @@ public class TradeServiceComponent {
         // 基本参数校验
         AssertUtils.notNull(payment.getTradeId(), "tradeId missed");
         AssertUtils.notNull(payment.getAccountId(), "accountId missed");
-        AssertUtils.notNull(payment.getBusinessId(), "businessId missed");
         AssertUtils.notNull(payment.getChannelId(), "channelId missed");
         // 费用参数校验
         payment.fees().ifPresent(fees -> fees.stream().forEach(fee -> {

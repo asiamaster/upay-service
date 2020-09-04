@@ -18,6 +18,7 @@ import com.diligrp.xtrade.upay.core.dao.IMerchantDao;
 import com.diligrp.xtrade.upay.core.domain.MerchantPermit;
 import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
 import com.diligrp.xtrade.upay.core.model.FundAccount;
+import com.diligrp.xtrade.upay.core.service.IFundAccountService;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
 import com.diligrp.xtrade.upay.trade.dao.IPaymentFeeDao;
 import com.diligrp.xtrade.upay.trade.dao.ITradeOrderDao;
@@ -75,6 +76,9 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
     private IAccountChannelService accountChannelService;
 
     @Resource
+    private IFundAccountService fundAccountService;
+
+    @Resource
     private KeyGeneratorManager keyGeneratorManager;
 
     @Resource
@@ -102,15 +106,17 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
         FundAccount fromAccount = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
         String paymentId = String.valueOf(keyGenerator.nextId());
-        AccountChannel channel = AccountChannel.of(paymentId, payment.getAccountId(), payment.getBusinessId());
+        AccountChannel channel = AccountChannel.of(paymentId, fromAccount.getAccountId(), fromAccount.getParentId());
         IFundTransaction transaction = channel.openTransaction(FrozenState.FROZEN.getCode(), now);
         transaction.freeze(trade.getAmount());
         TransactionStatus status = accountChannelService.submit(transaction);
 
         // 创建冻结资金订单
+        Long masterAccountId = fromAccount.getParentId() == 0 ? fromAccount.getAccountId() : fromAccount.getParentId();
+        Long childAccountId = fromAccount.getParentId() == 0 ? null : fromAccount.getAccountId();
         long frozenId = keyGeneratorManager.getKeyGenerator(SequenceKey.FROZEN_ID).nextId();
         FrozenOrder frozenOrder = FrozenOrder.builder().frozenId(frozenId).paymentId(paymentId)
-            .accountId(payment.getAccountId()).businessId(payment.getBusinessId()).name(fromAccount.getName())
+            .accountId(masterAccountId).childId(childAccountId).name(fromAccount.getName())
             .type(FrozenType.TRADE_FROZEN.getCode()).amount(trade.getAmount()).state(FrozenState.FROZEN.getCode())
             .description(null).version(0).createdTime(now).build();
         frozenOrderDao.insertFrozenOrder(frozenOrder);
@@ -123,7 +129,7 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
         }
         // 生成"处理中"的支付记录
         TradePayment paymentDo = TradePayment.builder().paymentId(paymentId).tradeId(trade.getTradeId())
-            .channelId(payment.getChannelId()).accountId(payment.getAccountId()).businessId(payment.getBusinessId())
+            .channelId(payment.getChannelId()).accountId(payment.getAccountId())
             .name(fromAccount.getName()).cardNo(null).amount(payment.getAmount()).fee(0L).state(PaymentState.PROCESSING.getCode())
             .description(TradeType.AUTH_TRADE.getName()).version(0).createdTime(now).build();
         tradePaymentDao.insertTradePayment(paymentDo);
@@ -159,14 +165,14 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
 
         // 获取商户收益账号信息
         LocalDateTime now = LocalDateTime.now();
-        accountChannelService.checkTradePermission(payment.getAccountId(), confirm.getPassword(), -1);
+        FundAccount fromAccount = accountChannelService.checkTradePermission(payment.getAccountId(), confirm.getPassword(), -1);
         MerchantPermit merchant = merchantDao.findMerchantById(trade.getMchId()).map(mer -> MerchantPermit.of(
             mer.getMchId(), mer.getCode(), mer.getProfitAccount(), mer.getVouchAccount(), mer.getPledgeAccount(),
-            mer.getPrivateKey(), mer.getPublicKey()))
-            .orElseThrow(() -> new ServiceAccessException(ErrorCode.OBJECT_NOT_FOUND, "商户信息未注册"));
+            mer.getPrivateKey(), mer.getPublicKey())).orElseThrow(
+            () -> new ServiceAccessException(ErrorCode.OBJECT_NOT_FOUND, "商户信息未注册"));
 
         // 处理买家付款和买家佣金
-        AccountChannel fromChannel = AccountChannel.of(payment.getPaymentId(), payment.getAccountId(), payment.getBusinessId());
+        AccountChannel fromChannel = AccountChannel.of(payment.getPaymentId(), fromAccount.getAccountId(), fromAccount.getParentId());
         IFundTransaction fromTransaction = fromChannel.openTransaction(trade.getType(), now);
         fromTransaction.unfreeze(frozenOrder.getAmount());
         fromTransaction.outgo(confirm.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName());
@@ -176,7 +182,8 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
         TransactionStatus status = accountChannelService.submit(fromTransaction);
 
         // 处理卖家收款和卖家佣金
-        AccountChannel toChannel = AccountChannel.of(payment.getPaymentId(), trade.getAccountId(), trade.getBusinessId());
+        FundAccount toAccount = fundAccountService.findFundAccountById(trade.getAccountId());
+        AccountChannel toChannel = AccountChannel.of(payment.getPaymentId(), toAccount.getAccountId(), toAccount.getParentId());
         IFundTransaction toTransaction = toChannel.openTransaction(trade.getType(), now);
         toTransaction.income(confirm.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName());
         fees.stream().filter(Fee::forSeller).forEach(fee -> {
@@ -186,7 +193,7 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
 
         // 处理商户收益
         if (!fees.isEmpty()) {
-            AccountChannel merChannel = AccountChannel.of(payment.getPaymentId(), merchant.getProfitAccount(), null);
+            AccountChannel merChannel = AccountChannel.of(payment.getPaymentId(), merchant.getProfitAccount(), 0L);
             IFundTransaction merTransaction = merChannel.openTransaction(trade.getType(), now);
             fees.forEach(fee ->
                 merTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName())
@@ -244,7 +251,7 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
 
         // 撤销预授权，需验证买方账户状态无须验证密码
         LocalDateTime when = LocalDateTime.now();
-        accountChannelService.checkTradePermission(payment.getAccountId());
+        FundAccount account = accountChannelService.checkTradePermission(payment.getAccountId());
         Optional<FrozenOrder> orderOpt = frozenOrderDao.findFrozenOrderByPaymentId(payment.getPaymentId());
         FrozenOrder order = orderOpt.orElseThrow(() -> new TradePaymentException(ErrorCode.OBJECT_NOT_FOUND, "冻结订单不存在"));
         if (order.getState() != FrozenState.FROZEN.getCode()) {
@@ -252,7 +259,7 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
         }
 
         // 解冻冻结资金
-        AccountChannel channel = AccountChannel.of(payment.getPaymentId(), payment.getAccountId(), payment.getBusinessId());
+        AccountChannel channel = AccountChannel.of(payment.getPaymentId(), account.getAccountId(), account.getParentId());
         IFundTransaction transaction = channel.openTransaction(trade.getType(), when);
         transaction.unfreeze(trade.getAmount());
         TransactionStatus status = accountChannelService.submit(transaction);

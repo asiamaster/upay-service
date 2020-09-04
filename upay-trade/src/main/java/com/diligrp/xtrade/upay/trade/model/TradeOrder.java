@@ -22,8 +22,6 @@ public class TradeOrder extends BaseDo {
     private String cycleNo;
     // 账号ID
     private Long accountId;
-    // 业务账号ID
-    private Long businessId;
     // 账号名称
     private String name;
     // 金额-分
@@ -93,14 +91,6 @@ public class TradeOrder extends BaseDo {
 
     public void setAccountId(Long accountId) {
         this.accountId = accountId;
-    }
-
-    public Long getBusinessId() {
-        return businessId;
-    }
-
-    public void setBusinessId(Long businessId) {
-        this.businessId = businessId;
     }
 
     public String getName() {
@@ -196,11 +186,6 @@ public class TradeOrder extends BaseDo {
 
         public Builder accountId(Long accountId) {
             TradeOrder.this.accountId = accountId;
-            return this;
-        }
-
-        public Builder businessId(Long businessId) {
-            TradeOrder.this.businessId = businessId;
             return this;
         }
 

@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -63,16 +64,27 @@ public class FundAccountServiceImpl implements IFundAccountService {
         String secretKey = PasswordUtils.generateSecretKey();
         String password = PasswordUtils.encrypt(account.getPassword(), secretKey);
 
+        long parentId = account.getParentId() == null ? 0L : account.getParentId();
         FundAccount fundAccount = FundAccount.builder().customerId(account.getCustomerId()).accountId(accountId)
-            .parentId(0L).type(account.getType()).useFor(account.getUseFor()).code(account.getCode())
+            .parentId(parentId).type(account.getType()).useFor(account.getUseFor()).code(account.getCode())
             .name(account.getName()).gender(account.getGender()).mobile(account.getMobile()).email(account.getEmail())
             .idCode(account.getIdCode()).address(account.getAddress()).password(password).secretKey(secretKey)
             .state(AccountState.NORMAL.getCode()).mchId(mchId).version(0).createdTime(when).build();
+        // 创建子账户检查主资金账户状态
+        fundAccount.ifChildAccount(act -> {
+            Optional<FundAccount> masterOpt = fundAccountDao.findFundAccountById(account.getParentId());
+            masterOpt.ifPresent(AccountStateMachine::registerSubAccountCheck);
+            masterOpt.orElseThrow(() -> new FundAccountException(ErrorCode.OPERATION_NOT_ALLOWED, "主资金账户不存在"));
+        });
         fundAccountDao.insertFundAccount(fundAccount);
 
-        AccountFund accountFund = AccountFund.builder().accountId(accountId).balance(0L).frozenAmount(0L)
-            .vouchAmount(0L).version(0).createdTime(when).build();
-        accountFundDao.insertAccountFund(accountFund);
+        // 子账户无须创建账户资金，共享主账户资金
+        fundAccount.ifMasterAccount(act -> {
+            AccountFund accountFund = AccountFund.builder().accountId(accountId).balance(0L).frozenAmount(0L)
+                .vouchAmount(0L).version(0).createdTime(when).build();
+            accountFundDao.insertAccountFund(accountFund);
+        });
+
         return accountId;
     }
 
@@ -114,21 +126,35 @@ public class FundAccountServiceImpl implements IFundAccountService {
 
     /**
      * {@inheritDoc}
+     *
+     * 注销主账户时所有子账户必须为注销状态
      */
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public void unregisterFundAccount(Long accountId) {
         Optional<FundAccount> accountOpt = fundAccountDao.findFundAccountById(accountId);
-        accountOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
+        FundAccount account = accountOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
         accountOpt.ifPresent(AccountStateMachine::unregisterAccountCheck);
         Optional<AccountFund> fundOpt = accountFundDao.findAccountFundById(accountId);
         fundOpt.ifPresent(AccountStateMachine::unregisterFundCheck);
+
+        // 不能注销存在子账号的资金账号
+        account.ifMasterAccount(act -> {
+            List<FundAccount> children = fundAccountDao.findFundAccountByParentId(account.getParentId());
+            children.stream().forEach(AccountStateMachine::unregisterAccountByChildCheck);
+        });
         AccountStateDto accountState = AccountStateDto.of(accountId, AccountState.VOID.getCode(),
             LocalDateTime.now(), accountOpt.get().getVersion());
         Integer result = fundAccountDao.compareAndSetState(accountState);
         if (result == 0) {
             throw new FundAccountException(ErrorCode.DATA_CONCURRENT_UPDATED, "系统正忙，请稍后重试");
         }
+    }
+
+    @Override
+    public FundAccount findFundAccountById(Long accountId) {
+        Optional<FundAccount> accountOpt = fundAccountDao.findFundAccountById(accountId);
+        return accountOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
     }
 
     /**
@@ -141,8 +167,9 @@ public class FundAccountServiceImpl implements IFundAccountService {
      */
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW, isolation = Isolation.READ_COMMITTED)
-    public Optional<AccountFund> findAccountFundById(Long accountId) {
-        return accountFundDao.findAccountFundById(accountId);
+    public AccountFund findAccountFundById(Long accountId) {
+        Optional<AccountFund> fundOpt = accountFundDao.findAccountFundById(accountId);
+        return fundOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "账号资金不存在"));
     }
 
 

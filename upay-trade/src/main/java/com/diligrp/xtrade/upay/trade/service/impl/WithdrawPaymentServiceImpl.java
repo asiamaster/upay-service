@@ -1,8 +1,6 @@
 package com.diligrp.xtrade.upay.trade.service.impl;
 
 import com.diligrp.xtrade.shared.sequence.IKeyGenerator;
-import com.diligrp.xtrade.shared.sequence.ISerialKeyGenerator;
-import com.diligrp.xtrade.shared.sequence.KeyGeneratorManager;
 import com.diligrp.xtrade.shared.sequence.SnowflakeKeyManager;
 import com.diligrp.xtrade.shared.util.ObjectUtils;
 import com.diligrp.xtrade.upay.channel.domain.AccountChannel;
@@ -12,6 +10,7 @@ import com.diligrp.xtrade.upay.channel.type.ChannelType;
 import com.diligrp.xtrade.upay.core.ErrorCode;
 import com.diligrp.xtrade.upay.core.domain.MerchantPermit;
 import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
+import com.diligrp.xtrade.upay.core.model.FundAccount;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
 import com.diligrp.xtrade.upay.trade.dao.IPaymentFeeDao;
 import com.diligrp.xtrade.upay.trade.dao.ITradeOrderDao;
@@ -29,7 +28,6 @@ import com.diligrp.xtrade.upay.trade.type.FundType;
 import com.diligrp.xtrade.upay.trade.type.PaymentState;
 import com.diligrp.xtrade.upay.trade.type.TradeState;
 import com.diligrp.xtrade.upay.trade.type.TradeType;
-import com.diligrp.xtrade.upay.trade.util.PaymentDatedIdStrategy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -76,19 +74,15 @@ public class WithdrawPaymentServiceImpl implements IPaymentService {
         if (!ObjectUtils.equals(trade.getAccountId(), payment.getAccountId())) {
             throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "提现资金账号不一致");
         }
-        if (!ObjectUtils.equals(trade.getBusinessId(), payment.getBusinessId())) {
-            throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "提现业务账号不一致");
-        }
-
         Optional<List<Fee>> feesOpt = payment.getObjects(Fee.class.getName());
         List<Fee> fees = feesOpt.orElseGet(Collections::emptyList);
 
         // 处理个人提现
         LocalDateTime now = LocalDateTime.now();
-        accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
+        FundAccount account = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
         String paymentId = String.valueOf(keyGenerator.nextId());
-        AccountChannel channel = AccountChannel.of(paymentId, trade.getAccountId(), trade.getBusinessId());
+        AccountChannel channel = AccountChannel.of(paymentId, account.getAccountId(), account.getParentId());
         IFundTransaction transaction = channel.openTransaction(trade.getType(), now);
         transaction.outgo(trade.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName());
         fees.forEach(fee -> {
@@ -99,7 +93,7 @@ public class WithdrawPaymentServiceImpl implements IPaymentService {
         // 处理商户收益
         if (!fees.isEmpty()) {
             MerchantPermit merchant = payment.getObject(MerchantPermit.class.getName(), MerchantPermit.class);
-            AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), null);
+            AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);
             IFundTransaction merTransaction = merChannel.openTransaction(trade.getType(), now);
             fees.forEach(fee ->
                 merTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName())
@@ -115,10 +109,9 @@ public class WithdrawPaymentServiceImpl implements IPaymentService {
         }
         long totalFee = fees.stream().mapToLong(Fee::getAmount).sum();
         TradePayment paymentDo = TradePayment.builder().paymentId(paymentId).tradeId(trade.getTradeId())
-            .channelId(payment.getChannelId()).accountId(trade.getAccountId()).businessId(trade.getBusinessId())
-            .name(trade.getName()).cardNo(null).amount(payment.getAmount()).fee(totalFee).state(PaymentState.SUCCESS.getCode())
-            .description(TradeType.WITHDRAW.getName())
-            .version(0).createdTime(now).build();
+            .channelId(payment.getChannelId()).accountId(trade.getAccountId()).name(trade.getName())
+            .cardNo(null).amount(payment.getAmount()).fee(totalFee).state(PaymentState.SUCCESS.getCode())
+            .description(TradeType.WITHDRAW.getName()).version(0).createdTime(now).build();
         tradePaymentDao.insertTradePayment(paymentDo);
 
         if (!fees.isEmpty()) {

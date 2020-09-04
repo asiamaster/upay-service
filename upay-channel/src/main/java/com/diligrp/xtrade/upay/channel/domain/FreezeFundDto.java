@@ -6,8 +6,6 @@ package com.diligrp.xtrade.upay.channel.domain;
 public class FreezeFundDto {
     // 资金账号ID
     private Long accountId;
-    // 业务账号
-    private Long businessId;
     // 类型 - 系统冻结和交易冻结
     private Integer type;
     // 冻结金额 - 分
@@ -23,14 +21,6 @@ public class FreezeFundDto {
 
     public void setAccountId(Long accountId) {
         this.accountId = accountId;
-    }
-
-    public Long getBusinessId() {
-        return businessId;
-    }
-
-    public void setBusinessId(Long businessId) {
-        this.businessId = businessId;
     }
 
     public Integer getType() {

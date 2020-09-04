@@ -10,8 +10,6 @@ import java.util.Optional;
 public class Payment extends HashMap<String, Object> {
     // 资金账号ID
     private Long accountId;
-    // 业务账号ID
-    private Long businessId;
     // 支付金额
     private Long amount;
     // 支付渠道
@@ -19,10 +17,9 @@ public class Payment extends HashMap<String, Object> {
     // 支付密码
     private String password;
 
-    public static Payment of(Long accountId, Long businessId, Long amount, Integer channelId, String password) {
+    public static Payment of(Long accountId, Long amount, Integer channelId, String password) {
         Payment payment = new Payment();
         payment.setAccountId(accountId);
-        payment.setBusinessId(businessId);
         payment.setAmount(amount);
         payment.setChannelId(channelId);
         payment.setPassword(password);
@@ -35,14 +32,6 @@ public class Payment extends HashMap<String, Object> {
 
     public void setAccountId(Long accountId) {
         this.accountId = accountId;
-    }
-
-    public Long getBusinessId() {
-        return businessId;
-    }
-
-    public void setBusinessId(Long businessId) {
-        this.businessId = businessId;
     }
 
     public Long getAmount() {

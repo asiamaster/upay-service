@@ -93,9 +93,6 @@ public class AuthFeePaymentServiceImpl extends FeePaymentServiceImpl implements 
         if (!ObjectUtils.equals(trade.getAccountId(), payment.getAccountId())) {
             throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "缴费资金账号不一致");
         }
-        if (!ObjectUtils.equals(trade.getBusinessId(), payment.getBusinessId())) {
-            throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "缴费业务账号不一致");
-        }
 
         Optional<List<Fee>> feesOpt = payment.getObjects(Fee.class.getName());
         feesOpt.ifPresent(fees -> { throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "预授权冻结不支持收取费用"); });
@@ -105,15 +102,17 @@ public class AuthFeePaymentServiceImpl extends FeePaymentServiceImpl implements 
         FundAccount account = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
         String paymentId = String.valueOf(keyGenerator.nextId());
-        AccountChannel channel = AccountChannel.of(paymentId, payment.getAccountId(), payment.getBusinessId());
+        AccountChannel channel = AccountChannel.of(paymentId, account.getAccountId(), account.getParentId());
         IFundTransaction transaction = channel.openTransaction(FrozenState.FROZEN.getCode(), now);
         transaction.freeze(trade.getAmount());
         TransactionStatus status = accountChannelService.submit(transaction);
 
         // 创建冻结资金订单
+        Long masterAccountId = account.getParentId() == 0 ? account.getAccountId() : account.getParentId();
+        Long childAccountId = account.getParentId() == 0 ? null : account.getAccountId();
         long frozenId = keyGeneratorManager.getKeyGenerator(SequenceKey.FROZEN_ID).nextId();
         FrozenOrder frozenOrder = FrozenOrder.builder().frozenId(frozenId).paymentId(paymentId)
-            .accountId(payment.getAccountId()).businessId(payment.getBusinessId()).name(account.getName())
+            .accountId(masterAccountId).childId(childAccountId).name(account.getName())
             .type(FrozenType.TRADE_FROZEN.getCode()).amount(trade.getAmount()).state(FrozenState.FROZEN.getCode())
             .description(null).version(0).createdTime(now).build();
         frozenOrderDao.insertFrozenOrder(frozenOrder);
@@ -126,7 +125,7 @@ public class AuthFeePaymentServiceImpl extends FeePaymentServiceImpl implements 
         }
         // 生成"处理中"的支付记录
         TradePayment paymentDo = TradePayment.builder().paymentId(paymentId).tradeId(trade.getTradeId())
-            .channelId(payment.getChannelId()).accountId(trade.getAccountId()).businessId(trade.getBusinessId())
+            .channelId(payment.getChannelId()).accountId(trade.getAccountId())
             .name(trade.getName()).cardNo(null).amount(payment.getAmount()).fee(0L).state(PaymentState.PROCESSING.getCode())
             .description(TradeType.AUTH_FEE.getName()).version(0).createdTime(now).build();
         tradePaymentDao.insertTradePayment(paymentDo);
@@ -165,13 +164,13 @@ public class AuthFeePaymentServiceImpl extends FeePaymentServiceImpl implements 
 
         // 获取商户收益账号信息
         LocalDateTime now = LocalDateTime.now();
-        accountChannelService.checkTradePermission(payment.getAccountId(), confirm.getPassword(), -1);
+        FundAccount account = accountChannelService.checkTradePermission(payment.getAccountId(), confirm.getPassword(), -1);
         MerchantPermit merchant = merchantDao.findMerchantById(trade.getMchId()).map(mer -> MerchantPermit.of(
             mer.getMchId(), mer.getCode(), mer.getProfitAccount(), mer.getVouchAccount(), mer.getPledgeAccount(),
             mer.getPrivateKey(), mer.getPublicKey()))
             .orElseThrow(() -> new ServiceAccessException(ErrorCode.OBJECT_NOT_FOUND, "商户信息未注册"));
         // 客户账号资金解冻并缴费
-        AccountChannel channel = AccountChannel.of(payment.getPaymentId(), payment.getAccountId(), payment.getBusinessId());
+        AccountChannel channel = AccountChannel.of(payment.getPaymentId(), account.getAccountId(), account.getParentId());
         IFundTransaction transaction = channel.openTransaction(trade.getType(), now);
         transaction.unfreeze(frozenOrder.getAmount());
         fees.forEach(fee ->
@@ -180,7 +179,7 @@ public class AuthFeePaymentServiceImpl extends FeePaymentServiceImpl implements 
         TransactionStatus status = accountChannelService.submit(transaction);
 
         // 园区收益账户收款
-        AccountChannel merChannel = AccountChannel.of(payment.getPaymentId(), merchant.getProfitAccount(), null);
+        AccountChannel merChannel = AccountChannel.of(payment.getPaymentId(), merchant.getProfitAccount(), 0L);
         IFundTransaction feeTransaction = merChannel.openTransaction(trade.getType(), now);
         fees.forEach(fee ->
             feeTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName())
@@ -234,7 +233,7 @@ public class AuthFeePaymentServiceImpl extends FeePaymentServiceImpl implements 
         }
         // 撤销预授权，需验证缴费账户状态无须验证密码
         LocalDateTime when = LocalDateTime.now();
-        accountChannelService.checkTradePermission(trade.getAccountId());
+        FundAccount account = accountChannelService.checkTradePermission(payment.getAccountId());
         Optional<FrozenOrder> orderOpt = frozenOrderDao.findFrozenOrderByPaymentId(payment.getPaymentId());
         FrozenOrder order = orderOpt.orElseThrow(() -> new TradePaymentException(ErrorCode.OBJECT_NOT_FOUND, "冻结订单不存在"));
         if (order.getState() != FrozenState.FROZEN.getCode()) {
@@ -242,7 +241,7 @@ public class AuthFeePaymentServiceImpl extends FeePaymentServiceImpl implements 
         }
 
         // 解冻冻结资金
-        AccountChannel channel = AccountChannel.of(payment.getPaymentId(), payment.getAccountId(), payment.getBusinessId());
+        AccountChannel channel = AccountChannel.of(payment.getPaymentId(), account.getAccountId(), account.getParentId());
         IFundTransaction transaction = channel.openTransaction(trade.getType(), when);
         transaction.unfreeze(trade.getAmount());
         TransactionStatus status = accountChannelService.submit(transaction);

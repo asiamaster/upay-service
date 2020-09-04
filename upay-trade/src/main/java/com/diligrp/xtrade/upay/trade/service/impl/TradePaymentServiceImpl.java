@@ -12,6 +12,7 @@ import com.diligrp.xtrade.upay.core.dao.IMerchantDao;
 import com.diligrp.xtrade.upay.core.domain.MerchantPermit;
 import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
 import com.diligrp.xtrade.upay.core.model.FundAccount;
+import com.diligrp.xtrade.upay.core.service.IFundAccountService;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
 import com.diligrp.xtrade.upay.trade.dao.IPaymentFeeDao;
 import com.diligrp.xtrade.upay.trade.dao.IRefundPaymentDao;
@@ -69,6 +70,9 @@ public class TradePaymentServiceImpl implements IPaymentService {
     private IAccountChannelService accountChannelService;
 
     @Resource
+    private IFundAccountService fundAccountService;
+
+    @Resource
     private SnowflakeKeyManager snowflakeKeyManager;
 
     /**
@@ -94,7 +98,7 @@ public class TradePaymentServiceImpl implements IPaymentService {
         FundAccount fromAccount = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
         String paymentId = String.valueOf(keyGenerator.nextId());
-        AccountChannel fromChannel = AccountChannel.of(paymentId, payment.getAccountId(), payment.getBusinessId());
+        AccountChannel fromChannel = AccountChannel.of(paymentId, fromAccount.getAccountId(), fromAccount.getParentId());
         IFundTransaction fromTransaction = fromChannel.openTransaction(trade.getType(), now);
         fromTransaction.outgo(trade.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName());
         fees.stream().filter(Fee::forBuyer).forEach(fee -> {
@@ -103,7 +107,8 @@ public class TradePaymentServiceImpl implements IPaymentService {
         TransactionStatus status = accountChannelService.submit(fromTransaction);
 
         // 处理卖家收款和卖家佣金
-        AccountChannel toChannel = AccountChannel.of(paymentId, trade.getAccountId(), trade.getBusinessId());
+        FundAccount toAccount = fundAccountService.findFundAccountById(trade.getAccountId());
+        AccountChannel toChannel = AccountChannel.of(paymentId, toAccount.getAccountId(), toAccount.getParentId());
         IFundTransaction toTransaction = toChannel.openTransaction(trade.getType(), now);
         toTransaction.income(trade.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName());
         fees.stream().filter(Fee::forSeller).forEach(fee -> {
@@ -114,7 +119,7 @@ public class TradePaymentServiceImpl implements IPaymentService {
         // 处理商户收益
         if (!fees.isEmpty()) {
             MerchantPermit merchant = payment.getObject(MerchantPermit.class.getName(), MerchantPermit.class);
-            AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), null);
+            AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);
             IFundTransaction merTransaction = merChannel.openTransaction(trade.getType(), now);
             fees.forEach(fee ->
                 merTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName())
@@ -134,7 +139,7 @@ public class TradePaymentServiceImpl implements IPaymentService {
         // 买家佣金存储在TradePayment支付模型中
         long fromFee = fees.stream().filter(Fee::forBuyer).mapToLong(Fee::getAmount).sum();
         TradePayment paymentDo = TradePayment.builder().paymentId(paymentId).tradeId(trade.getTradeId())
-            .channelId(payment.getChannelId()).accountId(payment.getAccountId()).businessId(payment.getBusinessId())
+            .channelId(payment.getChannelId()).accountId(payment.getAccountId())
             .name(fromAccount.getName()).cardNo(null).amount(payment.getAmount()).fee(fromFee).state(PaymentState.SUCCESS.getCode())
             .description(TradeType.DIRECT_TRADE.getName()).version(0).createdTime(now).build();
         tradePaymentDao.insertTradePayment(paymentDo);
@@ -165,7 +170,7 @@ public class TradePaymentServiceImpl implements IPaymentService {
 
         // 撤销交易，需验证退款方账户状态无须验证密码
         LocalDateTime now = LocalDateTime.now();
-        accountChannelService.checkTradePermission(trade.getAccountId());
+        FundAccount fromAccount = accountChannelService.checkTradePermission(trade.getAccountId());
         MerchantPermit merchant = merchantDao.findMerchantById(trade.getMchId()).map(mer -> MerchantPermit.of(
             mer.getMchId(), mer.getCode(), mer.getProfitAccount(), mer.getVouchAccount(), mer.getPledgeAccount(),
             mer.getPrivateKey(), mer.getPublicKey()))
@@ -176,7 +181,7 @@ public class TradePaymentServiceImpl implements IPaymentService {
         // 处理卖家退款和退佣金，由于底层先产生收入明细后产生支出明细(FundActivity.compare)
         // 这样保证卖家先退款后收入佣金不会造成收支明细中期初余额出现负数（资金仍然是安全的）
         List<PaymentFee> fees = paymentFeeDao.findPaymentFees(payment.getPaymentId());
-        AccountChannel fromChannel = AccountChannel.of(paymentId, trade.getAccountId(), trade.getBusinessId());
+        AccountChannel fromChannel = AccountChannel.of(paymentId, fromAccount.getAccountId(), fromAccount.getParentId());
         IFundTransaction fromTransaction = fromChannel.openTransaction(TradeType.CANCEL_TRADE.getCode(), now);
         fromTransaction.outgo(trade.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName());
         fees.stream().filter(PaymentFee::forSeller).forEach(fee -> {
@@ -185,7 +190,8 @@ public class TradePaymentServiceImpl implements IPaymentService {
         TransactionStatus status = accountChannelService.submit(fromTransaction);
 
         // 处理买家收款和退佣金
-        AccountChannel toChannel = AccountChannel.of(paymentId, payment.getAccountId(), payment.getBusinessId());
+        FundAccount toAccount = fundAccountService.findFundAccountById(payment.getAccountId());
+        AccountChannel toChannel = AccountChannel.of(paymentId, toAccount.getAccountId(), toAccount.getParentId());
         IFundTransaction toTransaction = toChannel.openTransaction(TradeType.CANCEL_TRADE.getCode(), now);
         fees.stream().filter(PaymentFee::forBuyer).forEach(fee -> {
             toTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName());
@@ -195,7 +201,7 @@ public class TradePaymentServiceImpl implements IPaymentService {
 
         // 处理商户退佣金
         if (!fees.isEmpty()) {
-            AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), null);
+            AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);
             IFundTransaction merTransaction = merChannel.openTransaction(TradeType.CANCEL_TRADE.getCode(), now);
             fees.forEach(fee ->
                 merTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName())

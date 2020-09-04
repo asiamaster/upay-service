@@ -40,7 +40,7 @@ public interface IAccountChannelService {
     /**
      * 人工/系统冻结平台账户资金
      */
-    FrozenStatus freezeAccountFund(FreezeFundDto freezeAccountFundrequest);
+    FrozenStatus freezeAccountFund(FreezeFundDto request);
 
     /**
      * 人工/系统解冻平台账户资金

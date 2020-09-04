@@ -71,6 +71,10 @@
         SELECT * FROM upay_fund_account WHERE account_id = #{accountId}
     </select>
 
+    <select id="findFundAccountByParentId" parameterType="long" resultMap="FundAccountMap">
+        SELECT * FROM upay_fund_account WHERE parent_id = #{parentId}
+    </select>
+
     <update id="compareAndSetState" parameterType="com.diligrp.xtrade.upay.core.domain.AccountStateDto">
         UPDATE
             upay_fund_account

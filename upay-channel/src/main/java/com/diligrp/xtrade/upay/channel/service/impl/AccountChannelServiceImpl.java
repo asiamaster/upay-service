@@ -12,11 +12,9 @@ import com.diligrp.xtrade.upay.channel.exception.PaymentChannelException;
 import com.diligrp.xtrade.upay.channel.service.IAccountChannelService;
 import com.diligrp.xtrade.upay.channel.service.IFrozenOrderService;
 import com.diligrp.xtrade.upay.core.ErrorCode;
-import com.diligrp.xtrade.upay.core.dao.IFundAccountDao;
 import com.diligrp.xtrade.upay.core.domain.FundTransaction;
 import com.diligrp.xtrade.upay.core.domain.RegisterAccount;
 import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
-import com.diligrp.xtrade.upay.core.exception.FundAccountException;
 import com.diligrp.xtrade.upay.core.model.AccountFund;
 import com.diligrp.xtrade.upay.core.model.FundAccount;
 import com.diligrp.xtrade.upay.core.service.IFundAccountService;
@@ -41,9 +39,6 @@ public class AccountChannelServiceImpl implements IAccountChannelService {
     private final static String PASSWORD_KEY_PREFIX = "upay:permission:password:";
 
     private final static int PASSWORD_ERROR_EXPIRE = 60 * 60 * 24 * 2;
-
-    @Resource
-    private IFundAccountDao fundAccountDao;
 
     @Resource
     private IFundStreamEngine fundStreamEngine;
@@ -129,8 +124,7 @@ public class AccountChannelServiceImpl implements IAccountChannelService {
      */
     @Override
     public AccountFund queryAccountFund(Long accountId) {
-        Optional<AccountFund> accountFund = fundAccountService.findAccountFundById(accountId);;
-        return accountFund.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
+        return fundAccountService.findAccountFundById(accountId);
     }
 
     /**
@@ -141,8 +135,7 @@ public class AccountChannelServiceImpl implements IAccountChannelService {
     @Override
     public FundAccount checkTradePermission(long accountId, String password, int maxPwdErrors) {
         AssertUtils.notEmpty(password, "password missed");
-        Optional<FundAccount> accountOpt = fundAccountDao.findFundAccountById(accountId);
-        FundAccount account = accountOpt.orElseThrow(() -> new PaymentChannelException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
+        FundAccount account = fundAccountService.findFundAccountById(accountId);
         if (account.getState() != AccountState.NORMAL.getCode()) {
             throw new PaymentChannelException(ErrorCode.INVALID_ACCOUNT_STATE, "账户状态异常");
         }
@@ -175,8 +168,7 @@ public class AccountChannelServiceImpl implements IAccountChannelService {
      */
     @Override
     public FundAccount checkTradePermission(long accountId) {
-        Optional<FundAccount> accountOpt = fundAccountDao.findFundAccountById(accountId);
-        FundAccount account = accountOpt.orElseThrow(() -> new PaymentChannelException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
+        FundAccount account = fundAccountService.findFundAccountById(accountId);
         if (account.getState() != AccountState.NORMAL.getCode()) {
             throw new PaymentChannelException(ErrorCode.INVALID_ACCOUNT_STATE, "账户状态异常");
         }

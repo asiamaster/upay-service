@@ -12,6 +12,7 @@ import com.diligrp.xtrade.upay.core.ErrorCode;
 import com.diligrp.xtrade.upay.core.dao.IMerchantDao;
 import com.diligrp.xtrade.upay.core.domain.MerchantPermit;
 import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
+import com.diligrp.xtrade.upay.core.model.FundAccount;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
 import com.diligrp.xtrade.upay.trade.dao.IPaymentFeeDao;
 import com.diligrp.xtrade.upay.trade.dao.IRefundPaymentDao;
@@ -83,9 +84,6 @@ public class FeePaymentServiceImpl implements IPaymentService {
         if (!ObjectUtils.equals(trade.getAccountId(), payment.getAccountId())) {
             throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "缴费资金账号不一致");
         }
-        if (!ObjectUtils.equals(trade.getBusinessId(), payment.getBusinessId())) {
-            throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "缴费业务账号不一致");
-        }
 
         MerchantPermit merchant = payment.getObject(MerchantPermit.class.getName(), MerchantPermit.class);
         Optional<List<Fee>> feesOpt = payment.getObjects(Fee.class.getName());
@@ -98,11 +96,11 @@ public class FeePaymentServiceImpl implements IPaymentService {
         // 处理账户余额缴费
         TransactionStatus status = null;
         LocalDateTime now = LocalDateTime.now();
-        accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
+        FundAccount account = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
         String paymentId = String.valueOf(keyGenerator.nextId());
         if (payment.getChannelId() == ChannelType.ACCOUNT.getCode()) {
-            AccountChannel channel = AccountChannel.of(paymentId, trade.getAccountId(), trade.getBusinessId());
+            AccountChannel channel = AccountChannel.of(paymentId, account.getAccountId(), account.getParentId());
             IFundTransaction transaction = channel.openTransaction(trade.getType(), now);
             fees.forEach(fee ->
                 transaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName())
@@ -111,7 +109,7 @@ public class FeePaymentServiceImpl implements IPaymentService {
         }
 
         // 处理商户收款
-        AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), null);
+        AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);
         IFundTransaction feeTransaction = merChannel.openTransaction(trade.getType(), now);
         fees.forEach(fee ->
             feeTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName())
@@ -126,7 +124,7 @@ public class FeePaymentServiceImpl implements IPaymentService {
         }
 
         TradePayment paymentDo = TradePayment.builder().paymentId(paymentId).tradeId(trade.getTradeId())
-            .channelId(payment.getChannelId()).accountId(trade.getAccountId()).businessId(trade.getBusinessId())
+            .channelId(payment.getChannelId()).accountId(trade.getAccountId())
             .name(trade.getName()).cardNo(null).amount(trade.getAmount()).fee(0L).state(PaymentState.SUCCESS.getCode())
             .description(TradeType.PAY_FEE.getName()).version(0).createdTime(now).build();
         tradePaymentDao.insertTradePayment(paymentDo);
@@ -161,15 +159,15 @@ public class FeePaymentServiceImpl implements IPaymentService {
 
         // 撤销缴费，需验证缴费账户状态无须验证密码
         LocalDateTime now = LocalDateTime.now();
-        accountChannelService.checkTradePermission(trade.getAccountId());
+        FundAccount account = accountChannelService.checkTradePermission(trade.getAccountId());
         // 获取交易订单中的商户收益账号信息，并处理商户退款
         MerchantPermit merchant = merchantDao.findMerchantById(trade.getMchId()).map(mer -> MerchantPermit.of(
             mer.getMchId(), mer.getCode(), mer.getProfitAccount(), mer.getVouchAccount(), mer.getPledgeAccount(),
-            mer.getPrivateKey(), mer.getPublicKey()))
-            .orElseThrow(() -> new ServiceAccessException(ErrorCode.OBJECT_NOT_FOUND, "商户信息未注册"));
+            mer.getPrivateKey(), mer.getPublicKey())).orElseThrow(
+            () -> new ServiceAccessException(ErrorCode.OBJECT_NOT_FOUND, "商户信息未注册"));
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
         String paymentId = String.valueOf(keyGenerator.nextId());
-        AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), null);
+        AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);
         IFundTransaction feeTransaction = merChannel.openTransaction(TradeType.CANCEL_TRADE.getCode(), now);
         fees.forEach(fee ->
             feeTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName())
@@ -179,7 +177,7 @@ public class FeePaymentServiceImpl implements IPaymentService {
         // 处理客户收款
         TransactionStatus status = null;
         if (payment.getChannelId() == ChannelType.ACCOUNT.getCode()) {
-            AccountChannel channel = AccountChannel.of(paymentId, trade.getAccountId(), trade.getBusinessId());
+            AccountChannel channel = AccountChannel.of(paymentId, account.getAccountId(), account.getParentId());
             IFundTransaction transaction = channel.openTransaction(TradeType.CANCEL_TRADE.getCode(), now);
             fees.forEach(fee ->
                 transaction.income(fee.getAmount(), fee.getType(), fee.getTypeName())

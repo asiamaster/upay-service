@@ -3,6 +3,7 @@ package com.diligrp.xtrade.upay.core.model;
 import com.diligrp.xtrade.shared.domain.BaseDo;
 
 import java.time.LocalDateTime;
+import java.util.function.Consumer;
 
 /**
  * 资金账户数据模型
@@ -207,6 +208,18 @@ public class FundAccount extends BaseDo {
 
     public void setVersion(Integer version) {
         this.version = version;
+    }
+
+    public void ifMasterAccount(Consumer<FundAccount> action) {
+        if (parentId == 0) {
+            action.accept(this);
+        }
+    }
+
+    public void ifChildAccount(Consumer<FundAccount> action) {
+        if (parentId != 0) {
+            action.accept(this);
+        }
     }
 
     public static Builder builder() {

@@ -40,7 +40,6 @@ public class FundServiceComponent {
     public FrozenStatus freeze(ServiceRequest<FreezeFundDto> request) {
         FreezeFundDto freezeFund = request.getData();
         AssertUtils.notNull(freezeFund.getAccountId(), "accountId missed");
-        AssertUtils.notNull(freezeFund.getBusinessId(), "businessId missed");
         AssertUtils.notNull(freezeFund.getAmount(), "amount missed");
         freezeFund.setType(FrozenType.SYSTEM_FROZEN.getCode());
         return accountChannelService.freezeAccountFund(freezeFund);

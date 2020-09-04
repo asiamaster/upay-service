@@ -17,13 +17,13 @@ public class AccountChannel {
     private String paymentId;
     // 资金账号ID
     private long accountId;
-    // 业务账号ID
-    private Long businessId;
+    // 父账号ID
+    private Long parentId;
 
-    public AccountChannel(String paymentId, long accountId, Long businessId) {
+    public AccountChannel(String paymentId, long accountId, Long parentId) {
         this.paymentId = paymentId;
         this.accountId = accountId;
-        this.businessId = businessId;
+        this.parentId = parentId;
     }
 
     public String getPaymentId() {
@@ -34,16 +34,16 @@ public class AccountChannel {
         return accountId;
     }
 
-    public Long getBusinessId() {
-        return businessId;
+    public Long getParentId() {
+        return parentId;
     }
 
     public IFundTransaction openTransaction(int tradeType, LocalDateTime when) {
         return new ChannelFundTransaction(tradeType, when);
     }
 
-    public static AccountChannel of(String paymentId, long accountId, Long businessId) {
-        return new AccountChannel(paymentId, accountId, businessId);
+    public static AccountChannel of(String paymentId, long accountId, Long parentId) {
+        return new AccountChannel(paymentId, accountId, parentId);
     }
 
     public class ChannelFundTransaction implements IFundTransaction {
@@ -94,7 +94,7 @@ public class AccountChannel {
             }
 
             FundActivity[] fundActivities = funds.toArray(new FundActivity[funds.size()]);
-            return Optional.of(FundTransaction.of(paymentId, accountId, businessId, tradeType, frozenAmount, fundActivities, when));
+            return Optional.of(FundTransaction.of(paymentId, accountId, parentId, tradeType, frozenAmount, fundActivities, when));
         }
     }
 }

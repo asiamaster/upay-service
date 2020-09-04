@@ -67,7 +67,7 @@ public class FrozenOrderServiceImpl implements IFrozenOrderService {
 
         // 冻结资金
         LocalDateTime now = LocalDateTime.now();
-        AccountChannel channel = AccountChannel.of(null, request.getAccountId(), request.getBusinessId());
+        AccountChannel channel = AccountChannel.of(null, account.getAccountId(), account.getParentId());
         IFundTransaction transaction = channel.openTransaction(FrozenState.FROZEN.getCode(), now);
         transaction.freeze(request.getAmount());
         TransactionStatus status = accountChannelService.submit(transaction);
@@ -76,7 +76,7 @@ public class FrozenOrderServiceImpl implements IFrozenOrderService {
         IKeyGenerator keyGenerator = keyGeneratorManager.getKeyGenerator(SequenceKey.FROZEN_ID);
         long frozenId = keyGenerator.nextId();
         FrozenOrder frozenOrder = FrozenOrder.builder().frozenId(frozenId).paymentId(null).accountId(request.getAccountId())
-            .businessId(request.getBusinessId()).name(account.getName()).type(request.getType()).amount(request.getAmount())
+            .name(account.getName()).type(request.getType()).amount(request.getAmount())
             .extension(request.getExtension()).state(FrozenState.FROZEN.getCode()).description(request.getDescription())
             .version(0).createdTime(now).build();
         frozenOrderDao.insertFrozenOrder(frozenOrder);
@@ -100,11 +100,11 @@ public class FrozenOrderServiceImpl implements IFrozenOrderService {
             throw new PaymentChannelException(ErrorCode.OPERATION_NOT_ALLOWED, "不能解冻交易冻结的资金");
         }
         Optional<FundAccount> accountOpt = fundAccountDao.findFundAccountById(order.getAccountId());
-        accountOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
+        FundAccount account = accountOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
         accountOpt.ifPresent(AccountStateMachine::frozenFundCheck);
 
         LocalDateTime now = LocalDateTime.now();
-        AccountChannel channel = AccountChannel.of(null, order.getAccountId(), order.getBusinessId());
+        AccountChannel channel = AccountChannel.of(null, account.getAccountId(), account.getParentId());
         IFundTransaction transaction = channel.openTransaction(FrozenState.UNFROZEN.getCode(), now);
         transaction.unfreeze(order.getAmount());
         TransactionStatus status = accountChannelService.submit(transaction);
@@ -120,7 +120,7 @@ public class FrozenOrderServiceImpl implements IFrozenOrderService {
     /**
      * {@inheritDoc}
      *
-     *  分页查询冻结资金订单
+     *  根据主资金账号进行分页查询冻结资金订单，当传入子账号进行查询时，将返回空结果
      */
     @Override
     public PageMessage<FrozenOrder> listFrozenOrders(FrozenOrderQuery query) {

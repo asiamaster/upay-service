@@ -55,10 +55,12 @@ public class DefaultFundStreamEngine implements IFundStreamEngine {
     public TransactionStatus submit(FundTransaction transaction) {
         boolean success = true;
         TransactionStatus status = null;
+        // 将子账号的交易操作主账号资金
+        Long masterAccountId = transaction.getParentId() == 0 ? transaction.getAccountId() : transaction.getParentId();
+        Long childAccountId = transaction.getParentId() == 0 ? null : transaction.getAccountId();
         for (int retry = 0; retry < RETRIES; retry ++) {
             // 新启事务查询账户资金及数据版本，避免数据库隔离级别和Mybatis缓存造成乐观锁重试机制无法生效
-            Optional<AccountFund> fundOpt = fundAccountService.findAccountFundById(transaction.getAccountId());
-            AccountFund accountFund = fundOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "账号资金不存在"));
+            AccountFund accountFund = fundAccountService.findAccountFundById(masterAccountId);
             status = TransactionStatus.of(accountFund.getAccountId(), accountFund.getBalance(), 0L,
                 accountFund.getFrozenAmount(), transaction.getFrozenAmount(), transaction.getWhen());
             // 处理解冻资金transaction.getFrozenAmount()<0
@@ -106,8 +108,8 @@ public class DefaultFundStreamEngine implements IFundStreamEngine {
             List<FundStatement> statements = Arrays.stream(transaction.getActivities())
                 .filter(activity -> activity.getAmount() != 0).sorted(FundActivity::compare)
                 .map(activity -> FundStatement.builder().paymentId(transaction.getPaymentId())
-                    .accountId(transaction.getAccountId()).businessId(transaction.getBusinessId())
-                    .tradeType(transaction.getType()).action(ActionType.getByAmount(activity.getAmount()).getCode())
+                    .accountId(masterAccountId).childId(childAccountId).tradeType(transaction.getType())
+                    .action(ActionType.getByAmount(activity.getAmount()).getCode())
                     .balance(balance.getAndAdd(activity.getAmount())).amount(activity.getAmount()).type(activity.getType())
                     .typeName(activity.getTypeName()).description(null).createdTime(transaction.getWhen()).build())
                 .collect(Collectors.toList());

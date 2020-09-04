@@ -71,7 +71,7 @@ public class PaymentPlatformServiceImpl implements IPaymentPlatformService, Bean
         String tradeId = String.valueOf(keyGenerator.nextId());
         TradeOrder tradeOrder = TradeOrder.builder().mchId(application.getMerchant().getMchId()).appId(application.getAppId())
             .tradeId(tradeId).type(trade.getType()).serialNo(trade.getSerialNo()).cycleNo(trade.getCycleNo())
-            .accountId(account.getAccountId()).businessId(trade.getBusinessId()).name(account.getName())
+            .accountId(account.getAccountId()).name(account.getName())
             .amount(trade.getAmount()).maxAmount(trade.getAmount()).fee(0L).state(TradeState.PENDING.getCode())
             .description(trade.getDescription()).version(0).createdTime(when).build();
         tradeOrderDao.insertTradeOrder(tradeOrder);
@@ -106,8 +106,7 @@ public class PaymentPlatformServiceImpl implements IPaymentPlatformService, Bean
 //        feeList.stream().map(fee -> FundType.getFee(fee.getType())).forEach(feeOpt ->
 //            feeOpt.orElseThrow(() -> new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "不支持的费用类型")));
 
-        Payment payment = Payment.of(request.getAccountId(), request.getBusinessId(), trade.getAmount(),
-            request.getChannelId(), request.getPassword());
+        Payment payment = Payment.of(request.getAccountId(), trade.getAmount(), request.getChannelId(), request.getPassword());
         payment.put(MerchantPermit.class.getName(), application.getMerchant());
         request.fees().ifPresent(fees -> payment.put(Fee.class.getName(), fees));
 

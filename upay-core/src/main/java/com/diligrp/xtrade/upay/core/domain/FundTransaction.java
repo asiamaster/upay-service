@@ -10,8 +10,8 @@ public class FundTransaction {
     private String paymentId;
     // 资金账号ID
     private long accountId;
-    // 业务账号ID - 可为NULL
-    private Long businessId;
+    // 父账号ID
+    private Long parentId;
     // 业务类型
     private int type;
     // 冻结或解冻金额
@@ -37,12 +37,12 @@ public class FundTransaction {
         this.accountId = accountId;
     }
 
-    public Long getBusinessId() {
-        return businessId;
+    public Long getParentId() {
+        return parentId;
     }
 
-    public void setBusinessId(Long businessId) {
-        this.businessId = businessId;
+    public void setParentId(Long parentId) {
+        this.parentId = parentId;
     }
 
     public int getType() {
@@ -89,12 +89,12 @@ public class FundTransaction {
         return activities != null && activities.length > 0;
     }
 
-    public static FundTransaction of(String paymentId, long accountId, Long businessId, int type, long frozenAmount,
+    public static FundTransaction of(String paymentId, long accountId, Long parentId, int type, long frozenAmount,
                                      FundActivity[] activities, LocalDateTime when) {
         FundTransaction transaction = new FundTransaction();
         transaction.setPaymentId(paymentId);
         transaction.setAccountId(accountId);
-        transaction.setBusinessId(businessId);
+        transaction.setParentId(parentId);
         transaction.setType(type);
         transaction.setFrozenAmount(frozenAmount);
         transaction.setActivities(activities);

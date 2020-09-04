@@ -16,8 +16,6 @@ public class TradePayment extends BaseDo {
     private Integer channelId;
     // 账号ID
     private Long accountId;
-    // 业务账号
-    private Long businessId;
     // 账号名称
     private String name;
     // 银行卡号
@@ -63,14 +61,6 @@ public class TradePayment extends BaseDo {
 
     public void setAccountId(Long accountId) {
         this.accountId = accountId;
-    }
-
-    public Long getBusinessId() {
-        return businessId;
-    }
-
-    public void setBusinessId(Long businessId) {
-        this.businessId = businessId;
     }
 
     public String getName() {
@@ -151,11 +141,6 @@ public class TradePayment extends BaseDo {
 
         public Builder accountId(Long accountId) {
             TradePayment.this.accountId = accountId;
-            return this;
-        }
-
-        public Builder businessId(Long businessId) {
-            TradePayment.this.businessId = businessId;
             return this;
         }
 

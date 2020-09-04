@@ -8,7 +8,7 @@
         <result column="frozen_id" property="frozenId"/>
         <result column="payment_id" property="paymentId"/>
         <result column="account_id" property="accountId"/>
-        <result column="business_id" property="businessId"/>
+        <result column="child_id" property="childId"/>
         <result column="name" property="name"/>
         <result column="type" property="type"/>
         <result column="amount" property="amount"/>
@@ -21,10 +21,10 @@
     </resultMap>
 
     <insert id="insertFrozenOrder" parameterType="com.diligrp.xtrade.upay.channel.model.FrozenOrder">
-        INSERT INTO upay_frozen_order(frozen_id, payment_id, account_id, business_id, name, type, amount, state,
+        INSERT INTO upay_frozen_order(frozen_id, payment_id, account_id, child_id, name, type, amount, state,
             extension, description, version, created_time, modified_time)
         VALUES
-          (#{frozenId}, #{paymentId}, #{accountId}, #{businessId}, #{name}, #{type}, #{amount}, #{state},
+          (#{frozenId}, #{paymentId}, #{accountId}, #{childId}, #{name}, #{type}, #{amount}, #{state},
            #{extension}, #{description}, #{version}, #{createdTime}, #{modifiedTime})
     </insert>
 

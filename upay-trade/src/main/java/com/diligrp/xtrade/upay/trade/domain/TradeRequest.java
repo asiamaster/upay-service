@@ -8,8 +8,6 @@ public class TradeRequest {
     private Integer type;
     // 账号ID
     private Long accountId;
-    // 业务账号ID
-    private Long businessId;
     // 金额-分
     private Long amount;
     // 外部流水号
@@ -33,14 +31,6 @@ public class TradeRequest {
 
     public void setAccountId(Long accountId) {
         this.accountId = accountId;
-    }
-
-    public Long getBusinessId() {
-        return businessId;
-    }
-
-    public void setBusinessId(Long businessId) {
-        this.businessId = businessId;
     }
 
     public Long getAmount() {
