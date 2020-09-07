@@ -20,6 +20,7 @@ import com.diligrp.xtrade.upay.core.domain.MerchantPermit;
 import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
 import com.diligrp.xtrade.upay.core.model.FundAccount;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
+import com.diligrp.xtrade.upay.core.util.AsyncTaskExecutor;
 import com.diligrp.xtrade.upay.trade.dao.IPaymentFeeDao;
 import com.diligrp.xtrade.upay.trade.dao.ITradeOrderDao;
 import com.diligrp.xtrade.upay.trade.dao.ITradePaymentDao;
@@ -110,7 +111,9 @@ public class AuthFeePaymentServiceImpl extends FeePaymentServiceImpl implements 
         // 创建冻结资金订单
         Long masterAccountId = account.getParentId() == 0 ? account.getAccountId() : account.getParentId();
         Long childAccountId = account.getParentId() == 0 ? null : account.getAccountId();
-        long frozenId = keyGeneratorManager.getKeyGenerator(SequenceKey.FROZEN_ID).nextId();
+        IKeyGenerator frozenKey = keyGeneratorManager.getKeyGenerator(SequenceKey.FROZEN_ID);
+        // 异步执行避免Seata回滚造成ID重复
+        long frozenId = AsyncTaskExecutor.submit(() -> frozenKey.nextId());
         FrozenOrder frozenOrder = FrozenOrder.builder().frozenId(frozenId).paymentId(paymentId)
             .accountId(masterAccountId).childId(childAccountId).name(account.getName())
             .type(FrozenType.TRADE_FROZEN.getCode()).amount(trade.getAmount()).state(FrozenState.FROZEN.getCode())

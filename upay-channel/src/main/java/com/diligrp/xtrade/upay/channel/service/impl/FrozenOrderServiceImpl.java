@@ -23,6 +23,7 @@ import com.diligrp.xtrade.upay.core.exception.FundAccountException;
 import com.diligrp.xtrade.upay.core.model.FundAccount;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
 import com.diligrp.xtrade.upay.core.util.AccountStateMachine;
+import com.diligrp.xtrade.upay.core.util.AsyncTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -74,7 +75,8 @@ public class FrozenOrderServiceImpl implements IFrozenOrderService {
 
         // 创建冻结资金订单
         IKeyGenerator keyGenerator = keyGeneratorManager.getKeyGenerator(SequenceKey.FROZEN_ID);
-        long frozenId = keyGenerator.nextId();
+        // 异步执行避免Seata回滚造成ID重复
+        long frozenId = AsyncTaskExecutor.submit(() -> keyGenerator.nextId());
         FrozenOrder frozenOrder = FrozenOrder.builder().frozenId(frozenId).paymentId(null).accountId(request.getAccountId())
             .name(account.getName()).type(request.getType()).amount(request.getAmount())
             .extension(request.getExtension()).state(FrozenState.FROZEN.getCode()).description(request.getDescription())

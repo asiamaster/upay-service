@@ -18,6 +18,7 @@ import com.diligrp.xtrade.upay.core.type.AccountType;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
 import com.diligrp.xtrade.upay.core.type.UseFor;
 import com.diligrp.xtrade.upay.core.util.AccountStateMachine;
+import com.diligrp.xtrade.upay.core.util.AsyncTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Propagation;
@@ -60,7 +61,8 @@ public class FundAccountServiceImpl implements IFundAccountService {
 
         LocalDateTime when = LocalDateTime.now();
         IKeyGenerator keyGenerator = keyGeneratorManager.getKeyGenerator(SequenceKey.FUND_ACCOUNT);
-        long accountId = keyGenerator.nextId();
+        // 异步执行避免Seata回滚造成ID重复
+        long accountId = AsyncTaskExecutor.submit(() -> keyGenerator.nextId());
         String secretKey = PasswordUtils.generateSecretKey();
         String password = PasswordUtils.encrypt(account.getPassword(), secretKey);
 
