@@ -156,6 +156,7 @@ public class FundAccountServiceImpl implements IFundAccountService {
     @Override
     public FundAccount findFundAccountById(Long accountId) {
         Optional<FundAccount> accountOpt = fundAccountDao.findFundAccountById(accountId);
+        accountOpt.ifPresent(AccountStateMachine::voidAccountCheck);
         return accountOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
     }
 

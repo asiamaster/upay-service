@@ -21,6 +21,7 @@ import com.diligrp.xtrade.upay.core.dao.IFundAccountDao;
 import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
 import com.diligrp.xtrade.upay.core.exception.FundAccountException;
 import com.diligrp.xtrade.upay.core.model.FundAccount;
+import com.diligrp.xtrade.upay.core.service.IFundAccountService;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
 import com.diligrp.xtrade.upay.core.util.AccountStateMachine;
 import com.diligrp.xtrade.upay.core.util.AsyncTaskExecutor;
@@ -51,6 +52,9 @@ public class FrozenOrderServiceImpl implements IFrozenOrderService {
 
     @Resource
     private IAccountChannelService accountChannelService;
+
+    @Resource
+    private IFundAccountService fundAccountService;
 
     /**
      * {@inheritDoc}
@@ -126,6 +130,8 @@ public class FrozenOrderServiceImpl implements IFrozenOrderService {
      */
     @Override
     public PageMessage<FrozenOrder> listFrozenOrders(FrozenOrderQuery query) {
+        // 检查资金账号是否存在
+        fundAccountService.findFundAccountById(query.getAccountId());
         List<FrozenOrder> frozenOrders = Collections.emptyList();
         long total = frozenOrderDao.countFrozenOrders(query);
         if (total > 0) {

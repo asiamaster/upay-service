@@ -101,4 +101,10 @@ public final class AccountStateMachine {
             throw new FundAccountException(ErrorCode.OPERATION_NOT_ALLOWED, "不能注销有余额的资金账户");
         }
     }
+
+    public static void voidAccountCheck(FundAccount account) {
+        if (account.getState() == AccountState.VOID.getCode()) {
+            throw new FundAccountException(ErrorCode.INVALID_ACCOUNT_STATE, "资金账户已注销");
+        }
+    }
 }
