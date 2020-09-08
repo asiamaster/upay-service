@@ -139,7 +139,8 @@ public class AccountChannelServiceImpl implements IAccountChannelService {
         AssertUtils.notEmpty(password, "password missed");
         FundAccount account = fundAccountService.findFundAccountById(accountId);
         if (account.getState() != AccountState.NORMAL.getCode()) {
-            throw new PaymentChannelException(ErrorCode.INVALID_ACCOUNT_STATE, "账户状态异常");
+            throw new PaymentChannelException(ErrorCode.INVALID_ACCOUNT_STATE,
+                "资金账户已" + AccountState.getName(account.getState()));
         }
 
         String encodedPwd = PasswordUtils.encrypt(password, account.getSecretKey());
@@ -172,8 +173,8 @@ public class AccountChannelServiceImpl implements IAccountChannelService {
     public FundAccount checkTradePermission(long accountId) {
         FundAccount account = fundAccountService.findFundAccountById(accountId);
         if (account.getState() != AccountState.NORMAL.getCode()) {
-            throw new PaymentChannelException(ErrorCode.INVALID_ACCOUNT_STATE, "账户状态异常");
-        }
+            throw new PaymentChannelException(ErrorCode.INVALID_ACCOUNT_STATE,
+                "资金账户已" + AccountState.getName(account.getState()));        }
         return account;
     }
 
