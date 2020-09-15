@@ -1,6 +1,7 @@
 package com.diligrp.xtrade.upay.core.model;
 
 import com.diligrp.xtrade.shared.domain.BaseDo;
+import net.sf.cglib.core.Local;
 
 import java.time.LocalDateTime;
 
@@ -196,6 +197,11 @@ public class Merchant extends BaseDo {
 
         public Builder createdTime(LocalDateTime createdTime) {
             Merchant.this.createdTime = createdTime;
+            return this;
+        }
+
+        public Builder modifiedTime(LocalDateTime modifiedTime) {
+            Merchant.this.modifiedTime = modifiedTime;
             return this;
         }
 

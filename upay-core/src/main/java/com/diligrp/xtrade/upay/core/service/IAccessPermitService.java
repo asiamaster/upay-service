@@ -20,6 +20,11 @@ public interface IAccessPermitService {
     MerchantPermit registerMerchant(RegisterMerchant request);
 
     /**
+     * 修改商户信息: 修改商户名等信息
+     */
+    void modifyMerchant(RegisterMerchant request);
+
+    /**
      * 注册应用: 创建商户应用(分配appId和accessToken)，分配商户应用公私钥
      */
     ApplicationPermit registerApplication(RegisterApplication request);

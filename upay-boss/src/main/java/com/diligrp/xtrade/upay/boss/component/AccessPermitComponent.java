@@ -34,6 +34,16 @@ public class AccessPermitComponent {
     }
 
     /**
+     * 修改商户信息
+     */
+    public void modifyMerchant(ServiceRequest<RegisterMerchant> request) {
+        RegisterMerchant merchant = request.getData();
+        AssertUtils.notNull(merchant.getMchId(), "mchId missed");
+        AssertUtils.notEmpty(merchant.getName(), "name missed");
+        accessPermitService.modifyMerchant(merchant);
+    }
+
+    /**
      * 注册应用: 创建商户应用(分配appId和accessToken)，分配商户应用公私钥
      */
     public ApplicationPermit application(ServiceRequest<RegisterApplication> request) {

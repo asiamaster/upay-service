@@ -86,7 +86,7 @@ public class PaymentPlatformController {
             result = Message.failure(pex.getCode(), pex.getMessage());
         } catch (Throwable ex) {
             LOG.error("Payment service unknown exception", ex);
-            result = Message.failure(ErrorCode.SYSTEM_UNKNOWN_ERROR, ex.getMessage());
+            result = Message.failure(ErrorCode.SYSTEM_UNKNOWN_ERROR, "系统未知异常，请联系系统管理员");
         }
 
         // 处理数据签名: 忽略签名失败，签名失败时调用方会验签失败

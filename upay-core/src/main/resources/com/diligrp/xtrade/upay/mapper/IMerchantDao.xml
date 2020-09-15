@@ -49,6 +49,26 @@
              #{address}, #{contact}, #{mobile}, #{privateKey}, #{publicKey}, #{state}, #{createdTime})
     </insert>
 
+    <update id="updateMerchant" parameterType="com.diligrp.xtrade.upay.core.model.Merchant">
+        UPDATE upay_merchant SET modified_time = #{modifiedTime}
+        <if test="code != null and code != '' ">
+            , code = #{code}
+        </if>
+        <if test="name != null and name != '' ">
+            , name = #{name}
+        </if>
+        <if test="address != null and address != '' ">
+            , address = #{address}
+        </if>
+        <if test="contact != null and contact != '' ">
+            , contact = #{contact}
+        </if>
+        <if test="mobile != null and mobile != '' ">
+            , mobile = #{mobile}
+        </if>
+        WHERE mch_id = #{mchId};
+    </update>
+
     <insert id="insertApplication" parameterType="com.diligrp.xtrade.upay.core.model.Application">
         INSERT INTO upay_application(app_id, mch_id, name, access_token, private_key, public_key, created_time)
         VALUES (#{appId}, #{mchId}, #{name}, #{accessToken}, #{privateKey}, #{publicKey}, #{createdTime})

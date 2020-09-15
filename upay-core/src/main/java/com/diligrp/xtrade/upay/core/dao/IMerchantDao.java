@@ -18,5 +18,7 @@ public interface IMerchantDao extends MybatisMapperSupport {
 
     void insertMerchant(Merchant merchant);
 
+    int updateMerchant(Merchant merchant);
+
     void insertApplication(Application application);
 }

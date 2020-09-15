@@ -121,6 +121,20 @@ public class AccessPermitServiceImpl implements IAccessPermitService {
      * {@inheritDoc}
      */
     @Override
+    public void modifyMerchant(RegisterMerchant request) {
+        Optional<Merchant> merchantOpt = merchantDao.findMerchantById(request.getMchId());
+        merchantOpt.orElseThrow(() -> new PaymentServiceException(ErrorCode.OBJECT_NOT_FOUND, "接入商户不存在") );
+
+        LocalDateTime now = LocalDateTime.now();
+        Merchant merchant = Merchant.builder().mchId(request.getMchId()).code(request.getCode()).name(request.getName())
+            .address(request.getAddress()).contact(request.getContact()).mobile(request.getMobile()).modifiedTime(now).build();
+        merchantDao.updateMerchant(merchant);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public ApplicationPermit registerApplication(RegisterApplication request) {
         Optional<Merchant> merchantOpt = merchantDao.findMerchantById(request.getMchId());
