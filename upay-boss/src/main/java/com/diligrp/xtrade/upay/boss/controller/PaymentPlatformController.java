@@ -56,16 +56,18 @@ public class PaymentPlatformController {
             RequestContext context = HttpUtils.requestContext(request);
             String service = context.getString(Constants.PARAM_SERVICE);
             Long appId = context.getLong(Constants.PARAM_APPID);
+            Long mchId = context.getLong(Constants.PARAM_MCHID);
             String accessToken = context.getString(Constants.PARAM_ACCESS_TOKEN);
             String signature = context.getString(Constants.PARAM_SIGNATURE);
             String charset = context.getString(Constants.PARAM_CHARSET);
 
             AssertUtils.notNull(appId, "appId missed");
+            AssertUtils.notNull(mchId, "mchId missed");
             AssertUtils.notEmpty(service, "service missed");
             AssertUtils.notEmpty(payload, "payment request payload missed");
 
             MessageEnvelop envelop = MessageEnvelop.of(appId, service, accessToken, payload, signature, charset);
-            application = checkAccessPermission(context, envelop);
+            application = checkAccessPermission(context, mchId, envelop);
             // 获取"接口数据签名验签"系统配置
             signCheck = paymentConfigService.dataSignSwitch(application.getMerchant().getCode());
             if (signCheck) {
@@ -105,8 +107,8 @@ public class PaymentPlatformController {
     /**
      * 检查接口访问权限，验证应用accessToken
      */
-    private ApplicationPermit checkAccessPermission(RequestContext context, MessageEnvelop envelop) {
-        ApplicationPermit application = accessPermitService.loadApplicationPermit(envelop.getAppId());
+    private ApplicationPermit checkAccessPermission(RequestContext context, Long mchId, MessageEnvelop envelop) {
+        ApplicationPermit application = accessPermitService.loadApplicationPermit(mchId, envelop.getAppId());
 
         // 校验应用访问权限, 暂时不校验商户状态
         if (!ObjectUtils.equals(envelop.getAccessToken(), application.getAccessToken())) {

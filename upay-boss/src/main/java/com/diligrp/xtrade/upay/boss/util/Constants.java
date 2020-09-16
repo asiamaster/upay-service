@@ -8,6 +8,8 @@ public final class Constants {
 
     public final static String PARAM_APPID = "appid";
 
+    public final static String PARAM_MCHID = "mchid";
+
     public final static String PARAM_ACCESS_TOKEN = "token";
 
     public final static String PARAM_SIGNATURE = "signature";

@@ -38,20 +38,24 @@ public class AccessPermitServiceImpl implements IAccessPermitService {
     @Resource
     private IFundAccountService fundAccountService;
 
-    private Map<Long, ApplicationPermit> permits = new ConcurrentHashMap<>();
+    private Map<Long, ApplicationPermit> applications = new ConcurrentHashMap<>();
+
+    private Map<Long, MerchantPermit> merchants = new ConcurrentHashMap<>();
 
     /**
      * {@inheritDoc}
+     *
+     * 接口适用场景：应用直接归属于商户，根据应用ID即可获取应用所属商户信息(收益账户)
      *
      * 由于商户和应用信息一旦创建基本上不会修改，因此可以缓存在本地JVM中；
      * 如后期需要限制商户状态，则只能缓存在REDIS中，商户状态更新时同步更新缓存
      */
     @Override
     public ApplicationPermit loadApplicationPermit(Long appId) {
-        ApplicationPermit permit = permits.get(appId);
+        ApplicationPermit permit = applications.get(appId);
         if (permit == null) {
-            synchronized (permits) {
-                if ((permit = permits.get(appId)) == null) {
+            synchronized (applications) {
+                if ((permit = applications.get(appId)) == null) {
                     Optional<Application> application = merchantDao.findApplicationById(appId);
                     permit = application.map(app -> {
                         MerchantPermit merchant = merchantDao.findMerchantById(app.getMchId())
@@ -61,7 +65,7 @@ public class AccessPermitServiceImpl implements IAccessPermitService {
                         return ApplicationPermit.of(app.getAppId(), app.getAccessToken(), app.getPrivateKey(),
                             app.getPublicKey(), merchant);
                     }).orElseThrow(() -> new ServiceAccessException(ErrorCode.OBJECT_NOT_FOUND, "应用信息未注册"));
-                    permits.put(appId, permit);
+                    applications.put(appId, permit);
                 }
             }
         }
@@ -75,6 +79,44 @@ public class AccessPermitServiceImpl implements IAccessPermitService {
                 .orElseThrow(() -> new ServiceAccessException(ErrorCode.OBJECT_NOT_FOUND, "商户信息未注册"));
             return ApplicationPermit.of(app.getAppId(), app.getAccessToken(), app.getPrivateKey(), app.getPublicKey(), merchant);
         }).orElseThrow(() -> new ServiceAccessException(ErrorCode.OBJECT_NOT_FOUND, "应用信息未注册"));*/
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * 接口适用场景：应用不归属于商户，应用与商户无直接关系，根据应用ID无法获取商户信息(收益账户)
+     *
+     * 由于商户和应用信息一旦创建基本上不会修改，因此可以缓存在本地JVM中；
+     * 如后期需要限制商户状态，则只能缓存在REDIS中，商户状态更新时同步更新缓存
+     */
+    @Override
+    public ApplicationPermit loadApplicationPermit(Long mchId, Long appId) {
+        ApplicationPermit application = applications.get(appId);
+        if (application == null) {
+            synchronized (applications) {
+                if ((application = applications.get(appId)) == null) {
+                    application = merchantDao.findApplicationById(appId).map(app -> ApplicationPermit.of(app.getAppId(),
+                            app.getAccessToken(), app.getPrivateKey(), app.getPublicKey()))
+                        .orElseThrow(() -> new ServiceAccessException(ErrorCode.OBJECT_NOT_FOUND, "应用信息未注册"));
+                    applications.put(appId, application);
+                }
+            }
+        }
+
+        MerchantPermit merchant = merchants.get(mchId);
+        if (merchant == null) {
+            synchronized (merchants) {
+                if ((merchant = merchants.get(mchId)) == null) {
+                    merchant = merchantDao.findMerchantById(mchId)
+                        .map(mer -> MerchantPermit.of(mer.getMchId(), mer.getCode(), mer.getProfitAccount(),
+                            mer.getVouchAccount(), mer.getPledgeAccount(), mer.getPrivateKey(), mer.getPublicKey()))
+                        .orElseThrow(() -> new ServiceAccessException(ErrorCode.OBJECT_NOT_FOUND, "商户信息未注册"));
+                    merchants.put(mchId, merchant);
+                }
+            }
+        }
+        application.setMerchant(merchant);
+        return application;
     }
 
     /**

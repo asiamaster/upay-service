@@ -65,4 +65,14 @@ public class ApplicationPermit {
 
         return permit;
     }
+
+    public static ApplicationPermit of(Long appId, String accessToken, String privateKey, String publicKey) {
+        ApplicationPermit permit = new ApplicationPermit();
+        permit.setAppId(appId);
+        permit.setAccessToken(accessToken);
+        permit.setPrivateKey(privateKey);
+        permit.setPublicKey(publicKey);
+
+        return permit;
+    }
 }

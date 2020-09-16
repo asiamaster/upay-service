@@ -15,6 +15,11 @@ public interface IAccessPermitService {
     ApplicationPermit loadApplicationPermit(Long appId);
 
     /**
+     * 根据商户ID和应用ID获取应用接入许可
+     */
+    ApplicationPermit loadApplicationPermit(Long mchId, Long appId);
+
+    /**
      * 注册商户: 创建接入商户(分配mchId)、创建商户账户（收益账户、担保账户和押金账户等）并分配商户公私钥
      */
     MerchantPermit registerMerchant(RegisterMerchant request);
