@@ -34,8 +34,8 @@ public class AccountServiceComponent {
         AssertUtils.notEmpty(account.getPassword(), "password missed");
         AssertUtils.isTrue(account.getType() != AccountType.MERCHANT.getCode(), "不能注册商户账号");
 
-        ApplicationPermit application = request.getContext().getObject(ApplicationPermit.class.getName(), ApplicationPermit.class);
-        long accountId = accountChannelService.registerFundAccount(application.getMerchant().getMchId(), account);
+        ApplicationPermit permit = request.getContext().getObject(ApplicationPermit.class.getName(), ApplicationPermit.class);
+        long accountId = accountChannelService.registerFundAccount(permit.getMerchant().getMchId(), account);
         return AccountId.of(accountId);
     }
 
@@ -63,6 +63,7 @@ public class AccountServiceComponent {
     public void unregister(ServiceRequest<AccountId> request) {
         AccountId accountId = request.getData();
         AssertUtils.notNull(accountId.getAccountId(), "accountId missed");
-        accountChannelService.unregisterFundAccount(accountId.getAccountId());
+        ApplicationPermit permit = request.getContext().getObject(ApplicationPermit.class.getName(), ApplicationPermit.class);
+        accountChannelService.unregisterFundAccount(permit.getMerchant().getMchId(), accountId.getAccountId());
     }
 }
