@@ -26,6 +26,7 @@ import com.diligrp.xtrade.upay.trade.service.IPaymentPlatformService;
 import com.diligrp.xtrade.upay.trade.service.IPaymentService;
 import com.diligrp.xtrade.upay.trade.type.TradeState;
 import com.diligrp.xtrade.upay.trade.type.TradeType;
+import org.apache.commons.lang.ObjectUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.stereotype.Service;
@@ -66,6 +67,9 @@ public class PaymentPlatformServiceImpl implements IPaymentPlatformService, Bean
         tradeType.orElseThrow(() -> new TradePaymentException(ErrorCode.TRADE_NOT_SUPPORTED, "不支持的交易类型"));
         Optional<FundAccount> accountOpt = fundAccountDao.findFundAccountById(trade.getAccountId());
         FundAccount account = accountOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
+        if (!ObjectUtils.equals(account.getMchId(), application.getMerchant().getMchId())) {
+            throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "该商户下资金账号不存在");
+        }
 
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.TRADE_ID);
         String tradeId = String.valueOf(keyGenerator.nextId());
@@ -90,6 +94,9 @@ public class PaymentPlatformServiceImpl implements IPaymentPlatformService, Bean
 
         Optional<TradeOrder> tradeOpt = tradeOrderDao.findTradeOrderById(request.getTradeId());
         TradeOrder trade = tradeOpt.orElseThrow(() -> new TradePaymentException(ErrorCode.TRADE_NOT_FOUND, "交易不存在"));
+        if (!ObjectUtils.equals(trade.getMchId(), application.getMerchant().getMchId())) {
+            throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "该商户下交易不存在");
+        }
         if (trade.getState() != TradeState.PENDING.getCode()) {
             throw new TradePaymentException(ErrorCode.INVALID_TRADE_STATE, "无效的交易状态");
         }
@@ -97,9 +104,6 @@ public class PaymentPlatformServiceImpl implements IPaymentPlatformService, Bean
         TradeType tradeType = typeOpt.orElseThrow(() -> new TradePaymentException(ErrorCode.TRADE_NOT_SUPPORTED, "不支持的交易类型"));
         Optional<IPaymentService> serviceOpt = tradeService(tradeType);
         IPaymentService service = serviceOpt.orElseThrow(() -> new TradePaymentException(ErrorCode.TRADE_NOT_SUPPORTED, "不支持的交易类型"));
-        if (!trade.getMchId().equals(application.getMerchant().getMchId())) {
-            throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "商户信息错误");
-        }
 
         // 检查是否是系统支持的费用类型 - 支付系统只负责记录费用类型，暂不校验费用类型，原因是业务系统费用过多且可动态配置
 //        List<Fee> feeList = request.fees().orElseGet(Collections::emptyList);
@@ -122,6 +126,9 @@ public class PaymentPlatformServiceImpl implements IPaymentPlatformService, Bean
     public PaymentResult confirm(ApplicationPermit application, ConfirmRequest request) {
         Optional<TradeOrder> tradeOpt = tradeOrderDao.findTradeOrderById(request.getTradeId());
         TradeOrder trade = tradeOpt.orElseThrow(() -> new TradePaymentException(ErrorCode.TRADE_NOT_FOUND, "交易不存在"));
+        if (!ObjectUtils.equals(trade.getMchId(), application.getMerchant().getMchId())) {
+            throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "该商户下交易不存在");
+        }
         if (!TradeState.forConfirm(trade.getState())) {
             throw new TradePaymentException(ErrorCode.INVALID_TRADE_STATE, "无效的交易状态，不能确认消费");
         }
@@ -145,6 +152,9 @@ public class PaymentPlatformServiceImpl implements IPaymentPlatformService, Bean
     public PaymentResult cancel(ApplicationPermit application, RefundRequest request) {
         Optional<TradeOrder> tradeOpt = tradeOrderDao.findTradeOrderById(request.getTradeId());
         TradeOrder trade = tradeOpt.orElseThrow(() -> new TradePaymentException(ErrorCode.TRADE_NOT_FOUND, "交易不存在"));
+        if (!ObjectUtils.equals(trade.getMchId(), application.getMerchant().getMchId())) {
+            throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "该商户下交易不存在");
+        }
         if (!TradeState.forCancel(trade.getState())) {
             throw new TradePaymentException(ErrorCode.INVALID_TRADE_STATE, "无效的交易状态，不能撤销交易");
         }

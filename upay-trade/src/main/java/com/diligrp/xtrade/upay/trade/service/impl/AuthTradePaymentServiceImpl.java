@@ -4,6 +4,7 @@ import com.diligrp.xtrade.shared.exception.ServiceAccessException;
 import com.diligrp.xtrade.shared.sequence.IKeyGenerator;
 import com.diligrp.xtrade.shared.sequence.KeyGeneratorManager;
 import com.diligrp.xtrade.shared.sequence.SnowflakeKeyManager;
+import com.diligrp.xtrade.shared.util.ObjectUtils;
 import com.diligrp.xtrade.upay.channel.dao.IFrozenOrderDao;
 import com.diligrp.xtrade.upay.channel.domain.AccountChannel;
 import com.diligrp.xtrade.upay.channel.domain.FrozenStateDto;
@@ -169,6 +170,9 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
         // 获取商户收益账号信息
         LocalDateTime now = LocalDateTime.now();
         FundAccount fromAccount = accountChannelService.checkTradePermission(payment.getAccountId(), confirm.getPassword(), -1);
+        if (!ObjectUtils.equals(fromAccount.getMchId(), trade.getAccountId())) {
+            throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "不能进行跨商户交易");
+        }
         MerchantPermit merchant = merchantDao.findMerchantById(trade.getMchId()).map(mer -> MerchantPermit.of(
             mer.getMchId(), mer.getCode(), mer.getProfitAccount(), mer.getVouchAccount(), mer.getPledgeAccount(),
             mer.getPrivateKey(), mer.getPublicKey())).orElseThrow(
