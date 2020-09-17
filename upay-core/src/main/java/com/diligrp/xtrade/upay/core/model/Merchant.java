@@ -1,7 +1,6 @@
 package com.diligrp.xtrade.upay.core.model;
 
 import com.diligrp.xtrade.shared.domain.BaseDo;
-import net.sf.cglib.core.Local;
 
 import java.time.LocalDateTime;
 
