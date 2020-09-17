@@ -36,8 +36,8 @@ public class TradeServiceComponent {
         AssertUtils.notNull(trade.getAmount(), "amount missed");
         AssertUtils.isTrue(trade.getAmount() > 0, "Invalid amount");
 
-        ApplicationPermit application = request.getContext().getObject(ApplicationPermit.class.getName(), ApplicationPermit.class);
-        String tradeId = paymentPlatformService.createTrade(application, trade);
+        ApplicationPermit permit = request.getContext().getObject(ApplicationPermit.class.getName(), ApplicationPermit.class);
+        String tradeId = paymentPlatformService.createTrade(permit, trade);
         return TradeId.of(tradeId);
     }
 
@@ -60,8 +60,8 @@ public class TradeServiceComponent {
             AssertUtils.isTrue(fee.getAmount() > 0, "Invalid fee amount");
         }));
 
-        ApplicationPermit application = request.getContext().getObject(ApplicationPermit.class.getName(), ApplicationPermit.class);
-        PaymentResult result = paymentPlatformService.commit(application, payment);
+        ApplicationPermit permit = request.getContext().getObject(ApplicationPermit.class.getName(), ApplicationPermit.class);
+        PaymentResult result = paymentPlatformService.commit(permit, payment);
         // 如有余额信息则返回余额信息
         return result.getStatus();
     }
@@ -86,8 +86,8 @@ public class TradeServiceComponent {
             AssertUtils.isTrue(fee.getAmount() > 0, "Invalid fee amount");
         }));
 
-        ApplicationPermit application = request.getContext().getObject(ApplicationPermit.class.getName(), ApplicationPermit.class);
-        PaymentResult result = paymentPlatformService.confirm(application, confirm);
+        ApplicationPermit permit = request.getContext().getObject(ApplicationPermit.class.getName(), ApplicationPermit.class);
+        PaymentResult result = paymentPlatformService.confirm(permit, confirm);
         // 如有余额信息则返回余额信息
         return result.getStatus();
     }

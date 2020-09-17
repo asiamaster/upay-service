@@ -28,7 +28,7 @@ public interface IFundAccountService {
     /**
      * 注销资金账号
      */
-    void unregisterFundAccount(Long accountId);
+    void unregisterFundAccount(Long mchId, Long accountId);
 
     /**
      * 根据账号ID查询资金账户

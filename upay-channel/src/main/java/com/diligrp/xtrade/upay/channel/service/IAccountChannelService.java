@@ -20,7 +20,7 @@ public interface IAccountChannelService {
     /**
      * 平台注销资金账号
      */
-    void unregisterFundAccount(Long accountId);
+    void unregisterFundAccount(Long mchId, Long accountId);
 
     /**
      * 提交资金事务

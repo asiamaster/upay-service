@@ -66,8 +66,8 @@ public class AccountChannelServiceImpl implements IAccountChannelService {
      * {@inheritDoc}
      */
     @Override
-    public void unregisterFundAccount(Long accountId) {
-        fundAccountService.unregisterFundAccount(accountId);
+    public void unregisterFundAccount(Long mchId, Long accountId) {
+        fundAccountService.unregisterFundAccount(mchId, accountId);
     }
 
     /**

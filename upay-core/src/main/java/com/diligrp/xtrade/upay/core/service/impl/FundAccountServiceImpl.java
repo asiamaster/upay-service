@@ -4,6 +4,7 @@ import com.diligrp.xtrade.shared.security.PasswordUtils;
 import com.diligrp.xtrade.shared.sequence.IKeyGenerator;
 import com.diligrp.xtrade.shared.sequence.KeyGeneratorManager;
 import com.diligrp.xtrade.shared.type.Gender;
+import com.diligrp.xtrade.shared.util.ObjectUtils;
 import com.diligrp.xtrade.upay.core.ErrorCode;
 import com.diligrp.xtrade.upay.core.dao.IAccountFundDao;
 import com.diligrp.xtrade.upay.core.dao.IFundAccountDao;
@@ -129,13 +130,16 @@ public class FundAccountServiceImpl implements IFundAccountService {
     /**
      * {@inheritDoc}
      *
-     * 注销主账户时所有子账户必须为注销状态
+     * 注销主账户时所有子账户必须为注销状态，且注销时提供的商户信息须与注册时商户信息一致
      */
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
-    public void unregisterFundAccount(Long accountId) {
+    public void unregisterFundAccount(Long mchId, Long accountId) {
         Optional<FundAccount> accountOpt = fundAccountDao.findFundAccountById(accountId);
         FundAccount account = accountOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
+        if (!ObjectUtils.equals(account.getMchId(), mchId)) {
+            throw new FundAccountException(ErrorCode.OPERATION_NOT_ALLOWED, "不能注销该商户下的资金账号");
+        }
         accountOpt.ifPresent(AccountStateMachine::unregisterAccountCheck);
         Optional<AccountFund> fundOpt = accountFundDao.findAccountFundById(accountId);
         fundOpt.ifPresent(AccountStateMachine::unregisterFundCheck);
