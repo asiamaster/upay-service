@@ -2,6 +2,7 @@ package com.diligrp.xtrade.upay.trade.service.impl;
 
 import com.diligrp.xtrade.shared.sequence.IKeyGenerator;
 import com.diligrp.xtrade.shared.sequence.SnowflakeKeyManager;
+import com.diligrp.xtrade.upay.channel.service.IAccountChannelService;
 import com.diligrp.xtrade.upay.channel.type.ChannelType;
 import com.diligrp.xtrade.upay.core.ErrorCode;
 import com.diligrp.xtrade.upay.core.domain.ApplicationPermit;
@@ -51,6 +52,9 @@ public class PaymentPlatformServiceImpl implements IPaymentPlatformService, Bean
     private IFundAccountService fundAccountService;
 
     @Resource
+    private IAccountChannelService accountChannelService;
+
+    @Resource
     private SnowflakeKeyManager snowflakeKeyManager;
 
     private Map<TradeType, IPaymentService> services = new HashMap<>();
@@ -65,6 +69,7 @@ public class PaymentPlatformServiceImpl implements IPaymentPlatformService, Bean
         Optional<TradeType> tradeType = TradeType.getType(trade.getType());
         tradeType.orElseThrow(() -> new TradePaymentException(ErrorCode.TRADE_NOT_SUPPORTED, "不支持的交易类型"));
         FundAccount account = fundAccountService.findFundAccountById(trade.getAccountId());
+        accountChannelService.checkAccountTradeState(account);
         if (!ObjectUtils.equals(account.getMchId(), application.getMerchant().getMchId())) {
             throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "该商户下资金账号不存在");
         }
