@@ -172,7 +172,7 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
         LocalDateTime now = LocalDateTime.now();
         FundAccount fromAccount = accountChannelService.checkTradePermission(payment.getAccountId(), confirm.getPassword(), -1);
         accountChannelService.checkAccountTradeState(fromAccount); // 寿光专用业务逻辑
-        if (!ObjectUtils.equals(fromAccount.getMchId(), trade.getAccountId())) {
+        if (!ObjectUtils.equals(fromAccount.getMchId(), trade.getMchId())) {
             throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "不能进行跨商户交易");
         }
         MerchantPermit merchant = merchantDao.findMerchantById(trade.getMchId()).map(mer -> MerchantPermit.of(

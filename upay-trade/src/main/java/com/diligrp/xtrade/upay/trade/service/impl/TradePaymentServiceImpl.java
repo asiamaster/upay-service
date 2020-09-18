@@ -98,7 +98,7 @@ public class TradePaymentServiceImpl implements IPaymentService {
         LocalDateTime now = LocalDateTime.now();
         FundAccount fromAccount = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
         accountChannelService.checkAccountTradeState(fromAccount); // 寿光专用业务逻辑
-        if (!ObjectUtils.equals(fromAccount.getMchId(), trade.getAccountId())) {
+        if (!ObjectUtils.equals(fromAccount.getMchId(), trade.getMchId())) {
             throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "不能进行跨商户交易");
         }
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
