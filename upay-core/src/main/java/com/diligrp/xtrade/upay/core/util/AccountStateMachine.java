@@ -102,9 +102,29 @@ public final class AccountStateMachine {
         }
     }
 
+    /**
+     * 校验资金账户是否已注销
+     */
     public static void voidAccountCheck(FundAccount account) {
         if (account.getState() == AccountState.VOID.getCode()) {
             throw new FundAccountException(ErrorCode.INVALID_ACCOUNT_STATE, "资金账户已注销");
+        }
+    }
+
+    /**
+     * 校验资金账户状态是否允许交易, 寿光市场专用
+     */
+    public static void accountStateCheck(FundAccount account) {
+        if (account.getState() == AccountState.VOID.getCode()) {
+            throw new FundAccountException(ErrorCode.INVALID_ACCOUNT_STATE, account.getName() + "的资金账户已注销");
+        }
+
+        if (account.getState() == AccountState.FROZEN.getCode()) {
+            throw new FundAccountException(ErrorCode.INVALID_ACCOUNT_STATE, account.getName() + "的资金账户已冻结");
+        }
+
+        if (account.getState() != AccountState.NORMAL.getCode()) {
+            throw new FundAccountException(ErrorCode.INVALID_ACCOUNT_STATE, account.getName() + "的资金账户状态异常");
         }
     }
 }
