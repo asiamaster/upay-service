@@ -4,11 +4,10 @@ import com.diligrp.xtrade.shared.sequence.IKeyGenerator;
 import com.diligrp.xtrade.shared.sequence.SnowflakeKeyManager;
 import com.diligrp.xtrade.upay.channel.type.ChannelType;
 import com.diligrp.xtrade.upay.core.ErrorCode;
-import com.diligrp.xtrade.upay.core.dao.IFundAccountDao;
 import com.diligrp.xtrade.upay.core.domain.ApplicationPermit;
 import com.diligrp.xtrade.upay.core.domain.MerchantPermit;
-import com.diligrp.xtrade.upay.core.exception.FundAccountException;
 import com.diligrp.xtrade.upay.core.model.FundAccount;
+import com.diligrp.xtrade.upay.core.service.IFundAccountService;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
 import com.diligrp.xtrade.upay.trade.dao.ITradeOrderDao;
 import com.diligrp.xtrade.upay.trade.domain.Confirm;
@@ -46,10 +45,10 @@ import java.util.Optional;
 public class PaymentPlatformServiceImpl implements IPaymentPlatformService, BeanPostProcessor {
 
     @Resource
-    private IFundAccountDao fundAccountDao;
+    private ITradeOrderDao tradeOrderDao;
 
     @Resource
-    private ITradeOrderDao tradeOrderDao;
+    private IFundAccountService fundAccountService;
 
     @Resource
     private SnowflakeKeyManager snowflakeKeyManager;
@@ -65,8 +64,7 @@ public class PaymentPlatformServiceImpl implements IPaymentPlatformService, Bean
         LocalDateTime when = LocalDateTime.now();
         Optional<TradeType> tradeType = TradeType.getType(trade.getType());
         tradeType.orElseThrow(() -> new TradePaymentException(ErrorCode.TRADE_NOT_SUPPORTED, "不支持的交易类型"));
-        Optional<FundAccount> accountOpt = fundAccountDao.findFundAccountById(trade.getAccountId());
-        FundAccount account = accountOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
+        FundAccount account = fundAccountService.findFundAccountById(trade.getAccountId());
         if (!ObjectUtils.equals(account.getMchId(), application.getMerchant().getMchId())) {
             throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "该商户下资金账号不存在");
         }

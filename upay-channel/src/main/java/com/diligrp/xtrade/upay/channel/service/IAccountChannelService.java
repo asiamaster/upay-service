@@ -66,4 +66,9 @@ public interface IAccountChannelService {
      * 重置交易密码: 不验证原密码
      */
     void resetTradePassword(long accountId, String password);
+
+    /**
+     * 寿光市场需求：买卖家资金账户状态必须正常才允许交易，并且子账户交易时父账户状态必须正常
+     */
+    void checkAccountTradeState(FundAccount account);
 }

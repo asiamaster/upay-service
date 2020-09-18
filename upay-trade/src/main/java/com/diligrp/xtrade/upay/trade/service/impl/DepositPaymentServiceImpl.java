@@ -80,6 +80,7 @@ public class DepositPaymentServiceImpl implements IPaymentService {
         // 处理个人充值
         LocalDateTime now = LocalDateTime.now();
         FundAccount account = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
+        accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
         String paymentId = String.valueOf(keyGenerator.nextId());
         AccountChannel channel = AccountChannel.of(paymentId, account.getAccountId(), account.getParentId());
