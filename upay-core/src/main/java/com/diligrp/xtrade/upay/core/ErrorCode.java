@@ -33,7 +33,7 @@ public class ErrorCode {
     // 无效资金账号状态
     public static final int INVALID_ACCOUNT_STATE = 503002;
     // 账号密码不正确
-    public static final int INVALID_ACCOUNT_PASSWORD = 503002;
+    public static final int INVALID_ACCOUNT_PASSWORD = 503003;
     // 账户余额不足
-    public static final int INSUFFICIENT_ACCOUNT_FUND = 503003;
+    public static final int INSUFFICIENT_ACCOUNT_FUND = 503004;
 }
