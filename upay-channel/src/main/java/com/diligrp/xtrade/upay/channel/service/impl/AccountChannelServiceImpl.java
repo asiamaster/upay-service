@@ -20,6 +20,7 @@ import com.diligrp.xtrade.upay.core.model.FundAccount;
 import com.diligrp.xtrade.upay.core.service.IFundAccountService;
 import com.diligrp.xtrade.upay.core.service.IFundStreamEngine;
 import com.diligrp.xtrade.upay.core.type.AccountState;
+import com.diligrp.xtrade.upay.core.util.AccountStateMachine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -184,6 +185,20 @@ public class AccountChannelServiceImpl implements IAccountChannelService {
     @Override
     public void resetTradePassword(long accountId, String password) {
         fundAccountService.resetTradePassword(accountId, password);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * 寿光市场专用需求
+     */
+    @Override
+    public void checkAccountTradeState(FundAccount account) {
+        AccountStateMachine.accountStateCheck(account);
+        if (account.getParentId() != 0) {
+            FundAccount parent = fundAccountService.findFundAccountById(account.getParentId());
+            AccountStateMachine.accountStateCheck(parent);
+        }
     }
 
     /**

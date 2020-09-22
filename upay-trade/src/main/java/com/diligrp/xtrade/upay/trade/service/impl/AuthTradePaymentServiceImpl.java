@@ -4,6 +4,7 @@ import com.diligrp.xtrade.shared.exception.ServiceAccessException;
 import com.diligrp.xtrade.shared.sequence.IKeyGenerator;
 import com.diligrp.xtrade.shared.sequence.KeyGeneratorManager;
 import com.diligrp.xtrade.shared.sequence.SnowflakeKeyManager;
+import com.diligrp.xtrade.shared.util.ObjectUtils;
 import com.diligrp.xtrade.upay.channel.dao.IFrozenOrderDao;
 import com.diligrp.xtrade.upay.channel.domain.AccountChannel;
 import com.diligrp.xtrade.upay.channel.domain.FrozenStateDto;
@@ -105,6 +106,7 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
         // 冻结资金
         LocalDateTime now = LocalDateTime.now();
         FundAccount fromAccount = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
+        accountChannelService.checkAccountTradeState(fromAccount); // 寿光专用业务逻辑
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
         String paymentId = String.valueOf(keyGenerator.nextId());
         AccountChannel channel = AccountChannel.of(paymentId, fromAccount.getAccountId(), fromAccount.getParentId());
@@ -169,6 +171,10 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
         // 获取商户收益账号信息
         LocalDateTime now = LocalDateTime.now();
         FundAccount fromAccount = accountChannelService.checkTradePermission(payment.getAccountId(), confirm.getPassword(), -1);
+        accountChannelService.checkAccountTradeState(fromAccount); // 寿光专用业务逻辑
+        if (!ObjectUtils.equals(fromAccount.getMchId(), trade.getMchId())) {
+            throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "不能进行跨商户交易");
+        }
         MerchantPermit merchant = merchantDao.findMerchantById(trade.getMchId()).map(mer -> MerchantPermit.of(
             mer.getMchId(), mer.getCode(), mer.getProfitAccount(), mer.getVouchAccount(), mer.getPledgeAccount(),
             mer.getPrivateKey(), mer.getPublicKey())).orElseThrow(
@@ -186,6 +192,7 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
 
         // 处理卖家收款和卖家佣金
         FundAccount toAccount = fundAccountService.findFundAccountById(trade.getAccountId());
+        accountChannelService.checkAccountTradeState(toAccount); // 寿光专用业务逻辑
         AccountChannel toChannel = AccountChannel.of(payment.getPaymentId(), toAccount.getAccountId(), toAccount.getParentId());
         IFundTransaction toTransaction = toChannel.openTransaction(trade.getType(), now);
         toTransaction.income(confirm.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName());
@@ -255,6 +262,7 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
         // 撤销预授权，需验证买方账户状态无须验证密码
         LocalDateTime when = LocalDateTime.now();
         FundAccount account = accountChannelService.checkTradePermission(payment.getAccountId());
+        accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
         Optional<FrozenOrder> orderOpt = frozenOrderDao.findFrozenOrderByPaymentId(payment.getPaymentId());
         FrozenOrder order = orderOpt.orElseThrow(() -> new TradePaymentException(ErrorCode.OBJECT_NOT_FOUND, "冻结订单不存在"));
         if (order.getState() != FrozenState.FROZEN.getCode()) {

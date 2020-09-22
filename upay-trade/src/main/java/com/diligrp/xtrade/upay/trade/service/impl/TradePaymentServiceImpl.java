@@ -3,6 +3,7 @@ package com.diligrp.xtrade.upay.trade.service.impl;
 import com.diligrp.xtrade.shared.exception.ServiceAccessException;
 import com.diligrp.xtrade.shared.sequence.IKeyGenerator;
 import com.diligrp.xtrade.shared.sequence.SnowflakeKeyManager;
+import com.diligrp.xtrade.shared.util.ObjectUtils;
 import com.diligrp.xtrade.upay.channel.domain.AccountChannel;
 import com.diligrp.xtrade.upay.channel.domain.IFundTransaction;
 import com.diligrp.xtrade.upay.channel.service.IAccountChannelService;
@@ -96,6 +97,10 @@ public class TradePaymentServiceImpl implements IPaymentService {
         // 处理买家付款和买家佣金
         LocalDateTime now = LocalDateTime.now();
         FundAccount fromAccount = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
+        accountChannelService.checkAccountTradeState(fromAccount); // 寿光专用业务逻辑
+        if (!ObjectUtils.equals(fromAccount.getMchId(), trade.getMchId())) {
+            throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "不能进行跨商户交易");
+        }
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
         String paymentId = String.valueOf(keyGenerator.nextId());
         AccountChannel fromChannel = AccountChannel.of(paymentId, fromAccount.getAccountId(), fromAccount.getParentId());
@@ -108,6 +113,7 @@ public class TradePaymentServiceImpl implements IPaymentService {
 
         // 处理卖家收款和卖家佣金
         FundAccount toAccount = fundAccountService.findFundAccountById(trade.getAccountId());
+        accountChannelService.checkAccountTradeState(toAccount); // 寿光专用业务逻辑
         AccountChannel toChannel = AccountChannel.of(paymentId, toAccount.getAccountId(), toAccount.getParentId());
         IFundTransaction toTransaction = toChannel.openTransaction(trade.getType(), now);
         toTransaction.income(trade.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName());
@@ -171,6 +177,7 @@ public class TradePaymentServiceImpl implements IPaymentService {
         // 撤销交易，需验证退款方账户状态无须验证密码
         LocalDateTime now = LocalDateTime.now();
         FundAccount fromAccount = accountChannelService.checkTradePermission(trade.getAccountId());
+        accountChannelService.checkAccountTradeState(fromAccount); // 寿光专用业务逻辑
         MerchantPermit merchant = merchantDao.findMerchantById(trade.getMchId()).map(mer -> MerchantPermit.of(
             mer.getMchId(), mer.getCode(), mer.getProfitAccount(), mer.getVouchAccount(), mer.getPledgeAccount(),
             mer.getPrivateKey(), mer.getPublicKey()))
@@ -191,6 +198,7 @@ public class TradePaymentServiceImpl implements IPaymentService {
 
         // 处理买家收款和退佣金
         FundAccount toAccount = fundAccountService.findFundAccountById(payment.getAccountId());
+        accountChannelService.checkAccountTradeState(toAccount); // 寿光专用业务逻辑
         AccountChannel toChannel = AccountChannel.of(paymentId, toAccount.getAccountId(), toAccount.getParentId());
         IFundTransaction toTransaction = toChannel.openTransaction(TradeType.CANCEL_TRADE.getCode(), now);
         fees.stream().filter(PaymentFee::forBuyer).forEach(fee -> {
