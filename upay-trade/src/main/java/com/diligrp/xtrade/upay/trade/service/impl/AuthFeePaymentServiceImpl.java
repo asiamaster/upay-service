@@ -171,8 +171,7 @@ public class AuthFeePaymentServiceImpl extends FeePaymentServiceImpl implements 
         FundAccount account = accountChannelService.checkTradePermission(payment.getAccountId(), confirm.getPassword(), -1);
         accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
         MerchantPermit merchant = merchantDao.findMerchantById(trade.getMchId()).map(mer -> MerchantPermit.of(
-            mer.getMchId(), mer.getCode(), mer.getProfitAccount(), mer.getVouchAccount(), mer.getPledgeAccount(),
-            mer.getPrivateKey(), mer.getPublicKey()))
+            mer.getMchId(), mer.getCode(), mer.getProfitAccount(), mer.getVouchAccount(), mer.getPledgeAccount()))
             .orElseThrow(() -> new ServiceAccessException(ErrorCode.OBJECT_NOT_FOUND, "商户信息未注册"));
         // 客户账号资金解冻并缴费
         AccountChannel channel = AccountChannel.of(payment.getPaymentId(), account.getAccountId(), account.getParentId());

@@ -176,9 +176,8 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
             throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "不能进行跨商户交易");
         }
         MerchantPermit merchant = merchantDao.findMerchantById(trade.getMchId()).map(mer -> MerchantPermit.of(
-            mer.getMchId(), mer.getCode(), mer.getProfitAccount(), mer.getVouchAccount(), mer.getPledgeAccount(),
-            mer.getPrivateKey(), mer.getPublicKey())).orElseThrow(
-            () -> new ServiceAccessException(ErrorCode.OBJECT_NOT_FOUND, "商户信息未注册"));
+            mer.getMchId(), mer.getCode(), mer.getProfitAccount(), mer.getVouchAccount(), mer.getPledgeAccount()))
+            .orElseThrow(() -> new ServiceAccessException(ErrorCode.OBJECT_NOT_FOUND, "商户信息未注册"));
 
         // 处理买家付款和买家佣金
         AccountChannel fromChannel = AccountChannel.of(payment.getPaymentId(), fromAccount.getAccountId(), fromAccount.getParentId());
