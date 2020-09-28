@@ -13,6 +13,7 @@ import com.diligrp.xtrade.upay.boss.util.Constants;
 import com.diligrp.xtrade.upay.boss.util.HttpUtils;
 import com.diligrp.xtrade.upay.core.ErrorCode;
 import com.diligrp.xtrade.upay.core.domain.ApplicationPermit;
+import com.diligrp.xtrade.upay.core.domain.MerchantPermit;
 import com.diligrp.xtrade.upay.core.exception.PaymentServiceException;
 import com.diligrp.xtrade.upay.core.service.IAccessPermitService;
 import com.diligrp.xtrade.upay.core.service.IPaymentConfigService;
@@ -70,8 +71,8 @@ public class PaymentPlatformController {
             application = checkAccessPermission(context, mchId, envelop);
             // 获取"接口数据签名验签"系统配置
             signCheck = paymentConfigService.dataSignSwitch(application.getMerchant().getCode());
-            if (signCheck) {
-                envelop.unpackEnvelop(application.getPublicKey());
+            if (signCheck) { // 应用公钥验签
+                envelop.unpackEnvelop(application.getAppPublicKey());
             }
             result = callableServiceManager.callService(context, envelop);
         } catch (IllegalArgumentException iex) {
@@ -94,8 +95,8 @@ public class PaymentPlatformController {
         // 处理数据签名: 忽略签名失败，签名失败时调用方会验签失败
         MessageEnvelop reply = MessageEnvelop.of(null, JsonUtils.toJsonString(result));
         try {
-            if (signCheck) {
-                reply.packEnvelop(application.getMerchant().getPrivateKey());
+            if (signCheck) { // 平台私钥签名
+                reply.packEnvelop(application.getPrivateKey());
                 response.addHeader(Constants.PARAM_SIGNATURE, reply.getSignature());
             }
         } catch (Exception ex) {
@@ -108,12 +109,14 @@ public class PaymentPlatformController {
      * 检查接口访问权限，验证应用accessToken
      */
     private ApplicationPermit checkAccessPermission(RequestContext context, Long mchId, MessageEnvelop envelop) {
-        ApplicationPermit application = accessPermitService.loadApplicationPermit(mchId, envelop.getAppId());
+        MerchantPermit merchant = accessPermitService.loadMerchantPermit(mchId);
+        ApplicationPermit application = accessPermitService.loadApplicationPermit(envelop.getAppId());
 
         // 校验应用访问权限, 暂时不校验商户状态
         if (!ObjectUtils.equals(envelop.getAccessToken(), application.getAccessToken())) {
             throw new ServiceAccessException(ErrorCode.UNAUTHORIZED_ACCESS_ERROR, "未授权的服务访问");
         }
+        application.setMerchant(merchant);
         context.put(ApplicationPermit.class.getName(), application);
         return application;
     }

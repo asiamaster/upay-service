@@ -14,8 +14,10 @@ import com.diligrp.xtrade.upay.core.exception.FundAccountException;
 import com.diligrp.xtrade.upay.core.model.AccountFund;
 import com.diligrp.xtrade.upay.core.model.FundAccount;
 import com.diligrp.xtrade.upay.core.service.IFundAccountService;
+import com.diligrp.xtrade.upay.core.type.AccountPermission;
 import com.diligrp.xtrade.upay.core.type.AccountState;
 import com.diligrp.xtrade.upay.core.type.AccountType;
+import com.diligrp.xtrade.upay.core.type.IdType;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
 import com.diligrp.xtrade.upay.core.type.UseFor;
 import com.diligrp.xtrade.upay.core.util.AccountStateMachine;
@@ -51,14 +53,14 @@ public class FundAccountServiceImpl implements IFundAccountService {
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public long createFundAccount(Long mchId, RegisterAccount account) {
-        AccountType.getType(account.getType()).orElseThrow(
-            () -> new FundAccountException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "无效的账号类型"));
-        UseFor.getType(account.getUseFor()).orElseThrow(
-            () -> new FundAccountException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "无效的业务用途"));
-        if (account.getGender() != null) {
-            Gender.getGender(account.getGender()).orElseThrow(
-                () -> new FundAccountException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "无效的性别"));
-        }
+        AccountType.getType(account.getType())
+            .orElseThrow(() -> new FundAccountException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "无效的账号类型"));
+        UseFor.getType(account.getUseFor())
+            .orElseThrow(() -> new FundAccountException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "无效的业务用途"));
+        Optional.ofNullable(account.getGender()).ifPresent(gender -> Gender.getGender(gender)
+            .orElseThrow(() -> new FundAccountException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "无效的性别")));
+        Optional.ofNullable(account.getIdType()).ifPresent(idType -> IdType.getType(idType)
+            .orElseThrow(() -> new FundAccountException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "无效的证件类型")));
 
         LocalDateTime when = LocalDateTime.now();
         IKeyGenerator keyGenerator = keyGeneratorManager.getKeyGenerator(SequenceKey.FUND_ACCOUNT);
@@ -66,13 +68,12 @@ public class FundAccountServiceImpl implements IFundAccountService {
         long accountId = AsyncTaskExecutor.submit(() -> keyGenerator.nextId());
         String secretKey = PasswordUtils.generateSecretKey();
         String password = PasswordUtils.encrypt(account.getPassword(), secretKey);
-
         long parentId = account.getParentId() == null ? 0L : account.getParentId();
         FundAccount fundAccount = FundAccount.builder().customerId(account.getCustomerId()).accountId(accountId)
-            .parentId(parentId).type(account.getType()).useFor(account.getUseFor()).code(account.getCode())
+            .parentId(parentId).type(account.getType()).useFor(account.getUseFor()).permission(AccountPermission.ALL_PERMISSION)
             .name(account.getName()).gender(account.getGender()).mobile(account.getMobile()).email(account.getEmail())
-            .idCode(account.getIdCode()).address(account.getAddress()).password(password).secretKey(secretKey)
-            .state(AccountState.NORMAL.getCode()).mchId(mchId).version(0).createdTime(when).build();
+            .idType(account.getIdType()).idCode(account.getIdCode()).address(account.getAddress()).password(password)
+            .secretKey(secretKey).state(AccountState.NORMAL.getCode()).mchId(mchId).version(0).createdTime(when).build();
         // 创建子账户检查主资金账户状态
         fundAccount.ifChildAccount(act -> {
             Optional<FundAccount> masterOpt = fundAccountDao.findFundAccountById(account.getParentId());
@@ -192,7 +193,6 @@ public class FundAccountServiceImpl implements IFundAccountService {
         FundAccount account = accountOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
         accountOpt.ifPresent(AccountStateMachine::updateAccountCheck);
         String newPassword = PasswordUtils.encrypt(password, account.getSecretKey());
-        account.setLoginPwd(newPassword);
         account.setPassword(newPassword);
         account.setModifiedTime(LocalDateTime.now());
         fundAccountDao.updateFundAccount(account);

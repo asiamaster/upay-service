@@ -17,8 +17,12 @@ public class Application extends BaseDo {
     // 授权Token
     private String accessToken;
     // 应用私钥
-    private String privateKey;
+    private String appPrivateKey;
     // 应用公钥
+    private String appPublicKey;
+    // 平台私钥
+    private String privateKey;
+    // 平台公钥
     private String publicKey;
 
     public Long getAppId() {
@@ -51,6 +55,22 @@ public class Application extends BaseDo {
 
     public void setAccessToken(String accessToken) {
         this.accessToken = accessToken;
+    }
+
+    public String getAppPrivateKey() {
+        return appPrivateKey;
+    }
+
+    public void setAppPrivateKey(String appPrivateKey) {
+        this.appPrivateKey = appPrivateKey;
+    }
+
+    public String getAppPublicKey() {
+        return appPublicKey;
+    }
+
+    public void setAppPublicKey(String appPublicKey) {
+        this.appPublicKey = appPublicKey;
     }
 
     public String getPrivateKey() {
@@ -91,6 +111,16 @@ public class Application extends BaseDo {
 
         public Builder accessToken(String accessToken) {
             Application.this.accessToken = accessToken;
+            return this;
+        }
+
+        public Builder appPrivateKey(String appPrivateKey) {
+            Application.this.appPrivateKey = appPrivateKey;
+            return this;
+        }
+
+        public Builder appPublicKey(String appPublicKey) {
+            Application.this.appPublicKey = appPublicKey;
             return this;
         }
 

@@ -26,10 +26,6 @@ public class Merchant extends BaseDo {
     private String contact;
     // 手机号
     private String mobile;
-    // 商户私钥
-    private String privateKey;
-    // 商户公钥
-    private String publicKey;
     // 商户状态
     private Integer state;
 
@@ -105,22 +101,6 @@ public class Merchant extends BaseDo {
         this.mobile = mobile;
     }
 
-    public String getPrivateKey() {
-        return privateKey;
-    }
-
-    public void setPrivateKey(String privateKey) {
-        this.privateKey = privateKey;
-    }
-
-    public String getPublicKey() {
-        return publicKey;
-    }
-
-    public void setPublicKey(String publicKey) {
-        this.publicKey = publicKey;
-    }
-
     public Integer getState() {
         return state;
     }
@@ -176,16 +156,6 @@ public class Merchant extends BaseDo {
 
         public Builder mobile(String mobile) {
             Merchant.this.mobile = mobile;
-            return this;
-        }
-
-        public Builder privateKey(String privateKey) {
-            Merchant.this.privateKey = privateKey;
-            return this;
-        }
-
-        public Builder publicKey(String publicKey) {
-            Merchant.this.publicKey = publicKey;
             return this;
         }
 

@@ -10,8 +10,6 @@ public class RegisterApplication {
     private Long mchId;
     // 应用名称
     private String name;
-    // 授权Token
-    private String accessToken;
 
     public Long getAppId() {
         return appId;
@@ -35,13 +33,5 @@ public class RegisterApplication {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public String getAccessToken() {
-        return accessToken;
-    }
-
-    public void setAccessToken(String accessToken) {
-        this.accessToken = accessToken;
     }
 }

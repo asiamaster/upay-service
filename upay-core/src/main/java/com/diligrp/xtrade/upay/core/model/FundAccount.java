@@ -19,8 +19,8 @@ public class FundAccount extends BaseDo {
     private Integer type;
     // 业务用途
     private Integer useFor;
-    // 登录账号 - 客户编码
-    private String code;
+    // 账户权限
+    private Integer permission;
     // 用户名
     private String name;
     // 性别
@@ -29,24 +29,20 @@ public class FundAccount extends BaseDo {
     private String mobile;
     // 邮箱地址
     private String email;
-    // 身份证号码
+    // 证件类型
+    private Integer idType;
+    // 证件号码
     private String idCode;
     // 联系地址
     private String address;
-    // 登陆密码
-    private String loginPwd;
     // 交易密码
     private String password;
-    // 最近登陆时间
-    private LocalDateTime loginTime;
     // 安全密钥
     private String secretKey;
     // 账号状态
     private Integer state;
     // 商户ID
     private Long mchId;
-    // 锁定时间
-    private LocalDateTime lockTime;
     // 数据版本号
     private Integer version;
 
@@ -90,12 +86,12 @@ public class FundAccount extends BaseDo {
         this.useFor = useFor;
     }
 
-    public String getCode() {
-        return code;
+    public Integer getPermission() {
+        return permission;
     }
 
-    public void setCode(String code) {
-        this.code = code;
+    public void setPermission(Integer permission) {
+        this.permission = permission;
     }
 
     public String getName() {
@@ -130,6 +126,14 @@ public class FundAccount extends BaseDo {
         this.email = email;
     }
 
+    public Integer getIdType() {
+        return idType;
+    }
+
+    public void setIdType(Integer idType) {
+        this.idType = idType;
+    }
+
     public String getIdCode() {
         return idCode;
     }
@@ -146,28 +150,12 @@ public class FundAccount extends BaseDo {
         this.address = address;
     }
 
-    public String getLoginPwd() {
-        return loginPwd;
-    }
-
-    public void setLoginPwd(String loginPwd) {
-        this.loginPwd = loginPwd;
-    }
-
     public String getPassword() {
         return password;
     }
 
     public void setPassword(String password) {
         this.password = password;
-    }
-
-    public LocalDateTime getLoginTime() {
-        return loginTime;
-    }
-
-    public void setLoginTime(LocalDateTime loginTime) {
-        this.loginTime = loginTime;
     }
 
     public String getSecretKey() {
@@ -192,14 +180,6 @@ public class FundAccount extends BaseDo {
 
     public void setMchId(Long mchId) {
         this.mchId = mchId;
-    }
-
-    public LocalDateTime getLockTime() {
-        return lockTime;
-    }
-
-    public void setLockTime(LocalDateTime lockTime) {
-        this.lockTime = lockTime;
     }
 
     public Integer getVersion() {
@@ -252,9 +232,9 @@ public class FundAccount extends BaseDo {
             return this;
         }
 
-        public Builder code(String code) {
-            FundAccount.this.code = code;
-            return this;
+        public Builder permission(Integer permission) {
+           FundAccount.this.permission = permission;
+           return this;
         }
 
         public Builder name(String name) {
@@ -275,6 +255,11 @@ public class FundAccount extends BaseDo {
         public Builder email(String email) {
             FundAccount.this.email = email;
             return this;
+        }
+
+        public Builder idType(Integer idType) {
+           FundAccount.this.idType = idType;
+           return this;
         }
 
         public Builder idCode(String idCode) {

@@ -12,6 +12,10 @@ public class ApplicationPermit {
     private String privateKey;
     // 应用公钥
     private String publicKey;
+    // 平台私钥
+    private String appPrivateKey;
+    // 平台公钥
+    private String appPublicKey;
     // 商户信息
     private MerchantPermit merchant;
 
@@ -47,6 +51,22 @@ public class ApplicationPermit {
         this.publicKey = publicKey;
     }
 
+    public String getAppPrivateKey() {
+        return appPrivateKey;
+    }
+
+    public void setAppPrivateKey(String appPrivateKey) {
+        this.appPrivateKey = appPrivateKey;
+    }
+
+    public String getAppPublicKey() {
+        return appPublicKey;
+    }
+
+    public void setAppPublicKey(String appPublicKey) {
+        this.appPublicKey = appPublicKey;
+    }
+
     public MerchantPermit getMerchant() {
         return merchant;
     }
@@ -55,10 +75,13 @@ public class ApplicationPermit {
         this.merchant = merchant;
     }
 
-    public static ApplicationPermit of(Long appId, String accessToken, String privateKey, String publicKey, MerchantPermit merchant) {
+    public static ApplicationPermit of(Long appId, String accessToken, String appPrivateKey, String appPublicKey,
+                                       String privateKey, String publicKey, MerchantPermit merchant) {
         ApplicationPermit permit = new ApplicationPermit();
         permit.setAppId(appId);
         permit.setAccessToken(accessToken);
+        permit.setAppPrivateKey(appPrivateKey);
+        permit.setAppPublicKey(appPublicKey);
         permit.setPrivateKey(privateKey);
         permit.setPublicKey(publicKey);
         permit.setMerchant(merchant);
@@ -66,9 +89,12 @@ public class ApplicationPermit {
         return permit;
     }
 
-    public static ApplicationPermit of(Long appId, String accessToken, String privateKey, String publicKey) {
+    public static ApplicationPermit of(Long appId, String accessToken, String appPrivateKey, String appPublicKey,
+                                       String privateKey, String publicKey) {
         ApplicationPermit permit = new ApplicationPermit();
         permit.setAppId(appId);
+        permit.setAppPrivateKey(appPrivateKey);
+        permit.setAppPublicKey(appPublicKey);
         permit.setAccessToken(accessToken);
         permit.setPrivateKey(privateKey);
         permit.setPublicKey(publicKey);
