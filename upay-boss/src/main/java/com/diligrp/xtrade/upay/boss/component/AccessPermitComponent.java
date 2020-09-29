@@ -49,7 +49,6 @@ public class AccessPermitComponent {
     public ApplicationPermit application(ServiceRequest<RegisterApplication> request) {
         RegisterApplication application = request.getData();
         AssertUtils.notNull(application.getAppId(), "appId missed");
-        AssertUtils.notNull(application.getMchId(), "mchId missed");
         AssertUtils.notEmpty(application.getName(), "name missed");
 
         return accessPermitService.registerApplication(application);

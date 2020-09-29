@@ -6,13 +6,13 @@ import com.diligrp.xtrade.shared.sequence.KeyGeneratorManager;
 import com.diligrp.xtrade.shared.type.Gender;
 import com.diligrp.xtrade.shared.util.ObjectUtils;
 import com.diligrp.xtrade.upay.core.ErrorCode;
-import com.diligrp.xtrade.upay.core.dao.IAccountFundDao;
 import com.diligrp.xtrade.upay.core.dao.IFundAccountDao;
+import com.diligrp.xtrade.upay.core.dao.IUserAccountDao;
 import com.diligrp.xtrade.upay.core.domain.AccountStateDto;
 import com.diligrp.xtrade.upay.core.domain.RegisterAccount;
 import com.diligrp.xtrade.upay.core.exception.FundAccountException;
-import com.diligrp.xtrade.upay.core.model.AccountFund;
 import com.diligrp.xtrade.upay.core.model.FundAccount;
+import com.diligrp.xtrade.upay.core.model.UserAccount;
 import com.diligrp.xtrade.upay.core.service.IFundAccountService;
 import com.diligrp.xtrade.upay.core.type.AccountPermission;
 import com.diligrp.xtrade.upay.core.type.AccountState;
@@ -39,10 +39,10 @@ import java.util.Optional;
 public class FundAccountServiceImpl implements IFundAccountService {
 
     @Resource
-    private IFundAccountDao fundAccountDao;
+    private IUserAccountDao fundAccountDao;
 
     @Resource
-    private IAccountFundDao accountFundDao;
+    private IFundAccountDao accountFundDao;
 
     @Resource
     private KeyGeneratorManager keyGeneratorManager;
@@ -69,24 +69,24 @@ public class FundAccountServiceImpl implements IFundAccountService {
         String secretKey = PasswordUtils.generateSecretKey();
         String password = PasswordUtils.encrypt(account.getPassword(), secretKey);
         long parentId = account.getParentId() == null ? 0L : account.getParentId();
-        FundAccount fundAccount = FundAccount.builder().customerId(account.getCustomerId()).accountId(accountId)
+        UserAccount userAccount = UserAccount.builder().customerId(account.getCustomerId()).accountId(accountId)
             .parentId(parentId).type(account.getType()).useFor(account.getUseFor()).permission(AccountPermission.ALL_PERMISSION)
             .name(account.getName()).gender(account.getGender()).mobile(account.getMobile()).email(account.getEmail())
             .idType(account.getIdType()).idCode(account.getIdCode()).address(account.getAddress()).password(password)
             .secretKey(secretKey).state(AccountState.NORMAL.getCode()).mchId(mchId).version(0).createdTime(when).build();
         // 创建子账户检查主资金账户状态
-        fundAccount.ifChildAccount(act -> {
-            Optional<FundAccount> masterOpt = fundAccountDao.findFundAccountById(account.getParentId());
+        userAccount.ifChildAccount(act -> {
+            Optional<UserAccount> masterOpt = fundAccountDao.findUserAccountById(account.getParentId());
             masterOpt.ifPresent(AccountStateMachine::registerSubAccountCheck);
             masterOpt.orElseThrow(() -> new FundAccountException(ErrorCode.OPERATION_NOT_ALLOWED, "主资金账户不存在"));
         });
-        fundAccountDao.insertFundAccount(fundAccount);
+        fundAccountDao.insertUserAccount(userAccount);
 
         // 子账户无须创建账户资金，共享主账户资金
-        fundAccount.ifMasterAccount(act -> {
-            AccountFund accountFund = AccountFund.builder().accountId(accountId).balance(0L).frozenAmount(0L)
+        userAccount.ifMasterAccount(act -> {
+            FundAccount fundAccount = FundAccount.builder().accountId(accountId).balance(0L).frozenAmount(0L)
                 .vouchAmount(0L).version(0).createdTime(when).build();
-            accountFundDao.insertAccountFund(accountFund);
+            accountFundDao.insertFundAccount(fundAccount);
         });
 
         return accountId;
@@ -98,7 +98,7 @@ public class FundAccountServiceImpl implements IFundAccountService {
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public void freezeFundAccount(Long accountId) {
-        Optional<FundAccount> accountOpt = fundAccountDao.findFundAccountById(accountId);
+        Optional<UserAccount> accountOpt = fundAccountDao.findUserAccountById(accountId);
         accountOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
         accountOpt.ifPresent(AccountStateMachine::freezeAccountCheck);
 
@@ -116,7 +116,7 @@ public class FundAccountServiceImpl implements IFundAccountService {
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public void unfreezeFundAccount(Long accountId) {
-        Optional<FundAccount> accountOpt = fundAccountDao.findFundAccountById(accountId);
+        Optional<UserAccount> accountOpt = fundAccountDao.findUserAccountById(accountId);
         accountOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
         accountOpt.ifPresent(AccountStateMachine::unfreezeAccountCheck);
 
@@ -136,18 +136,18 @@ public class FundAccountServiceImpl implements IFundAccountService {
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public void unregisterFundAccount(Long mchId, Long accountId) {
-        Optional<FundAccount> accountOpt = fundAccountDao.findFundAccountById(accountId);
-        FundAccount account = accountOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
+        Optional<UserAccount> accountOpt = fundAccountDao.findUserAccountById(accountId);
+        UserAccount account = accountOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
         if (!ObjectUtils.equals(account.getMchId(), mchId)) {
             throw new FundAccountException(ErrorCode.OPERATION_NOT_ALLOWED, "不能注销该商户下的资金账号");
         }
         accountOpt.ifPresent(AccountStateMachine::unregisterAccountCheck);
-        Optional<AccountFund> fundOpt = accountFundDao.findAccountFundById(accountId);
+        Optional<FundAccount> fundOpt = accountFundDao.findFundAccountById(accountId);
         fundOpt.ifPresent(AccountStateMachine::unregisterFundCheck);
 
         // 不能注销存在子账号的资金账号
         account.ifMasterAccount(act -> {
-            List<FundAccount> children = fundAccountDao.findFundAccountByParentId(account.getAccountId());
+            List<UserAccount> children = fundAccountDao.findUserAccountByParentId(account.getAccountId());
             children.stream().forEach(AccountStateMachine::unregisterAccountByChildCheck);
         });
         AccountStateDto accountState = AccountStateDto.of(accountId, AccountState.VOID.getCode(),
@@ -159,8 +159,8 @@ public class FundAccountServiceImpl implements IFundAccountService {
     }
 
     @Override
-    public FundAccount findFundAccountById(Long accountId) {
-        Optional<FundAccount> accountOpt = fundAccountDao.findFundAccountById(accountId);
+    public UserAccount findFundAccountById(Long accountId) {
+        Optional<UserAccount> accountOpt = fundAccountDao.findUserAccountById(accountId);
         accountOpt.ifPresent(AccountStateMachine::voidAccountCheck);
         return accountOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
     }
@@ -175,8 +175,8 @@ public class FundAccountServiceImpl implements IFundAccountService {
      */
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW, isolation = Isolation.READ_COMMITTED)
-    public AccountFund findAccountFundById(Long accountId) {
-        Optional<AccountFund> fundOpt = accountFundDao.findAccountFundById(accountId);
+    public FundAccount findAccountFundById(Long accountId) {
+        Optional<FundAccount> fundOpt = accountFundDao.findFundAccountById(accountId);
         return fundOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "账号资金不存在"));
     }
 
@@ -189,12 +189,12 @@ public class FundAccountServiceImpl implements IFundAccountService {
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public void resetTradePassword(long accountId, String password) {
-        Optional<FundAccount> accountOpt = fundAccountDao.findFundAccountById(accountId);
-        FundAccount account = accountOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
+        Optional<UserAccount> accountOpt = fundAccountDao.findUserAccountById(accountId);
+        UserAccount account = accountOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
         accountOpt.ifPresent(AccountStateMachine::updateAccountCheck);
         String newPassword = PasswordUtils.encrypt(password, account.getSecretKey());
         account.setPassword(newPassword);
         account.setModifiedTime(LocalDateTime.now());
-        fundAccountDao.updateFundAccount(account);
+        fundAccountDao.updateUserAccount(account);
     }
 }

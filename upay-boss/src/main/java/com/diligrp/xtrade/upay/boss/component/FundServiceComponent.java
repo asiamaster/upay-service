@@ -16,7 +16,7 @@ import com.diligrp.xtrade.upay.channel.model.FrozenOrder;
 import com.diligrp.xtrade.upay.channel.service.IAccountChannelService;
 import com.diligrp.xtrade.upay.channel.service.IFrozenOrderService;
 import com.diligrp.xtrade.upay.channel.type.FrozenType;
-import com.diligrp.xtrade.upay.core.model.AccountFund;
+import com.diligrp.xtrade.upay.core.model.FundAccount;
 
 import javax.annotation.Resource;
 import java.util.List;
@@ -61,8 +61,8 @@ public class FundServiceComponent {
         AccountId accountId = request.getData();
         AssertUtils.notNull(accountId.getAccountId(), "accountId missed");
 
-        AccountFund accountFund = accountChannelService.queryAccountFund(accountId.getAccountId());
-        return FundBalance.of(accountFund.getAccountId(), accountFund.getBalance(), accountFund.getFrozenAmount());
+        FundAccount fundAccount = accountChannelService.queryAccountFund(accountId.getAccountId());
+        return FundBalance.of(fundAccount.getAccountId(), fundAccount.getBalance(), fundAccount.getFrozenAmount());
     }
 
     /**

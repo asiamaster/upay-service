@@ -6,8 +6,6 @@ package com.diligrp.xtrade.upay.core.domain;
 public class RegisterApplication {
     // 应用ID
     private Long appId;
-    // 商户ID
-    private Long mchId;
     // 应用名称
     private String name;
 
@@ -17,14 +15,6 @@ public class RegisterApplication {
 
     public void setAppId(Long appId) {
         this.appId = appId;
-    }
-
-    public Long getMchId() {
-        return mchId;
-    }
-
-    public void setMchId(Long mchId) {
-        this.mchId = mchId;
     }
 
     public String getName() {

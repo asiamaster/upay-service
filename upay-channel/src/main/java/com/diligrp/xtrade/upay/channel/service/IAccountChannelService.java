@@ -5,8 +5,8 @@ import com.diligrp.xtrade.upay.channel.domain.FrozenStatus;
 import com.diligrp.xtrade.upay.channel.domain.IFundTransaction;
 import com.diligrp.xtrade.upay.core.domain.RegisterAccount;
 import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
-import com.diligrp.xtrade.upay.core.model.AccountFund;
 import com.diligrp.xtrade.upay.core.model.FundAccount;
+import com.diligrp.xtrade.upay.core.model.UserAccount;
 
 /**
  * 账户/余额渠道服务接口
@@ -50,17 +50,17 @@ public interface IAccountChannelService {
     /**
      * 查询平台账户资金信息
      */
-    AccountFund queryAccountFund(Long accountId);
+    FundAccount queryAccountFund(Long accountId);
 
     /**
      * 检查交易权限：账户状态、交易密码
      */
-    FundAccount checkTradePermission(long accountId, String password, int maxPwdErrors);
+    UserAccount checkTradePermission(long accountId, String password, int maxPwdErrors);
 
     /**
      * 检查交易权限：账户状态
      */
-    FundAccount checkTradePermission(long accountId);
+    UserAccount checkTradePermission(long accountId);
 
     /**
      * 重置交易密码: 不验证原密码
@@ -70,5 +70,5 @@ public interface IAccountChannelService {
     /**
      * 寿光市场需求：买卖家资金账户状态必须正常才允许交易，并且子账户交易时父账户状态必须正常
      */
-    void checkAccountTradeState(FundAccount account);
+    void checkAccountTradeState(UserAccount account);
 }

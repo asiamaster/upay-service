@@ -53,7 +53,7 @@ public class AccessPermitServiceImpl implements IAccessPermitService {
     public MerchantPermit loadMerchantPermit(Long mchId) {
         MerchantPermit permit = merchants.get(mchId);
         if (permit == null) {
-            synchronized (permit) {
+            synchronized (merchants) {
                 if ((permit = merchants.get(mchId)) == null) {
                     permit = merchantDao.findMerchantById(mchId)
                         .map(mer -> MerchantPermit.of(mer.getMchId(), mer.getCode(), mer.getProfitAccount(),
@@ -142,10 +142,8 @@ public class AccessPermitServiceImpl implements IAccessPermitService {
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public ApplicationPermit registerApplication(RegisterApplication request) {
-        Optional<Merchant> merchantOpt = merchantDao.findMerchantById(request.getMchId());
-        merchantOpt.orElseThrow(() -> new PaymentServiceException(ErrorCode.OBJECT_NOT_FOUND, "商户信息未注册"));
         Optional<Application> applicationOpt = merchantDao.findApplicationById(request.getAppId());
-        applicationOpt.ifPresent(application -> new PaymentServiceException(ErrorCode.OBJECT_ALREADY_EXISTS, "接入应用已存在"));
+        applicationOpt.ifPresent(app -> { throw new PaymentServiceException(ErrorCode.OBJECT_ALREADY_EXISTS, "接入应用已存在");});
 
         LocalDateTime now = LocalDateTime.now();
         ApplicationPermit permit;
@@ -156,7 +154,7 @@ public class AccessPermitServiceImpl implements IAccessPermitService {
         } catch (Exception ex) {
             throw new PaymentServiceException("生成应用安全密钥失败", ex);
         }
-        Application application = Application.builder().appId(request.getAppId()).mchId(request.getMchId())
+        Application application = Application.builder().appId(request.getAppId()).mchId(0L)
             .name(request.getName()).accessToken(permit.getAccessToken()).appPrivateKey(permit.getAppPrivateKey())
             .appPublicKey(permit.getAppPublicKey()).privateKey(permit.getPrivateKey()).publicKey(permit.getPublicKey())
             .createdTime(now).build();

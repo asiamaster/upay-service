@@ -1,10 +1,8 @@
 package com.diligrp.xtrade.upay.core.service;
 
 import com.diligrp.xtrade.upay.core.domain.RegisterAccount;
-import com.diligrp.xtrade.upay.core.model.AccountFund;
 import com.diligrp.xtrade.upay.core.model.FundAccount;
-
-import java.util.Optional;
+import com.diligrp.xtrade.upay.core.model.UserAccount;
 
 /**
  * 资金账户服务接口
@@ -33,12 +31,12 @@ public interface IFundAccountService {
     /**
      * 根据账号ID查询资金账户
      */
-    FundAccount findFundAccountById(Long accountId);
+    UserAccount findFundAccountById(Long accountId);
 
     /**
      * 根据账号ID查询账户资金
      */
-    AccountFund findAccountFundById(Long accountId);
+    FundAccount findAccountFundById(Long accountId);
 
     /**
      * 重置账户交易密码
