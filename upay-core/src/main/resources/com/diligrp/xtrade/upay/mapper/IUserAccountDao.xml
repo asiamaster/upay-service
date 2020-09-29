@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.diligrp.xtrade.upay.core.dao.IUserAccountDao">
+    <resultMap id="UserAccountMap" type="com.diligrp.xtrade.upay.core.model.UserAccount">
+        <id column="id" property="id"/>
+        <result column="customer_id" property="customerId"/>
+        <result column="account_id" property="accountId"/>
+        <result column="parent_id" property="parentId"/>
+        <result column="type" property="type"/>
+        <result column="use_for" property="useFor"/>
+        <result column="permission" property="permission"/>
+        <result column="name" property="name"/>
+        <result column="gender" property="gender"/>
+        <result column="mobile" property="mobile"/>
+        <result column="email" property="email"/>
+        <result column="id_type" property="idType"/>
+        <result column="id_code" property="idCode"/>
+        <result column="address" property="address"/>
+        <result column="password" property="password"/>
+        <result column="secret_key" property="secretKey"/>
+        <result column="state" property="state"/>
+        <result column="mch_id" property="mchId"/>
+        <result column="version" property="version"/>
+        <result column="created_time" property="createdTime"/>
+        <result column="modified_time" property="modifiedTime"/>
+    </resultMap>
+
+    <insert id="insertUserAccount" parameterType="com.diligrp.xtrade.upay.core.model.UserAccount">
+        INSERT INTO upay_user_account(customer_id, account_id, parent_id, type, use_for, permission, name, gender,
+          mobile, email, id_type, id_code, address, password, secret_key, state, mch_id, version, created_time, modified_time)
+        VALUES
+          (#{customerId}, #{accountId}, #{parentId}, #{type}, #{useFor}, #{permission}, #{name}, #{gender},
+           #{mobile}, #{email}, #{idType}, #{idCode}, #{address}, #{password}, #{secretKey},
+           #{state}, #{mchId}, #{version}, #{createdTime}, #{modifiedTime})
+    </insert>
+
+    <update id="updateUserAccount" parameterType="com.diligrp.xtrade.upay.core.model.UserAccount">
+        UPDATE upay_user_account
+        <set>
+            <if test="name != null">
+                name = #{name},
+            </if>
+            <if test="mobile != null">
+                mobile = #{mobile},
+            </if>
+            <if test="address != null">
+                address = #{address},
+            </if>
+            <if test="password != null">
+                password = #{password},
+            </if>
+            <if test="modifiedTime != null">
+                modified_time = #{modifiedTime},
+            </if>
+        </set>
+        where account_id = #{accountId}
+    </update>
+
+    <select id="findUserAccountById" parameterType="long" resultMap="UserAccountMap">
+        SELECT * FROM upay_user_account WHERE account_id = #{accountId}
+    </select>
+
+    <select id="findUserAccountByParentId" parameterType="long" resultMap="UserAccountMap">
+        SELECT * FROM upay_user_account WHERE parent_id = #{parentId}
+    </select>
+
+    <update id="compareAndSetState" parameterType="com.diligrp.xtrade.upay.core.domain.AccountStateDto">
+        UPDATE
+            upay_user_account
+        SET
+            state = #{state}, modified_time = #{modifiedTime}, version = version + 1
+        WHERE
+            account_id = #{accountId} AND version = #{version}
+    </update>
+</mapper>

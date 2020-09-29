@@ -9,7 +9,7 @@ import com.diligrp.xtrade.upay.channel.service.IAccountChannelService;
 import com.diligrp.xtrade.upay.channel.type.ChannelType;
 import com.diligrp.xtrade.upay.core.ErrorCode;
 import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
-import com.diligrp.xtrade.upay.core.model.FundAccount;
+import com.diligrp.xtrade.upay.core.model.UserAccount;
 import com.diligrp.xtrade.upay.core.service.IFundAccountService;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
 import com.diligrp.xtrade.upay.trade.dao.ITradeOrderDao;
@@ -72,7 +72,7 @@ public class TransferPaymentServiceImpl implements IPaymentService {
 
         // 交易转出
         LocalDateTime now = LocalDateTime.now();
-        FundAccount fromAccount = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
+        UserAccount fromAccount = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
         accountChannelService.checkAccountTradeState(fromAccount); // 寿光专用业务逻辑
         if (!ObjectUtils.equals(fromAccount.getMchId(), trade.getAccountId())) {
             throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "不能进行跨商户转账");
@@ -85,7 +85,7 @@ public class TransferPaymentServiceImpl implements IPaymentService {
         TransactionStatus status = accountChannelService.submit(fromTransaction);
 
         // 交易转入
-        FundAccount toAccount = fundAccountService.findFundAccountById(trade.getAccountId());
+        UserAccount toAccount = fundAccountService.findFundAccountById(trade.getAccountId());
         accountChannelService.checkAccountTradeState(toAccount); // 寿光专用业务逻辑
         AccountChannel toChannel = AccountChannel.of(paymentId, toAccount.getAccountId(), toAccount.getParentId());
         IFundTransaction toTransaction = toChannel.openTransaction(trade.getType(), now);

@@ -12,7 +12,7 @@ import com.diligrp.xtrade.upay.core.ErrorCode;
 import com.diligrp.xtrade.upay.core.dao.IMerchantDao;
 import com.diligrp.xtrade.upay.core.domain.MerchantPermit;
 import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
-import com.diligrp.xtrade.upay.core.model.FundAccount;
+import com.diligrp.xtrade.upay.core.model.UserAccount;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
 import com.diligrp.xtrade.upay.trade.dao.IPaymentFeeDao;
 import com.diligrp.xtrade.upay.trade.dao.IRefundPaymentDao;
@@ -96,7 +96,7 @@ public class FeePaymentServiceImpl implements IPaymentService {
         // 处理账户余额缴费
         TransactionStatus status = null;
         LocalDateTime now = LocalDateTime.now();
-        FundAccount account = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
+        UserAccount account = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
         accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
         String paymentId = String.valueOf(keyGenerator.nextId());
@@ -160,13 +160,12 @@ public class FeePaymentServiceImpl implements IPaymentService {
 
         // 撤销缴费，需验证缴费账户状态无须验证密码
         LocalDateTime now = LocalDateTime.now();
-        FundAccount account = accountChannelService.checkTradePermission(trade.getAccountId());
+        UserAccount account = accountChannelService.checkTradePermission(trade.getAccountId());
         accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
         // 获取交易订单中的商户收益账号信息，并处理商户退款
         MerchantPermit merchant = merchantDao.findMerchantById(trade.getMchId()).map(mer -> MerchantPermit.of(
-            mer.getMchId(), mer.getCode(), mer.getProfitAccount(), mer.getVouchAccount(), mer.getPledgeAccount(),
-            mer.getPrivateKey(), mer.getPublicKey())).orElseThrow(
-            () -> new ServiceAccessException(ErrorCode.OBJECT_NOT_FOUND, "商户信息未注册"));
+            mer.getMchId(), mer.getCode(), mer.getProfitAccount(), mer.getVouchAccount(), mer.getPledgeAccount()))
+            .orElseThrow(() -> new ServiceAccessException(ErrorCode.OBJECT_NOT_FOUND, "商户信息未注册"));
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
         String paymentId = String.valueOf(keyGenerator.nextId());
         AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);

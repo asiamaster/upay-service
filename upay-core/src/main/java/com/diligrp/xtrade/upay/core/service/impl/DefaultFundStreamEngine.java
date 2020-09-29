@@ -1,13 +1,13 @@
 package com.diligrp.xtrade.upay.core.service.impl;
 
 import com.diligrp.xtrade.upay.core.ErrorCode;
-import com.diligrp.xtrade.upay.core.dao.IAccountFundDao;
+import com.diligrp.xtrade.upay.core.dao.IFundAccountDao;
 import com.diligrp.xtrade.upay.core.dao.IFundStatementDao;
 import com.diligrp.xtrade.upay.core.domain.FundActivity;
 import com.diligrp.xtrade.upay.core.domain.FundTransaction;
 import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
 import com.diligrp.xtrade.upay.core.exception.FundAccountException;
-import com.diligrp.xtrade.upay.core.model.AccountFund;
+import com.diligrp.xtrade.upay.core.model.FundAccount;
 import com.diligrp.xtrade.upay.core.model.FundStatement;
 import com.diligrp.xtrade.upay.core.service.IFundAccountService;
 import com.diligrp.xtrade.upay.core.service.IFundStreamEngine;
@@ -19,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Resource;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
@@ -35,7 +34,7 @@ public class DefaultFundStreamEngine implements IFundStreamEngine {
     private IFundAccountService fundAccountService;
 
     @Resource
-    private IAccountFundDao accountFundDao;
+    private IFundAccountDao accountFundDao;
 
     @Resource
     private IFundStatementDao fundStatementDao;
@@ -60,40 +59,40 @@ public class DefaultFundStreamEngine implements IFundStreamEngine {
         Long childAccountId = transaction.getParentId() == 0 ? null : transaction.getAccountId();
         for (int retry = 0; retry < RETRIES; retry ++) {
             // 新启事务查询账户资金及数据版本，避免数据库隔离级别和Mybatis缓存造成乐观锁重试机制无法生效
-            AccountFund accountFund = fundAccountService.findAccountFundById(masterAccountId);
-            status = TransactionStatus.of(accountFund.getAccountId(), accountFund.getBalance(), 0L,
-                accountFund.getFrozenAmount(), transaction.getFrozenAmount(), transaction.getWhen());
+            FundAccount fundAccount = fundAccountService.findAccountFundById(masterAccountId);
+            status = TransactionStatus.of(fundAccount.getAccountId(), fundAccount.getBalance(), 0L,
+                fundAccount.getFrozenAmount(), transaction.getFrozenAmount(), transaction.getWhen());
             // 处理解冻资金transaction.getFrozenAmount()<0
             if (transaction.isUnfrozenTransaction()) {
                 // 判断冻结余额是否充足
-                if (accountFund.getFrozenAmount() + transaction.getFrozenAmount() < 0) {
+                if (fundAccount.getFrozenAmount() + transaction.getFrozenAmount() < 0) {
                     throw new FundAccountException(ErrorCode.INSUFFICIENT_ACCOUNT_FUND, "账户冻结余额不足");
                 }
-                accountFund.setFrozenAmount(accountFund.getFrozenAmount() + transaction.getFrozenAmount());
+                fundAccount.setFrozenAmount(fundAccount.getFrozenAmount() + transaction.getFrozenAmount());
             }
             // 处理资金交易
             if (transaction.isFundTransaction()) {
                 long totalAmount = Arrays.stream(transaction.getActivities()).mapToLong(FundActivity::getAmount).sum();
-                long availableAmount = accountFund.getBalance() - accountFund.getFrozenAmount();
+                long availableAmount = fundAccount.getBalance() - fundAccount.getFrozenAmount();
                 // 如果为资金支出(totalAmount<0)则判断账户余额是否充足
                 if (availableAmount + totalAmount < 0) {
                     throw new FundAccountException(ErrorCode.INSUFFICIENT_ACCOUNT_FUND, "账户余额不足");
                 }
-                accountFund.setBalance(accountFund.getBalance() + totalAmount);
+                fundAccount.setBalance(fundAccount.getBalance() + totalAmount);
                 status.setAmount(totalAmount);
             }
             // 处理冻结资金transaction.getFrozenAmount() > 0
             if (transaction.isFrozenTransacton()) {
-                long availableAmount = accountFund.getBalance() - accountFund.getFrozenAmount();
+                long availableAmount = fundAccount.getBalance() - fundAccount.getFrozenAmount();
                 // 判断账户余额是否充足
                 if (availableAmount - transaction.getFrozenAmount() < 0) {
                     throw new FundAccountException(ErrorCode.INSUFFICIENT_ACCOUNT_FUND, "账户余额不足");
                 }
-                accountFund.setFrozenAmount(accountFund.getFrozenAmount() + transaction.getFrozenAmount());
+                fundAccount.setFrozenAmount(fundAccount.getFrozenAmount() + transaction.getFrozenAmount());
             }
 
-            accountFund.setModifiedTime(transaction.getWhen());
-            success = compareAndSetVersion(accountFund);
+            fundAccount.setModifiedTime(transaction.getWhen());
+            success = compareAndSetVersion(fundAccount);
             if (success) break;
         }
 
@@ -121,7 +120,7 @@ public class DefaultFundStreamEngine implements IFundStreamEngine {
         return status;
     }
 
-    private boolean compareAndSetVersion(AccountFund accountFund) {
-        return accountFundDao.compareAndSetVersion(accountFund) > 0;
+    private boolean compareAndSetVersion(FundAccount fundAccount) {
+        return accountFundDao.compareAndSetVersion(fundAccount) > 0;
     }
 }

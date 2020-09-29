@@ -18,6 +18,7 @@ CREATE TABLE `xtrade_sequence_key` (
 -- --------------------------------------------------------------------
 -- Seata分布式事务undo log数据模型
 -- --------------------------------------------------------------------
+DROP TABLE IF EXISTS `undo_log`;
 CREATE TABLE `undo_log` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `branch_id` bigint(20) NOT NULL,
@@ -67,8 +68,6 @@ CREATE TABLE `upay_merchant` (
   `address` VARCHAR(128) COMMENT '商户地址',
   `contact` VARCHAR(50) COMMENT '联系人',
   `mobile` VARCHAR(20) COMMENT '手机号',
-  `private_key` VARCHAR(512) COMMENT '商户私钥',
-  `public_key` VARCHAR(200) COMMENT '商户公钥',
   `state` TINYINT UNSIGNED NOT NULL COMMENT '商户状态',
   `created_time` DATETIME COMMENT '创建时间',
   `modified_time` DATETIME COMMENT '修改时间',
@@ -87,8 +86,10 @@ CREATE TABLE `upay_application` (
   `mch_id` BIGINT NOT NULL COMMENT '商户ID',
   `name` VARCHAR(80) NOT NULL COMMENT '应用名称',
   `access_token` VARCHAR(40) COMMENT '授权Token',
-  `private_key` VARCHAR(512) COMMENT '应用私钥',
-  `public_key` VARCHAR(200) COMMENT '应用公钥',
+  `app_private_key` VARCHAR(512) COMMENT '应用私钥',
+  `app_public_key` VARCHAR(200) COMMENT '应用公钥',
+  `private_key` VARCHAR(512) COMMENT '商户私钥',
+  `public_key` VARCHAR(200) COMMENT '商户公钥',
   `created_time` DATETIME COMMENT '创建时间',
   `modified_time` DATETIME COMMENT '修改时间',
   PRIMARY KEY (`id`),
@@ -103,37 +104,34 @@ CREATE TABLE `upay_application` (
 -- 资金账号分主资金账号和子资金账号，通过parent_id标识，子资金账号暂时无任何业务用途；
 -- parent_id=0为主账号，且登录账号记录资金账号所属的园区卡号。
 -- --------------------------------------------------------------------
-DROP TABLE IF EXISTS `upay_fund_account`;
-CREATE TABLE `upay_fund_account` (
+DROP TABLE IF EXISTS `upay_user_account`;
+CREATE TABLE `upay_user_account` (
   `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
   `customer_id` BIGINT NOT NULL COMMENT '客户ID',
   `account_id` BIGINT NOT NULL COMMENT '账号ID',
   `parent_id` BIGINT NOT NULL COMMENT '父账号ID',
   `type` TINYINT UNSIGNED NOT NULL COMMENT '账号类型',
   `use_for` TINYINT UNSIGNED NOT NULL COMMENT '业务用途',
-  `code` VARCHAR(20) COMMENT '登录账号',
+  `permission` INT NOT NULL COMMENT '账号权限',
   `name` VARCHAR(40) NOT NULL COMMENT '用户名',
   `gender` TINYINT UNSIGNED COMMENT '性别',
   `mobile` VARCHAR(20) NOT NULL COMMENT '手机号',
   `email` VARCHAR(40) COMMENT '邮箱地址',
-  `id_code` VARCHAR(20) COMMENT '身份证号码',
+  `id_type` TINYINT UNSIGNED COMMENT '证件类型',
+  `id_code` VARCHAR(20) COMMENT '证件号码',
   `address` VARCHAR(128) COMMENT '联系地址',
-  `login_pwd` VARCHAR(50) COMMENT '登陆密码',
   `password` VARCHAR(50) NOT NULL COMMENT '交易密码',
-  `login_time` DATETIME COMMENT '最近登陆时间',
   `secret_key` VARCHAR(80) NOT NULL COMMENT '安全密钥',
   `state` TINYINT UNSIGNED NOT NULL COMMENT '账号状态',
-  `lock_time` DATETIME COMMENT '锁定时间',
   `mch_id` BIGINT NOT NULL COMMENT '商户ID',
   `version` INTEGER UNSIGNED NOT NULL COMMENT '数据版本号',
   `created_time` DATETIME COMMENT '创建时间',
   `modified_time` DATETIME COMMENT '修改时间',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_fund_account_accountId` (`account_id`) USING BTREE,
-  KEY `idx_fund_account_parentId` (`parent_id`) USING BTREE,
-  KEY `idx_fund_account_code` (`code`) USING BTREE,
-  KEY `idx_fund_account_name` (`name`) USING BTREE,
-  KEY `idx_fund_account_mobile` (`mobile`) USING BTREE
+  UNIQUE KEY `uk_user_account_accountId` (`account_id`) USING BTREE,
+  KEY `idx_user_account_parentId` (`parent_id`) USING BTREE,
+  KEY `idx_user_account_name` (`name`) USING BTREE,
+  KEY `idx_user_account_mobile` (`mobile`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------------------
@@ -142,8 +140,8 @@ CREATE TABLE `upay_fund_account` (
 -- 解冻消费时扣减余额；应收金额用于中央结算时记录卖家担保交易应收总金额，
 -- 此时还未进行园区-卖家的资金结算
 -- --------------------------------------------------------------------
-DROP TABLE IF EXISTS `upay_account_fund`;
-CREATE TABLE `upay_account_fund` (
+DROP TABLE IF EXISTS `upay_fund_account`;
+CREATE TABLE `upay_fund_account` (
   `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
   `account_id` BIGINT NOT NULL COMMENT '账号ID',
   `balance` BIGINT NOT NULL COMMENT '账户余额-分',
@@ -153,7 +151,7 @@ CREATE TABLE `upay_account_fund` (
   `created_time` DATETIME COMMENT '创建时间',
   `modified_time` DATETIME COMMENT '修改时间',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_account_fund_accountId` (`account_id`) USING BTREE
+  UNIQUE KEY `uk_fund_account_accountId` (`account_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------------------

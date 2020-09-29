@@ -5,82 +5,38 @@
 <mapper namespace="com.diligrp.xtrade.upay.core.dao.IFundAccountDao">
     <resultMap id="FundAccountMap" type="com.diligrp.xtrade.upay.core.model.FundAccount">
         <id column="id" property="id"/>
-        <result column="customer_id" property="customerId"/>
         <result column="account_id" property="accountId"/>
-        <result column="parent_id" property="parentId"/>
-        <result column="type" property="type"/>
-        <result column="use_for" property="useFor"/>
-        <result column="code" property="code"/>
-        <result column="name" property="name"/>
-        <result column="gender" property="gender"/>
-        <result column="mobile" property="mobile"/>
-        <result column="email" property="email"/>
-        <result column="id_code" property="idCode"/>
-        <result column="address" property="address"/>
-        <result column="login_pwd" property="loginPwd"/>
-        <result column="password" property="password"/>
-        <result column="login_time" property="loginTime"/>
-        <result column="secret_key" property="secretKey"/>
-        <result column="state" property="state"/>
-        <result column="lock_time" property="lockTime"/>
-        <result column="mch_id" property="mchId"/>
+        <result column="balance" property="balance"/>
+        <result column="frozen_amount" property="frozenAmount"/>
+        <result column="vouch_amount" property="vouchAmount"/>
         <result column="version" property="version"/>
         <result column="created_time" property="createdTime"/>
         <result column="modified_time" property="modifiedTime"/>
     </resultMap>
 
     <insert id="insertFundAccount" parameterType="com.diligrp.xtrade.upay.core.model.FundAccount">
-        INSERT INTO upay_fund_account(customer_id, account_id, parent_id, type, use_for, code, name, gender,
-          mobile, email, id_code, address, login_pwd, password, login_time, secret_key,
-          state, lock_time, mch_id, version, created_time, modified_time)
+        INSERT INTO upay_fund_account(account_id, balance, frozen_amount, vouch_amount,
+            version, created_time, modified_time)
         VALUES
-          (#{customerId}, #{accountId}, #{parentId}, #{type}, #{useFor}, #{code}, #{name}, #{gender},
-           #{mobile}, #{email}, #{idCode}, #{address}, #{loginPwd}, #{password}, #{loginTime}, #{secretKey},
-           #{state}, #{lockTime}, #{mchId}, #{version}, #{createdTime}, #{modifiedTime})
+          (#{accountId}, #{balance}, #{frozenAmount}, #{vouchAmount}, #{version},
+          #{createdTime}, #{modifiedTime})
     </insert>
-
-    <update id="updateFundAccount" parameterType="com.diligrp.xtrade.upay.core.model.FundAccount">
-        UPDATE upay_fund_account
-        <set>
-            <if test="code != null">
-                code = #{code},
-            </if>
-            <if test="name != null">
-                name = #{name},
-            </if>
-            <if test="mobile != null">
-                mobile = #{mobile},
-            </if>
-            <if test="address != null">
-                address = #{address},
-            </if>
-            <if test="loginPwd != null">
-                login_pwd = #{loginPwd},
-            </if>
-            <if test="password != null">
-                password = #{password},
-            </if>
-            <if test="modifiedTime != null">
-                modified_time = #{modifiedTime},
-            </if>
-        </set>
-        where account_id = #{accountId}
-    </update>
 
     <select id="findFundAccountById" parameterType="long" resultMap="FundAccountMap">
         SELECT * FROM upay_fund_account WHERE account_id = #{accountId}
     </select>
 
-    <select id="findFundAccountByParentId" parameterType="long" resultMap="FundAccountMap">
-        SELECT * FROM upay_fund_account WHERE parent_id = #{parentId}
-    </select>
-
-    <update id="compareAndSetState" parameterType="com.diligrp.xtrade.upay.core.domain.AccountStateDto">
-        UPDATE
-            upay_fund_account
-        SET
-            state = #{state}, modified_time = #{modifiedTime}, version = version + 1
-        WHERE
-            account_id = #{accountId} AND version = #{version}
+    <update id="compareAndSetVersion" parameterType="com.diligrp.xtrade.upay.core.model.FundAccount">
+        UPDATE upay_fund_account SET version = version + 1
+        <if test="balance != null">
+            , balance = #{balance}
+        </if>
+        <if test="frozenAmount != null">
+            , frozen_amount = #{frozenAmount}
+        </if>
+        <if test="modifiedTime != null">
+            , modified_time = #{modifiedTime}
+        </if>
+        WHERE account_id = #{accountId} AND version = #{version}
     </update>
 </mapper>

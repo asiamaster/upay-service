@@ -18,7 +18,7 @@ import com.diligrp.xtrade.upay.core.ErrorCode;
 import com.diligrp.xtrade.upay.core.dao.IMerchantDao;
 import com.diligrp.xtrade.upay.core.domain.MerchantPermit;
 import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
-import com.diligrp.xtrade.upay.core.model.FundAccount;
+import com.diligrp.xtrade.upay.core.model.UserAccount;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
 import com.diligrp.xtrade.upay.core.util.AsyncTaskExecutor;
 import com.diligrp.xtrade.upay.trade.dao.IPaymentFeeDao;
@@ -100,7 +100,7 @@ public class AuthFeePaymentServiceImpl extends FeePaymentServiceImpl implements 
 
         // 冻结资金
         LocalDateTime now = LocalDateTime.now();
-        FundAccount account = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
+        UserAccount account = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
         accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
         String paymentId = String.valueOf(keyGenerator.nextId());
@@ -168,11 +168,10 @@ public class AuthFeePaymentServiceImpl extends FeePaymentServiceImpl implements 
 
         // 获取商户收益账号信息
         LocalDateTime now = LocalDateTime.now();
-        FundAccount account = accountChannelService.checkTradePermission(payment.getAccountId(), confirm.getPassword(), -1);
+        UserAccount account = accountChannelService.checkTradePermission(payment.getAccountId(), confirm.getPassword(), -1);
         accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
         MerchantPermit merchant = merchantDao.findMerchantById(trade.getMchId()).map(mer -> MerchantPermit.of(
-            mer.getMchId(), mer.getCode(), mer.getProfitAccount(), mer.getVouchAccount(), mer.getPledgeAccount(),
-            mer.getPrivateKey(), mer.getPublicKey()))
+            mer.getMchId(), mer.getCode(), mer.getProfitAccount(), mer.getVouchAccount(), mer.getPledgeAccount()))
             .orElseThrow(() -> new ServiceAccessException(ErrorCode.OBJECT_NOT_FOUND, "商户信息未注册"));
         // 客户账号资金解冻并缴费
         AccountChannel channel = AccountChannel.of(payment.getPaymentId(), account.getAccountId(), account.getParentId());
@@ -238,7 +237,7 @@ public class AuthFeePaymentServiceImpl extends FeePaymentServiceImpl implements 
         }
         // 撤销预授权，需验证缴费账户状态无须验证密码
         LocalDateTime when = LocalDateTime.now();
-        FundAccount account = accountChannelService.checkTradePermission(payment.getAccountId());
+        UserAccount account = accountChannelService.checkTradePermission(payment.getAccountId());
         accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
         Optional<FrozenOrder> orderOpt = frozenOrderDao.findFrozenOrderByPaymentId(payment.getPaymentId());
         FrozenOrder order = orderOpt.orElseThrow(() -> new TradePaymentException(ErrorCode.OBJECT_NOT_FOUND, "冻结订单不存在"));

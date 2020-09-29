@@ -14,10 +14,6 @@ public class MerchantPermit {
     private Long vouchAccount;
     // 押金账户
     private Long pledgeAccount;
-    // 商户私钥
-    private String privateKey;
-    // 商户公钥
-    private String publicKey;
 
     public Long getMchId() {
         return mchId;
@@ -59,32 +55,13 @@ public class MerchantPermit {
         this.pledgeAccount = pledgeAccount;
     }
 
-    public String getPrivateKey() {
-        return privateKey;
-    }
-
-    public void setPrivateKey(String privateKey) {
-        this.privateKey = privateKey;
-    }
-
-    public String getPublicKey() {
-        return publicKey;
-    }
-
-    public void setPublicKey(String publicKey) {
-        this.publicKey = publicKey;
-    }
-
-    public static MerchantPermit of(Long mchId, String code, Long profitAccount, Long vouchAccount, Long pledgeAccount,
-                                    String privateKey, String publicKey) {
+    public static MerchantPermit of(Long mchId, String code, Long profitAccount, Long vouchAccount, Long pledgeAccount) {
         MerchantPermit permit = new MerchantPermit();
         permit.setMchId(mchId);
         permit.setCode(code);
         permit.setProfitAccount(profitAccount);
         permit.setVouchAccount(vouchAccount);
         permit.setPledgeAccount(pledgeAccount);
-        permit.setPrivateKey(privateKey);
-        permit.setPublicKey(publicKey);
         return permit;
     }
 }

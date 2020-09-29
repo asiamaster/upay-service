@@ -17,10 +17,10 @@ import com.diligrp.xtrade.upay.channel.service.IFrozenOrderService;
 import com.diligrp.xtrade.upay.channel.type.FrozenState;
 import com.diligrp.xtrade.upay.channel.type.FrozenType;
 import com.diligrp.xtrade.upay.core.ErrorCode;
-import com.diligrp.xtrade.upay.core.dao.IFundAccountDao;
+import com.diligrp.xtrade.upay.core.dao.IUserAccountDao;
 import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
 import com.diligrp.xtrade.upay.core.exception.FundAccountException;
-import com.diligrp.xtrade.upay.core.model.FundAccount;
+import com.diligrp.xtrade.upay.core.model.UserAccount;
 import com.diligrp.xtrade.upay.core.service.IFundAccountService;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
 import com.diligrp.xtrade.upay.core.util.AccountStateMachine;
@@ -45,7 +45,7 @@ public class FrozenOrderServiceImpl implements IFrozenOrderService {
     private IFrozenOrderDao frozenOrderDao;
 
     @Resource
-    private IFundAccountDao fundAccountDao;
+    private IUserAccountDao fundAccountDao;
 
     @Resource
     private KeyGeneratorManager keyGeneratorManager;
@@ -66,8 +66,8 @@ public class FrozenOrderServiceImpl implements IFrozenOrderService {
     public FrozenStatus freeze(FreezeFundDto request) {
         Optional<FrozenType> frozenTypeOpt = FrozenType.getType(request.getType());
         frozenTypeOpt.orElseThrow(() -> new PaymentChannelException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "不支持此冻结类型"));
-        Optional<FundAccount> accountOpt = fundAccountDao.findFundAccountById(request.getAccountId());
-        FundAccount account = accountOpt.orElseThrow(() -> new PaymentChannelException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
+        Optional<UserAccount> accountOpt = fundAccountDao.findUserAccountById(request.getAccountId());
+        UserAccount account = accountOpt.orElseThrow(() -> new PaymentChannelException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
         accountOpt.ifPresent(AccountStateMachine::frozenFundCheck);
 
         // 冻结资金
@@ -105,8 +105,8 @@ public class FrozenOrderServiceImpl implements IFrozenOrderService {
         if (order.getType() == FrozenType.TRADE_FROZEN.getCode()) {
             throw new PaymentChannelException(ErrorCode.OPERATION_NOT_ALLOWED, "不能解冻交易冻结的资金");
         }
-        Optional<FundAccount> accountOpt = fundAccountDao.findFundAccountById(order.getAccountId());
-        FundAccount account = accountOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
+        Optional<UserAccount> accountOpt = fundAccountDao.findUserAccountById(order.getAccountId());
+        UserAccount account = accountOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
         accountOpt.ifPresent(AccountStateMachine::frozenFundCheck);
 
         LocalDateTime now = LocalDateTime.now();

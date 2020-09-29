@@ -1,10 +1,8 @@
 package com.diligrp.xtrade.upay.trade.domain;
 
 import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
-import com.diligrp.xtrade.upay.core.model.AccountFund;
 
 import java.util.HashMap;
-import java.util.Optional;
 
 /**
  * 支付结果模型

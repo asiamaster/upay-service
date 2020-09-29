@@ -9,6 +9,8 @@
         <result column="mch_id" property="mchId"/>
         <result column="name" property="name"/>
         <result column="access_token" property="accessToken"/>
+        <result column="app_private_key" property="appPrivateKey"/>
+        <result column="app_public_key" property="appPublicKey"/>
         <result column="private_key" property="privateKey"/>
         <result column="public_key" property="publicKey"/>
         <result column="created_time" property="createdTime"/>
@@ -26,8 +28,6 @@
         <result column="address" property="address"/>
         <result column="contact" property="contact"/>
         <result column="mobile" property="mobile"/>
-        <result column="private_key" property="privateKey"/>
-        <result column="public_key" property="publicKey"/>
         <result column="state" property="state"/>
         <result column="created_time" property="createdTime"/>
         <result column="modified_time" property="modifiedTime"/>
@@ -43,10 +43,10 @@
     
     <insert id="insertMerchant" parameterType="com.diligrp.xtrade.upay.core.model.Merchant">
         INSERT INTO upay_merchant(mch_id, code, name, profit_account, vouch_account, pledge_account,
-            address, contact, mobile, private_key, public_key, state, created_time)
+            address, contact, mobile, state, created_time)
         VALUES
             (#{mchId}, #{code}, #{name}, #{profitAccount}, #{vouchAccount}, #{pledgeAccount},
-             #{address}, #{contact}, #{mobile}, #{privateKey}, #{publicKey}, #{state}, #{createdTime})
+             #{address}, #{contact}, #{mobile}, #{state}, #{createdTime})
     </insert>
 
     <update id="updateMerchant" parameterType="com.diligrp.xtrade.upay.core.model.Merchant">
@@ -70,7 +70,7 @@
     </update>
 
     <insert id="insertApplication" parameterType="com.diligrp.xtrade.upay.core.model.Application">
-        INSERT INTO upay_application(app_id, mch_id, name, access_token, private_key, public_key, created_time)
-        VALUES (#{appId}, #{mchId}, #{name}, #{accessToken}, #{privateKey}, #{publicKey}, #{createdTime})
+        INSERT INTO upay_application(app_id, mch_id, name, access_token, app_private_key, app_public_key, private_key, public_key, created_time)
+        VALUES (#{appId}, #{mchId}, #{name}, #{accessToken}, #{appPrivateKey}, #{appPublicKey}, #{privateKey}, #{publicKey}, #{createdTime})
     </insert>
 </mapper>

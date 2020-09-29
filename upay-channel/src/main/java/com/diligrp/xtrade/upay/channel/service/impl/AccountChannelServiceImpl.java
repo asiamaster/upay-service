@@ -15,8 +15,8 @@ import com.diligrp.xtrade.upay.core.ErrorCode;
 import com.diligrp.xtrade.upay.core.domain.FundTransaction;
 import com.diligrp.xtrade.upay.core.domain.RegisterAccount;
 import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
-import com.diligrp.xtrade.upay.core.model.AccountFund;
 import com.diligrp.xtrade.upay.core.model.FundAccount;
+import com.diligrp.xtrade.upay.core.model.UserAccount;
 import com.diligrp.xtrade.upay.core.service.IFundAccountService;
 import com.diligrp.xtrade.upay.core.service.IFundStreamEngine;
 import com.diligrp.xtrade.upay.core.type.AccountState;
@@ -124,8 +124,8 @@ public class AccountChannelServiceImpl implements IAccountChannelService {
      * {@inheritDoc}
      */
     @Override
-    public AccountFund queryAccountFund(Long accountId) {
-        FundAccount account = fundAccountService.findFundAccountById(accountId);
+    public FundAccount queryAccountFund(Long accountId) {
+        UserAccount account = fundAccountService.findFundAccountById(accountId);
         Long masterId = account.getParentId() == 0 ? account.getAccountId() : account.getParentId();
         return fundAccountService.findAccountFundById(masterId);
     }
@@ -136,9 +136,9 @@ public class AccountChannelServiceImpl implements IAccountChannelService {
      * maxPwdErrors为负数时表示不限制错误次数
      */
     @Override
-    public FundAccount checkTradePermission(long accountId, String password, int maxPwdErrors) {
+    public UserAccount checkTradePermission(long accountId, String password, int maxPwdErrors) {
         AssertUtils.notEmpty(password, "password missed");
-        FundAccount account = fundAccountService.findFundAccountById(accountId);
+        UserAccount account = fundAccountService.findFundAccountById(accountId);
         if (account.getState() != AccountState.NORMAL.getCode()) {
             throw new PaymentChannelException(ErrorCode.INVALID_ACCOUNT_STATE,
                 "资金账户已" + AccountState.getName(account.getState()));
@@ -171,8 +171,8 @@ public class AccountChannelServiceImpl implements IAccountChannelService {
      * {@inheritDoc}
      */
     @Override
-    public FundAccount checkTradePermission(long accountId) {
-        FundAccount account = fundAccountService.findFundAccountById(accountId);
+    public UserAccount checkTradePermission(long accountId) {
+        UserAccount account = fundAccountService.findFundAccountById(accountId);
         if (account.getState() != AccountState.NORMAL.getCode()) {
             throw new PaymentChannelException(ErrorCode.INVALID_ACCOUNT_STATE,
                 "资金账户已" + AccountState.getName(account.getState()));        }
@@ -193,10 +193,10 @@ public class AccountChannelServiceImpl implements IAccountChannelService {
      * 寿光市场专用需求
      */
     @Override
-    public void checkAccountTradeState(FundAccount account) {
+    public void checkAccountTradeState(UserAccount account) {
         AccountStateMachine.accountStateCheck(account);
         if (account.getParentId() != 0) {
-            FundAccount parent = fundAccountService.findFundAccountById(account.getParentId());
+            UserAccount parent = fundAccountService.findFundAccountById(account.getParentId());
             AccountStateMachine.accountStateCheck(parent);
         }
     }

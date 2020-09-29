@@ -22,7 +22,9 @@ public class RegisterAccount {
     private String mobile;
     // 邮箱
     private String email;
-    // 身份证编号
+    // 证件类型
+    private Integer idType;
+    // 证件号码
     private String idCode;
     // 地址
     private String address;
@@ -99,6 +101,14 @@ public class RegisterAccount {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public Integer getIdType() {
+        return idType;
+    }
+
+    public void setIdType(Integer idType) {
+        this.idType = idType;
     }
 
     public String getIdCode() {
