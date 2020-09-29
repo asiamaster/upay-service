@@ -18,6 +18,7 @@ CREATE TABLE `xtrade_sequence_key` (
 -- --------------------------------------------------------------------
 -- Seata分布式事务undo log数据模型
 -- --------------------------------------------------------------------
+DROP TABLE IF EXISTS `undo_log`;
 CREATE TABLE `undo_log` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `branch_id` bigint(20) NOT NULL,
@@ -129,7 +130,6 @@ CREATE TABLE `upay_user_account` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_user_account_accountId` (`account_id`) USING BTREE,
   KEY `idx_user_account_parentId` (`parent_id`) USING BTREE,
-  KEY `idx_user_account_code` (`code`) USING BTREE,
   KEY `idx_user_account_name` (`name`) USING BTREE,
   KEY `idx_user_account_mobile` (`mobile`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

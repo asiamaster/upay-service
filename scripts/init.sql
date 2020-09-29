@@ -19,12 +19,12 @@ VALUES (1040, 0, '商品交易应用', 'abcd1040', 'MIIBUwIBADANBgkqhkiG9w0BAQEF
 INSERT INTO `upay_merchant`(`mch_id`, `code`, `name`, `profit_account`, `vouch_account`, `pledge_account`, `address`, `contact`, `mobile`, `state`, `created_time`)
 VALUES (8, 'SG', '寿光地利农产品集团有限公司', 10001, 10002, 10003, '山东寿光', '赵丽英', '13688582561', 1, now());
 
-INSERT INTO `upay_user_account`(`customer_id`, `account_id`, `parent_id`, `type`, `use_for`, `name`, `mobile`, `address`, `password`, `secret_key`, `state`, `mch_id`, `version`, `created_time`)
-VALUES (0, 10001, 0, 3, 10, '寿光地利农产品集团有限公司', '13688582561', '山东寿光', '723c34e4fb337210268ea731f9afea5f7a05c896', 'QkI39VWUCa6CAHI0kFGQ0A==', 1, 8, 0, now());
-INSERT INTO `upay_user_account`(`customer_id`, `account_id`, `parent_id`, `type`, `use_for`, `name`, `mobile`, `address`, `password`, `secret_key`, `state`, `mch_id`, `version`, `created_time`)
-VALUES (0, 10002, 0, 3, 11, '寿光地利农产品集团有限公司', '13688582561', '山东寿光', '6a77ea3cb343c262d2a874629e5bc5f6c707d668', 'znULxxf0SRIfHICEBfefng==', 1, 8, 0, now());
-INSERT INTO `upay_user_account`(`customer_id`, `account_id`, `parent_id`, `type`, `use_for`, `name`, `mobile`, `address`, `password`, `secret_key`, `state`, `mch_id`, `version`, `created_time`)
-VALUES (0, 10003, 0, 3, 12, '寿光地利农产品集团有限公司', '13688582561', '山东寿光', '62feeafcaee1e992b9b03bd7494719b11bd0c284', 'XPOmYmU5kjDo9raAO6Zv/Q==', 1, 8, 0, now());
+INSERT INTO `upay_user_account`(`customer_id`, `account_id`, `parent_id`, `type`, `use_for`, `permission`, `name`, `mobile`, `address`, `password`, `secret_key`, `state`, `mch_id`, `version`, `created_time`)
+VALUES (0, 10001, 0, 3, 10, 268435455, '寿光地利农产品集团有限公司', '13688582561', '山东寿光', '723c34e4fb337210268ea731f9afea5f7a05c896', 'QkI39VWUCa6CAHI0kFGQ0A==', 1, 8, 0, now());
+INSERT INTO `upay_user_account`(`customer_id`, `account_id`, `parent_id`, `type`, `use_for`, `permission`, `name`, `mobile`, `address`, `password`, `secret_key`, `state`, `mch_id`, `version`, `created_time`)
+VALUES (0, 10002, 0, 3, 11, 268435455, '寿光地利农产品集团有限公司', '13688582561', '山东寿光', '6a77ea3cb343c262d2a874629e5bc5f6c707d668', 'znULxxf0SRIfHICEBfefng==', 1, 8, 0, now());
+INSERT INTO `upay_user_account`(`customer_id`, `account_id`, `parent_id`, `type`, `use_for`, `permission`, `name`, `mobile`, `address`, `password`, `secret_key`, `state`, `mch_id`, `version`, `created_time`)
+VALUES (0, 10003, 0, 3, 12, 268435455, '寿光地利农产品集团有限公司', '13688582561', '山东寿光', '62feeafcaee1e992b9b03bd7494719b11bd0c284', 'XPOmYmU5kjDo9raAO6Zv/Q==', 1, 8, 0, now());
 
 INSERT INTO `upay_fund_account`(`account_id`, `balance`, `frozen_amount`, `vouch_amount`, `version`, `created_time`)
 VALUES (10001, 0, 0, 0, 0, now());
