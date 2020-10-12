@@ -37,7 +37,7 @@ public enum AccountPermission implements IEnumType {
         if (permissions == null) {
             return NO_PERMISSION;
         }
-        return Arrays.stream(permissions).mapToInt(permission -> permission.getCode()).reduce(NO_PERMISSION, (a, b) -> a | b);
+        return Arrays.stream(permissions).mapToInt(AccountPermission::getCode).reduce(NO_PERMISSION, (a, b) -> a | b);
     }
 
     public static final boolean hasPermission(int permissionMask, AccountPermission permission) {
@@ -45,7 +45,37 @@ public enum AccountPermission implements IEnumType {
     }
 
     public static final boolean hasPermissions(int permissionMask, AccountPermission... permissions) {
-        return (permissionMask & permissionMask(permissions)) != 0;
+        if (permissions == null) {
+            return false;
+        }
+        for (AccountPermission permission : permissions) {
+            if (!hasPermission(permissionMask, permission)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static final int addPermission(int permissionMask, AccountPermission permission) {
+        return permissionMask | permission.getCode();
+    }
+
+    public static final int addPermissions(int permissionMask, AccountPermission... permissions) {
+        if (permissions == null) {
+            return permissionMask;
+        }
+        return Arrays.stream(permissions).mapToInt(AccountPermission::getCode).reduce(permissionMask, (a, b) -> a | b);
+    }
+
+    public static final int removePermission(int permissionMask, AccountPermission permission) {
+        return permissionMask & (~permission.getCode());
+    }
+
+    public static final int removePermissions(int permissionMask, AccountPermission... permissions) {
+        if (permissions == null) {
+            return permissionMask;
+        }
+        return Arrays.stream(permissions).mapToInt(AccountPermission::getCode).reduce(permissionMask, (a, b) -> a & (~b));
     }
 
     @Override
