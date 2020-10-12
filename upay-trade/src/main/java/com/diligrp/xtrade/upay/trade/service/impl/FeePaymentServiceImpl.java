@@ -96,7 +96,7 @@ public class FeePaymentServiceImpl implements IPaymentService {
         // 处理账户余额缴费
         TransactionStatus status = null;
         LocalDateTime now = LocalDateTime.now();
-        UserAccount account = ObjectUtils.isEmpty(payment.getPassword()) ? // 传入密码则校验，否则不校验密码（换卡工本费）
+        UserAccount account = payment.getChannelId() == ChannelType.CASH.getCode() ? // 现金缴费不校验密码（办卡/换卡工本费）
             accountChannelService.checkTradePermission(payment.getAccountId()) :
             accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
         accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
