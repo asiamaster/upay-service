@@ -24,6 +24,8 @@ public class TradePayment extends BaseDo {
     private Long amount;
     // 费用金额-分
     private Long fee;
+    // 免密支付协议ID
+    private Long protocolId;
     // 支付状态
     private Integer state;
     // 备注
@@ -95,6 +97,14 @@ public class TradePayment extends BaseDo {
         this.fee = fee;
     }
 
+    public Long getProtocolId() {
+        return protocolId;
+    }
+
+    public void setProtocolId(Long protocolId) {
+        this.protocolId = protocolId;
+    }
+
     public Integer getState() {
         return state;
     }
@@ -161,6 +171,11 @@ public class TradePayment extends BaseDo {
 
         public Builder fee(Long fee) {
             TradePayment.this.fee = fee;
+            return this;
+        }
+
+        public Builder protocolId(Long protocolId) {
+            TradePayment.this.protocolId = protocolId;
             return this;
         }
 

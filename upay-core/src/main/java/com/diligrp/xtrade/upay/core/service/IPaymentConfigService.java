@@ -21,6 +21,14 @@ public interface IPaymentConfigService {
     boolean smsNotifySwitch(String groupCode);
 
     /**
+     * 最大免密协议支付金额
+     *
+     * @param groupCode - 必填, 字典分组编码(市场编码)
+     * @return 最大免密协议支付金额
+     */
+    Long maxProtocolAmount(String groupCode);
+
+    /**
      * 获取数据字典配置值
      *
      * @param code - 必填, 参数编码

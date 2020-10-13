@@ -175,7 +175,8 @@ public class AccountChannelServiceImpl implements IAccountChannelService {
         UserAccount account = fundAccountService.findFundAccountById(accountId);
         if (account.getState() != AccountState.NORMAL.getCode()) {
             throw new PaymentChannelException(ErrorCode.INVALID_ACCOUNT_STATE,
-                "资金账户已" + AccountState.getName(account.getState()));        }
+                "资金账户已" + AccountState.getName(account.getState()));
+        }
         return account;
     }
 

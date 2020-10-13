@@ -13,6 +13,7 @@
         <result column="card_no" property="cardNo"/>
         <result column="amount" property="amount"/>
         <result column="fee" property="fee"/>
+        <result column="protocol_id" property="protocolId"/>
         <result column="state" property="state"/>
         <result column="description" property="description"/>
         <result column="version" property="version"/>
@@ -22,9 +23,9 @@
 
     <insert id="insertTradePayment" parameterType="com.diligrp.xtrade.upay.trade.model.TradePayment">
         INSERT INTO upay_trade_payment(payment_id, trade_id, channel_id, account_id, name, card_no, amount, fee,
-            state, description, version, created_time, modified_time)
+            protocol_id, state, description, version, created_time, modified_time)
         VALUES (#{paymentId}, #{tradeId}, #{channelId}, #{accountId}, #{name}, #{cardNo}, #{amount}, #{fee},
-            #{state}, #{description}, #{version}, #{createdTime}, #{modifiedTime})
+            #{protocolId}, #{state}, #{description}, #{version}, #{createdTime}, #{modifiedTime})
     </insert>
 
     <select id="findTradePaymentById" parameterType="string" resultMap="TradePaymentMap">

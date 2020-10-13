@@ -9,8 +9,10 @@ import com.diligrp.xtrade.upay.core.domain.ApplicationPermit;
 import com.diligrp.xtrade.upay.core.domain.MerchantPermit;
 import com.diligrp.xtrade.upay.core.model.UserAccount;
 import com.diligrp.xtrade.upay.core.service.IFundAccountService;
+import com.diligrp.xtrade.upay.core.service.IPaymentConfigService;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
 import com.diligrp.xtrade.upay.trade.dao.ITradeOrderDao;
+import com.diligrp.xtrade.upay.trade.dao.IUserProtocolDao;
 import com.diligrp.xtrade.upay.trade.domain.Confirm;
 import com.diligrp.xtrade.upay.trade.domain.ConfirmRequest;
 import com.diligrp.xtrade.upay.trade.domain.Fee;
@@ -113,7 +115,8 @@ public class PaymentPlatformServiceImpl implements IPaymentPlatformService, Bean
 //        feeList.stream().map(fee -> FundType.getFee(fee.getType())).forEach(feeOpt ->
 //            feeOpt.orElseThrow(() -> new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "不支持的费用类型")));
 
-        Payment payment = Payment.of(request.getAccountId(), trade.getAmount(), request.getChannelId(), request.getPassword());
+        Payment payment = Payment.of(request.getAccountId(), trade.getAmount(), request.getChannelId(),
+            request.getPassword(), request.getProtocolId());
         payment.put(MerchantPermit.class.getName(), application.getMerchant());
         request.fees().ifPresent(fees -> payment.put(Fee.class.getName(), fees));
 

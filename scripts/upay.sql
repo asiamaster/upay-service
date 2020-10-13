@@ -113,7 +113,7 @@ CREATE TABLE `upay_user_account` (
   `type` TINYINT UNSIGNED NOT NULL COMMENT '账号类型',
   `use_for` TINYINT UNSIGNED NOT NULL COMMENT '业务用途',
   `permission` INT NOT NULL COMMENT '账号权限',
-  `name` VARCHAR(40) NOT NULL COMMENT '用户名',
+  `name` VARCHAR(20) NOT NULL COMMENT '用户名',
   `gender` TINYINT UNSIGNED COMMENT '性别',
   `mobile` VARCHAR(20) NOT NULL COMMENT '手机号',
   `email` VARCHAR(40) COMMENT '邮箱地址',
@@ -223,8 +223,9 @@ CREATE TABLE `upay_trade_order` (
 -- 交易支付表
 -- 说明：交易支付表用于存储付款方信息，付款方包括园区账户、银行、第三方支付渠道等；
 -- 数据模型理论上一条交易订单可以有多条支付记录，支付金额可以小于或等于交易订单金额；
--- 所有支付都对应一个支付渠道，即使现金；费用金额用于存储向付款方(园区账户)收取的费用。
--- 组合支付时一个交易订单对应多个支付记录，一个交易订单同一种支付渠道只能有一条记录。
+-- 所有支付都对应一个支付渠道，即使现金；费用金额用于存储向付款方(园区账户)收取的费用；
+-- 组合支付时一个交易订单对应多个支付记录，一个交易订单同一种支付渠道只能有一条记录；
+-- 免密支付时需记录免密支付协议号。
 -- --------------------------------------------------------------------
 DROP TABLE IF EXISTS `upay_trade_payment`;
 CREATE TABLE `upay_trade_payment` (
@@ -237,6 +238,7 @@ CREATE TABLE `upay_trade_payment` (
   `card_no` VARCHAR(20) COMMENT '银行卡号',
   `amount` BIGINT NOT NULL COMMENT '金额-分',
   `fee` BIGINT NOT NULL COMMENT '费用金额-分',
+  `protocol_id` BIGINT COMMENT '免密协议ID',
   `state` TINYINT UNSIGNED NOT NULL COMMENT '支付状态',
   `description` VARCHAR(128) COMMENT '备注',
   `version` INTEGER UNSIGNED NOT NULL COMMENT '数据版本号',
@@ -320,6 +322,30 @@ CREATE TABLE `upay_frozen_order` (
   KEY `idx_frozen_order_accountId` (`account_id`, `type`) USING BTREE,
   KEY `idx_frozen_order_createdTime` (`created_time`) USING BTREE,
   KEY `idx_frozen_order_modifiedTime` (`modified_time`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------------------
+-- 免密支付协议表
+-- 说明：一个资金账号可以有多个不同类型的免密协议，且免密协议只能在指定金额范围内有效；
+-- --------------------------------------------------------------------
+DROP TABLE IF EXISTS `upay_user_protocol`;
+CREATE TABLE `upay_user_protocol` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `protocol_id` BIGINT NOT NULL COMMENT '协议ID',
+  `account_id` BIGINT NOT NULL COMMENT '账号ID',
+  `name` VARCHAR(20) COMMENT '用户名',
+  `type` TINYINT UNSIGNED NOT NULL COMMENT '协议类型',
+  `min_amount` BIGINT NOT NULL COMMENT '最小金额-分',
+  `max_amount` BIGINT NOT NULL COMMENT '最大金额-分',
+  `start_on` DATETIME COMMENT '生效时间',
+  `state` TINYINT UNSIGNED NOT NULL COMMENT '协议状态',
+  `description` VARCHAR(128) COMMENT '备注',
+  `version` INTEGER UNSIGNED NOT NULL COMMENT '数据版本号',
+  `created_time` DATETIME COMMENT '创建时间',
+  `modified_time` DATETIME COMMENT '修改时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_user_protocol_protocolId` (`protocol_id`) USING BTREE,
+  UNIQUE KEY `uk_user_protocol_accountId` (`account_id`, `type`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------------------
