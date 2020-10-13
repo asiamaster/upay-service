@@ -73,6 +73,13 @@ public enum ChannelType implements IEnumType {
     }
 
     /**
+     * 判断渠道是否可用于退费业务
+     */
+    public static boolean forRefundFee(int code) {
+        return code == ACCOUNT.getCode();
+    }
+
+    /**
      * 判断渠道是否可用于"即时交易", "预授权交易"和"转账"业务
      */
     public static boolean forTrade(int code) {

@@ -24,6 +24,8 @@ public enum TradeType implements IEnumType {
 
     BANK_DEPOSIT("网银充值", 15),
 
+    REFUND_FEE("退费", 16),
+
     DIRECT_TRADE("即时交易", 20),
 
     AUTH_TRADE("预授权交易", 21),
