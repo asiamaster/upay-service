@@ -15,10 +15,14 @@ import java.time.LocalDateTime;
  * @date: 2020/10/14
  */
 public class TradeStatementDto {
+    // 交易号
+    private String tradeId;
     // 交易类型
     private Integer type;
     // 交易类型描述
     private String typeName;
+    // 账号ID
+    private Long accountId;
     // 交易金额
     private Long amount;
     // 交易费用
@@ -36,6 +40,14 @@ public class TradeStatementDto {
     // 退款时间
     private LocalDateTime refundTime;
 
+    public String getTradeId() {
+        return tradeId;
+    }
+
+    public void setTradeId(String tradeId) {
+        this.tradeId = tradeId;
+    }
+
     public Integer getType() {
         return type;
     }
@@ -50,6 +62,14 @@ public class TradeStatementDto {
 
     public void setTypeName(String typeName) {
         this.typeName = typeName;
+    }
+
+    public Long getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(Long accountId) {
+        this.accountId = accountId;
     }
 
     public Long getAmount() {
@@ -118,8 +138,10 @@ public class TradeStatementDto {
 
     public static TradeStatementDto from(long accountId, TradeStatement trade) {
         TradeStatementDto dto = new TradeStatementDto();
+        dto.setTradeId(trade.getTradeId());
         dto.setType(trade.getType());
         typeName(trade, dto);
+        dto.setAccountId(accountId);
         amount(accountId, trade, dto);
         dto.setChannelId(trade.getChannelId());
         dto.setWhen(trade.getPayTime());
