@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.diligrp.xtrade.upay.channel.dao.IChannelStatementDao">
+    <select id="listTradeStatements" parameterType="com.diligrp.xtrade.upay.channel.domain.TradeQuery" resultType="com.diligrp.xtrade.upay.channel.domain.TradeStatement">
+        SELECT
+            uto.trade_id AS tradeId, uto.type, uto.serial_no AS serialNo, uto.account_id AS accountId1, uto.fee AS fee1,
+            uto.state, uto.description, utp.channel_id AS channelId, utp.account_id AS accountId2, utp.amount, utp.fee AS fee2,
+            utp.created_time AS payTime, urp.amount AS refundAmount, urp.created_time AS refundTime
+        FROM
+            upay_trade_order uto
+        INNER JOIN
+            upay_trade_payment utp ON uto.trade_id = utp.trade_id
+        LEFT JOIN
+            upay_refund_payment urp ON uto.trade_id = urp.trade_id AND uto.state IN (5, 6)
+        WHERE
+            uto.state IN (4, 5, 6) AND (uto.account_id = #{accountId} OR utp.account_id = #{accountId})
+            <if test="startDate != null">
+                <![CDATA[AND utp.created_time > #{startDate}]]>
+            </if>
+            <if test="endDate != null">
+                <![CDATA[AND utp.created_time < #{endDate}]]>
+            </if>
+        ORDER BY utp.created_time DESC
+        LIMIT #{start}, #{limit}
+    </select>
+
+    <select id="countTradeStatements" parameterType="com.diligrp.xtrade.upay.channel.domain.TradeQuery" resultType="long">
+        SELECT
+            COUNT(*)
+        FROM
+            upay_trade_order uto
+        INNER JOIN
+            upay_trade_payment utp ON uto.trade_id = utp.trade_id
+        LEFT JOIN
+            upay_refund_payment urp ON uto.trade_id = urp.trade_id AND uto.state IN (5, 6)
+        WHERE
+            uto.state IN (4, 5, 6) AND (uto.account_id = #{accountId} OR utp.account_id = #{accountId})
+            <if test="startDate != null">
+                <![CDATA[AND utp.created_time > #{startDate}]]>
+            </if>
+            <if test="endDate != null">
+                <![CDATA[AND utp.created_time < #{endDate}]]>
+            </if>
+    </select>
+
+    <select id="sumTradeStatements" parameterType="com.diligrp.xtrade.upay.channel.domain.TradeQuery" resultType="com.diligrp.xtrade.upay.channel.domain.SumTradeStatement">
+        SELECT
+            SUM(CASE WHEN action = 1 THEN amount ELSE 0 END) AS income, SUM(CASE WHEN action = 2 THEN -amount ELSE 0 END) AS output
+        FROM
+            upay_fund_statement
+        WHERE
+            account_id = #{accountId}
+            <if test="startDate != null">
+                <![CDATA[AND created_time > #{startDate}]]>
+            </if>
+            <if test="endDate != null">
+                <![CDATA[AND created_time < #{endDate}]]>
+            </if>
+        GROUP BY account_id
+    </select>
+</mapper>

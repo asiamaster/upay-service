@@ -246,8 +246,9 @@ CREATE TABLE `upay_trade_payment` (
   `modified_time` DATETIME COMMENT '修改时间',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_trade_payment_paymentId` (`payment_id`) USING BTREE,
-  UNIQUE KEY `idx_trade_payment_tradeId` (`trade_id`, `channel_id`) USING BTREE,
-  KEY `idx_trade_payment_accountId` (`account_id`) USING BTREE
+  UNIQUE KEY `uk_trade_payment_tradeId` (`trade_id`, `channel_id`) USING BTREE,
+  KEY `idx_trade_payment_accountId` (`account_id`) USING BTREE,
+  KEY `idx_trade_payment_createdTime` (`created_time`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------------------
