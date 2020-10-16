@@ -59,7 +59,7 @@ public class DefaultFundStreamEngine implements IFundStreamEngine {
         Long childAccountId = transaction.getParentId() == 0 ? null : transaction.getAccountId();
         for (int retry = 0; retry < RETRIES; retry ++) {
             // 新启事务查询账户资金及数据版本，避免数据库隔离级别和Mybatis缓存造成乐观锁重试机制无法生效
-            FundAccount fundAccount = fundAccountService.findAccountFundById(masterAccountId);
+            FundAccount fundAccount = fundAccountService.findFundAccountById(masterAccountId);
             status = TransactionStatus.of(fundAccount.getAccountId(), fundAccount.getBalance(), 0L,
                 fundAccount.getFrozenAmount(), transaction.getFrozenAmount(), transaction.getWhen());
             // 处理解冻资金transaction.getFrozenAmount()<0

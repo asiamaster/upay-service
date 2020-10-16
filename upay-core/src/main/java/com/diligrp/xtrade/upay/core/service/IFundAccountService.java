@@ -29,14 +29,14 @@ public interface IFundAccountService {
     void unregisterFundAccount(Long mchId, Long accountId);
 
     /**
-     * 根据账号ID查询资金账户
+     * 根据账号ID查询用户账户
      */
-    UserAccount findFundAccountById(Long accountId);
+    UserAccount findUserAccountById(Long accountId);
 
     /**
-     * 根据账号ID查询账户资金
+     * 根据账号ID查询资金账户
      */
-    FundAccount findAccountFundById(Long accountId);
+    FundAccount findFundAccountById(Long accountId);
 
     /**
      * 重置账户交易密码

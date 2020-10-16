@@ -86,7 +86,7 @@ public class PaymentProtocolServiceImpl implements IPaymentProtocolService {
     public UserProtocol queryUserProtocol(ProtocolQuery request) {
         ProtocolType.getType(request.getType()).orElseThrow(() ->
             new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "不支持的免密协议类型"));
-        UserAccount account = fundAccountService.findFundAccountById(request.getAccountId());
+        UserAccount account = fundAccountService.findUserAccountById(request.getAccountId());
         Optional<UserProtocol> protocolOpt = userProtocolDao.findUserProtocol(request.getAccountId(), request.getType());
         MerchantPermit merchant = accessPermitService.loadMerchantPermit(account.getMchId());
         Long maxAmount = paymentConfigService.maxProtocolAmount(merchant.getCode());
@@ -112,7 +112,7 @@ public class PaymentProtocolServiceImpl implements IPaymentProtocolService {
      */
     @Override
     public UserAccount checkProtocolPermission(long accountId, long protocolId, long amount) {
-        UserAccount account = fundAccountService.findFundAccountById(accountId);
+        UserAccount account = fundAccountService.findUserAccountById(accountId);
         if (account.getState() != AccountState.NORMAL.getCode()) {
             throw new PaymentChannelException(ErrorCode.INVALID_ACCOUNT_STATE,
                 "资金账户已" + AccountState.getName(account.getState()));

@@ -10,6 +10,7 @@ import com.diligrp.xtrade.upay.boss.domain.FrozenOrderDto;
 import com.diligrp.xtrade.upay.boss.domain.FundBalance;
 import com.diligrp.xtrade.upay.boss.domain.ListFrozen;
 import com.diligrp.xtrade.upay.channel.domain.FreezeFundDto;
+import com.diligrp.xtrade.upay.channel.domain.FrozenAmount;
 import com.diligrp.xtrade.upay.channel.domain.FrozenOrderQuery;
 import com.diligrp.xtrade.upay.channel.domain.FrozenStatus;
 import com.diligrp.xtrade.upay.channel.model.FrozenOrder;
@@ -17,9 +18,12 @@ import com.diligrp.xtrade.upay.channel.service.IAccountChannelService;
 import com.diligrp.xtrade.upay.channel.service.IFrozenOrderService;
 import com.diligrp.xtrade.upay.channel.type.FrozenType;
 import com.diligrp.xtrade.upay.core.model.FundAccount;
+import com.diligrp.xtrade.upay.core.model.UserAccount;
+import com.diligrp.xtrade.upay.core.service.IFundAccountService;
 
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -30,6 +34,9 @@ public class FundServiceComponent {
 
     @Resource
     private IAccountChannelService accountChannelService;
+
+    @Resource
+    private IFundAccountService fundAccountService;
 
     @Resource
     private IFrozenOrderService frozenOrderService;
@@ -61,8 +68,31 @@ public class FundServiceComponent {
         AccountId accountId = request.getData();
         AssertUtils.notNull(accountId.getAccountId(), "accountId missed");
 
-        FundAccount fundAccount = accountChannelService.queryAccountFund(accountId.getAccountId());
+        UserAccount account = fundAccountService.findUserAccountById(accountId.getAccountId());
+        Long masterId = account.getParentId() == 0 ? account.getAccountId() : account.getParentId();
+
+        FundAccount fundAccount = fundAccountService.findFundAccountById(masterId);
         return FundBalance.of(fundAccount.getAccountId(), fundAccount.getBalance(), fundAccount.getFrozenAmount());
+    }
+
+    /**
+     * 查询账户余额(包含人工冻结和系统冻结金额)
+     */
+    public FundBalance queryEx(ServiceRequest<AccountId> request) {
+        AccountId accountId = request.getData();
+        AssertUtils.notNull(accountId.getAccountId(), "accountId missed");
+
+        UserAccount account = fundAccountService.findUserAccountById(accountId.getAccountId());
+        Long masterId = account.getParentId() == 0 ? account.getAccountId() : account.getParentId();
+
+        FundAccount fundAccount = fundAccountService.findFundAccountById(masterId);
+        FundBalance balance = FundBalance.of(fundAccount.getAccountId(), fundAccount.getBalance(), fundAccount.getFrozenAmount());
+        Optional<FrozenAmount> frozenOpt = frozenOrderService.findFrozenAmount(masterId);
+        FrozenAmount frozenAmount = frozenOpt.orElse(FrozenAmount.of(masterId, 0L, 0L));
+        balance.setTradeFrozen(frozenAmount.getTradeFrozen());
+        balance.setManFrozen(frozenAmount.getManFrozen());
+
+        return balance;
     }
 
     /**

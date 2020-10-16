@@ -6,6 +6,7 @@ import com.diligrp.xtrade.shared.sequence.KeyGeneratorManager;
 import com.diligrp.xtrade.upay.channel.dao.IFrozenOrderDao;
 import com.diligrp.xtrade.upay.channel.domain.AccountChannel;
 import com.diligrp.xtrade.upay.channel.domain.FreezeFundDto;
+import com.diligrp.xtrade.upay.channel.domain.FrozenAmount;
 import com.diligrp.xtrade.upay.channel.domain.FrozenOrderQuery;
 import com.diligrp.xtrade.upay.channel.domain.FrozenStateDto;
 import com.diligrp.xtrade.upay.channel.domain.FrozenStatus;
@@ -131,12 +132,22 @@ public class FrozenOrderServiceImpl implements IFrozenOrderService {
     @Override
     public PageMessage<FrozenOrder> listFrozenOrders(FrozenOrderQuery query) {
         // 检查资金账号是否存在
-        fundAccountService.findFundAccountById(query.getAccountId());
+        fundAccountService.findUserAccountById(query.getAccountId());
         List<FrozenOrder> frozenOrders = Collections.emptyList();
         long total = frozenOrderDao.countFrozenOrders(query);
         if (total > 0) {
             frozenOrders = frozenOrderDao.listFrozenOrders(query);
         }
         return PageMessage.success(total, frozenOrders);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * 参数传入主资金账号ID
+     */
+    @Override
+    public Optional<FrozenAmount> findFrozenAmount(Long accountId) {
+        return frozenOrderDao.findFrozenAmount(accountId);
     }
 }

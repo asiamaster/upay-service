@@ -48,11 +48,6 @@ public interface IAccountChannelService {
     FrozenStatus unfreezeAccountFund(Long frozenId);
 
     /**
-     * 查询平台账户资金信息
-     */
-    FundAccount queryAccountFund(Long accountId);
-
-    /**
      * 检查交易权限：账户状态、交易密码
      */
     UserAccount checkTradePermission(long accountId, String password, int maxPwdErrors);

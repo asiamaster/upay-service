@@ -90,4 +90,15 @@
                 <![CDATA[AND created_time <= #{endTime}]]>
             </if>
     </select>
+
+    <select id="findFrozenAmount" parameterType="long" resultType="com.diligrp.xtrade.upay.channel.domain.FrozenAmount">
+        SELECT
+          account_id, SUM(CASE WHEN type=1 THEN amount ELSE 0 END) AS tradeFrozen, SUM(CASE WHEN type=2 THEN amount ELSE 0 END) AS manFrozen
+        FROM
+          upay_frozen_order
+        WHERE
+          account_id=#{accountId} AND state=1
+        GROUP BY
+          account_id
+    </select>
 </mapper>
