@@ -68,7 +68,7 @@ public class PaymentProtocolServiceImpl implements IPaymentProtocolService {
             .ifPresent(proto -> {throw new TradePaymentException(ErrorCode.OBJECT_ALREADY_EXISTS, "免密协议已存在");});
         UserAccount account = accountChannelService.checkTradePermission(request.getAccountId(), request.getPassword(), -1);
         MerchantPermit merchant = accessPermitService.loadMerchantPermit(account.getMchId());
-        Long maxAmount = paymentConfigService.maxProtocolAmount(merchant.getCode());
+        Long maxAmount = paymentConfigService.maxProtocolAmount(merchant.getCode(), request.getType());
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PROTOCOL_ID);
 
         LocalDateTime now = LocalDateTime.now();
@@ -89,7 +89,7 @@ public class PaymentProtocolServiceImpl implements IPaymentProtocolService {
         UserAccount account = fundAccountService.findUserAccountById(request.getAccountId());
         Optional<UserProtocol> protocolOpt = userProtocolDao.findUserProtocol(request.getAccountId(), request.getType());
         MerchantPermit merchant = accessPermitService.loadMerchantPermit(account.getMchId());
-        Long maxAmount = paymentConfigService.maxProtocolAmount(merchant.getCode());
+        Long maxAmount = paymentConfigService.maxProtocolAmount(merchant.getCode(), request.getType());
         protocolOpt.ifPresentOrElse(protocol -> {
             if (protocol.getState() != ProtocolState.NORMAL.getCode()) {
                 throw new UserProtocolException(UserProtocolException.USE_NOT_ALLOWED, "不允许使用免密支付，协议已被禁用");
@@ -124,7 +124,7 @@ public class PaymentProtocolServiceImpl implements IPaymentProtocolService {
             throw new UserProtocolException(ErrorCode.OPERATION_NOT_ALLOWED, "不允许使用免密支付，协议状态异常");
         }
         MerchantPermit merchant = accessPermitService.loadMerchantPermit(account.getMchId());
-        Long maxAmount = paymentConfigService.maxProtocolAmount(merchant.getCode());
+        Long maxAmount = paymentConfigService.maxProtocolAmount(merchant.getCode(), proto.getType());
         if (amount > maxAmount) {
             throw new UserProtocolException(ErrorCode.OPERATION_NOT_ALLOWED, "不允许使用免密支付，支付金额超出协议金额范围");
         }

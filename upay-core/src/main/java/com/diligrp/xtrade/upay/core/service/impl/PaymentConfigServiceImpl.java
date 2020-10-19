@@ -80,12 +80,14 @@ public class PaymentConfigServiceImpl implements IPaymentConfigService {
      * 设置最大免密支付金额
      */
     @Override
-    public Long maxProtocolAmount(String groupCode) {
+    public Long maxProtocolAmount(String groupCode, Integer protocolType) {
         AssertUtils.notEmpty(groupCode, "groupCode missed");
-        String cachedKey = PREFIX_CONFIG_KEY + groupCode + Constants.CHAR_UNDERSCORE + Constants.CONFIG_MAX_PROTO_AMOUNT;
+        String cachedKey = PREFIX_CONFIG_KEY + groupCode + Constants.CHAR_UNDERSCORE
+            + Constants.CONFIG_MAX_PROTO_AMOUNT + protocolType;
         String value = loadCachedConfig(cachedKey);
         if (ObjectUtils.isEmpty(value)) {
-            DataDictionary config = dataDictionaryDao.findDataDictionaryByCode(Constants.CONFIG_MAX_PROTO_AMOUNT, groupCode);
+            DataDictionary config = dataDictionaryDao.findDataDictionaryByCode(Constants.CONFIG_MAX_PROTO_AMOUNT
+                + protocolType, groupCode);
             if (config != null) {
                 value = config.getValue();
                 saveCachedConfig(cachedKey, value);

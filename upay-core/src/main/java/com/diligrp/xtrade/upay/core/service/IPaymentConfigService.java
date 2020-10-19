@@ -26,7 +26,7 @@ public interface IPaymentConfigService {
      * @param groupCode - 必填, 字典分组编码(市场编码)
      * @return 最大免密协议支付金额
      */
-    Long maxProtocolAmount(String groupCode);
+    Long maxProtocolAmount(String groupCode, Integer protocolType);
 
     /**
      * 获取数据字典配置值
