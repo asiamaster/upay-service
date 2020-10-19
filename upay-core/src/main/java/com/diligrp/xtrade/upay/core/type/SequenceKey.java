@@ -12,5 +12,7 @@ public enum SequenceKey implements SnowflakeKeyManager.SnowflakeKey {
 
     PAYMENT_ID,
 
-    FROZEN_ID;
+    FROZEN_ID,
+
+    PROTOCOL_ID;
 }

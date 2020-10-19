@@ -85,7 +85,7 @@ public class TransferPaymentServiceImpl implements IPaymentService {
         TransactionStatus status = accountChannelService.submit(fromTransaction);
 
         // 交易转入
-        UserAccount toAccount = fundAccountService.findFundAccountById(trade.getAccountId());
+        UserAccount toAccount = fundAccountService.findUserAccountById(trade.getAccountId());
         accountChannelService.checkAccountTradeState(toAccount); // 寿光专用业务逻辑
         AccountChannel toChannel = AccountChannel.of(paymentId, toAccount.getAccountId(), toAccount.getParentId());
         IFundTransaction toTransaction = toChannel.openTransaction(trade.getType(), now);

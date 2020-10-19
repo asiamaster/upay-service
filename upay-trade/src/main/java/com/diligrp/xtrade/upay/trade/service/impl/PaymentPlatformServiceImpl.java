@@ -68,7 +68,7 @@ public class PaymentPlatformServiceImpl implements IPaymentPlatformService, Bean
         LocalDateTime when = LocalDateTime.now();
         Optional<TradeType> tradeType = TradeType.getType(trade.getType());
         tradeType.orElseThrow(() -> new TradePaymentException(ErrorCode.TRADE_NOT_SUPPORTED, "不支持的交易类型"));
-        UserAccount account = fundAccountService.findFundAccountById(trade.getAccountId());
+        UserAccount account = fundAccountService.findUserAccountById(trade.getAccountId());
         accountChannelService.checkAccountTradeState(account);
         if (!ObjectUtils.equals(account.getMchId(), application.getMerchant().getMchId())) {
             throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "该商户下资金账号不存在");
@@ -113,7 +113,8 @@ public class PaymentPlatformServiceImpl implements IPaymentPlatformService, Bean
 //        feeList.stream().map(fee -> FundType.getFee(fee.getType())).forEach(feeOpt ->
 //            feeOpt.orElseThrow(() -> new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "不支持的费用类型")));
 
-        Payment payment = Payment.of(request.getAccountId(), trade.getAmount(), request.getChannelId(), request.getPassword());
+        Payment payment = Payment.of(request.getAccountId(), trade.getAmount(), request.getChannelId(),
+            request.getPassword(), request.getProtocolId());
         payment.put(MerchantPermit.class.getName(), application.getMerchant());
         request.fees().ifPresent(fees -> payment.put(Fee.class.getName(), fees));
 

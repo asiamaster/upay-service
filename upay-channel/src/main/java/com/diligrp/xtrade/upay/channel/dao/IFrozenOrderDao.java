@@ -1,6 +1,7 @@
 package com.diligrp.xtrade.upay.channel.dao;
 
 import com.diligrp.xtrade.shared.mybatis.MybatisMapperSupport;
+import com.diligrp.xtrade.upay.channel.domain.FrozenAmount;
 import com.diligrp.xtrade.upay.channel.domain.FrozenOrderQuery;
 import com.diligrp.xtrade.upay.channel.domain.FrozenStateDto;
 import com.diligrp.xtrade.upay.channel.model.FrozenOrder;
@@ -25,4 +26,6 @@ public interface IFrozenOrderDao extends MybatisMapperSupport {
     List<FrozenOrder> listFrozenOrders(FrozenOrderQuery query);
 
     long countFrozenOrders(FrozenOrderQuery query);
+
+    Optional<FrozenAmount> findFrozenAmount(Long accountId);
 }

@@ -12,7 +12,7 @@ public interface IAccessPermitService {
     /**
      * 获取商户接入许可
      */
-    MerchantPermit loadMerchantPermit(Long appId);
+    MerchantPermit loadMerchantPermit(Long mchId);
 
     /**
      * 获取应用接入许可

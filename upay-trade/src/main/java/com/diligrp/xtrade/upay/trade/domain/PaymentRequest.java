@@ -20,6 +20,8 @@ public class PaymentRequest {
     private String cardNo;
     // 费用列表
     private List<Fee> fees;
+    // 免密协议号
+    private Long protocolId;
 
     public String getTradeId() {
         return tradeId;
@@ -67,6 +69,14 @@ public class PaymentRequest {
 
     public void setFees(List<Fee> fees) {
         this.fees = fees;
+    }
+
+    public Long getProtocolId() {
+        return protocolId;
+    }
+
+    public void setProtocolId(Long protocolId) {
+        this.protocolId = protocolId;
     }
 
     public Optional<List<Fee>> fees() {

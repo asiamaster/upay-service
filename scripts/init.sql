@@ -38,3 +38,7 @@ INSERT INTO upay_data_dictionary(type, group_code, code, name, value, descriptio
 VALUES (1, 'SG', 'dataSignSwitch', '接口数据签名验签开关', 'off', 'on-开启签名验签, off-关闭签名验签', NOW());
 INSERT INTO upay_data_dictionary(type, group_code, code, name, value, description, created_time)
 VALUES (1, 'SG', 'smsNotifySwitch', '短信通知开关', 'off', 'on-开启短信通知, off-关闭短信通知', NOW());
+INSERT INTO upay_data_dictionary(type, group_code, code, name, value, description, created_time)
+VALUES (1, 'SG', 'maxProtocolAmount30', '进门收费最大免密支付金额', '10000000000', '设置最大免密支付金额', NOW());
+INSERT INTO upay_data_dictionary(type, group_code, code, name, value, description, created_time)
+VALUES (1, 'SG', 'maxProtocolAmount40', '本地配送最大免密支付金额', '10000', '设置最大免密支付金额', NOW());

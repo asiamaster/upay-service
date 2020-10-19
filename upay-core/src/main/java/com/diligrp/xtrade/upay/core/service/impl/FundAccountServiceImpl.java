@@ -159,7 +159,7 @@ public class FundAccountServiceImpl implements IFundAccountService {
     }
 
     @Override
-    public UserAccount findFundAccountById(Long accountId) {
+    public UserAccount findUserAccountById(Long accountId) {
         Optional<UserAccount> accountOpt = fundAccountDao.findUserAccountById(accountId);
         accountOpt.ifPresent(AccountStateMachine::voidAccountCheck);
         return accountOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
@@ -175,7 +175,7 @@ public class FundAccountServiceImpl implements IFundAccountService {
      */
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW, isolation = Isolation.READ_COMMITTED)
-    public FundAccount findAccountFundById(Long accountId) {
+    public FundAccount findFundAccountById(Long accountId) {
         Optional<FundAccount> fundOpt = accountFundDao.findFundAccountById(accountId);
         return fundOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "账号资金不存在"));
     }

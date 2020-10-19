@@ -24,17 +24,13 @@ public enum TradeType implements IEnumType {
 
     BANK_DEPOSIT("网银充值", 15),
 
+    REFUND_FEE("退费", 16),
+
     DIRECT_TRADE("即时交易", 20),
 
     AUTH_TRADE("预授权交易", 21),
 
-    VOUCH_TRADE("担保交易", 22),
-
     TRANSFER("账户转账", 23),
-
-    ONLINE_DEPOSIT("银行圈存", 30),
-
-    ONLINE_WITHDRAW("银行圈提", 31),
 
     CANCEL_TRADE("交易撤销", 40),
 

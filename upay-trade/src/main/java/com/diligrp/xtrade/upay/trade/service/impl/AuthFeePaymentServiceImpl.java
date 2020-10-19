@@ -1,6 +1,5 @@
 package com.diligrp.xtrade.upay.trade.service.impl;
 
-import com.diligrp.xtrade.shared.exception.ServiceAccessException;
 import com.diligrp.xtrade.shared.sequence.IKeyGenerator;
 import com.diligrp.xtrade.shared.sequence.KeyGeneratorManager;
 import com.diligrp.xtrade.shared.sequence.SnowflakeKeyManager;
@@ -15,10 +14,10 @@ import com.diligrp.xtrade.upay.channel.type.ChannelType;
 import com.diligrp.xtrade.upay.channel.type.FrozenState;
 import com.diligrp.xtrade.upay.channel.type.FrozenType;
 import com.diligrp.xtrade.upay.core.ErrorCode;
-import com.diligrp.xtrade.upay.core.dao.IMerchantDao;
 import com.diligrp.xtrade.upay.core.domain.MerchantPermit;
 import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
 import com.diligrp.xtrade.upay.core.model.UserAccount;
+import com.diligrp.xtrade.upay.core.service.IAccessPermitService;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
 import com.diligrp.xtrade.upay.core.util.AsyncTaskExecutor;
 import com.diligrp.xtrade.upay.trade.dao.IPaymentFeeDao;
@@ -69,10 +68,10 @@ public class AuthFeePaymentServiceImpl extends FeePaymentServiceImpl implements 
     private IPaymentFeeDao paymentFeeDao;
 
     @Resource
-    private IMerchantDao merchantDao;
+    private IAccountChannelService accountChannelService;
 
     @Resource
-    private IAccountChannelService accountChannelService;
+    private IAccessPermitService accessPermitService;
 
     @Resource
     private KeyGeneratorManager keyGeneratorManager;
@@ -170,9 +169,7 @@ public class AuthFeePaymentServiceImpl extends FeePaymentServiceImpl implements 
         LocalDateTime now = LocalDateTime.now();
         UserAccount account = accountChannelService.checkTradePermission(payment.getAccountId(), confirm.getPassword(), -1);
         accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
-        MerchantPermit merchant = merchantDao.findMerchantById(trade.getMchId()).map(mer -> MerchantPermit.of(
-            mer.getMchId(), mer.getCode(), mer.getProfitAccount(), mer.getVouchAccount(), mer.getPledgeAccount()))
-            .orElseThrow(() -> new ServiceAccessException(ErrorCode.OBJECT_NOT_FOUND, "商户信息未注册"));
+        MerchantPermit merchant = accessPermitService.loadMerchantPermit(trade.getMchId());
         // 客户账号资金解冻并缴费
         AccountChannel channel = AccountChannel.of(payment.getPaymentId(), account.getAccountId(), account.getParentId());
         IFundTransaction transaction = channel.openTransaction(trade.getType(), now);

@@ -2,8 +2,11 @@ package com.diligrp.xtrade.upay.core.service.impl;
 
 import com.diligrp.xtrade.shared.redis.IRedisSystemService;
 import com.diligrp.xtrade.shared.util.AssertUtils;
+import com.diligrp.xtrade.shared.util.NumberUtils;
 import com.diligrp.xtrade.shared.util.ObjectUtils;
+import com.diligrp.xtrade.upay.core.ErrorCode;
 import com.diligrp.xtrade.upay.core.dao.IDataDictionaryDao;
+import com.diligrp.xtrade.upay.core.exception.PaymentServiceException;
 import com.diligrp.xtrade.upay.core.model.DataDictionary;
 import com.diligrp.xtrade.upay.core.service.IPaymentConfigService;
 import com.diligrp.xtrade.upay.core.util.Constants;
@@ -69,6 +72,33 @@ public class PaymentConfigServiceImpl implements IPaymentConfigService {
             }
         }
         return Constants.SWITCH_ON.equalsIgnoreCase(value);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * 设置最大免密支付金额
+     */
+    @Override
+    public Long maxProtocolAmount(String groupCode, Integer protocolType) {
+        AssertUtils.notEmpty(groupCode, "groupCode missed");
+        String cachedKey = PREFIX_CONFIG_KEY + groupCode + Constants.CHAR_UNDERSCORE
+            + Constants.CONFIG_MAX_PROTO_AMOUNT + protocolType;
+        String value = loadCachedConfig(cachedKey);
+        if (ObjectUtils.isEmpty(value)) {
+            DataDictionary config = dataDictionaryDao.findDataDictionaryByCode(Constants.CONFIG_MAX_PROTO_AMOUNT
+                + protocolType, groupCode);
+            if (config != null) {
+                value = config.getValue();
+                saveCachedConfig(cachedKey, value);
+            }
+        }
+        // 如无配置信息则使用全局配置金额100元 @see Constants.DEFAULT_MAX_PROTO_AMOUNT
+        value = ObjectUtils.isEmpty(value) ? Constants.DEFAULT_MAX_PROTO_AMOUNT : value;
+        if (!NumberUtils.isNumeric(value)) {
+            throw new PaymentServiceException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "免密协议参数配置错误");
+        }
+        return Long.parseLong(value);
     }
 
     /**

@@ -122,23 +122,13 @@ public class AccountChannelServiceImpl implements IAccountChannelService {
 
     /**
      * {@inheritDoc}
-     */
-    @Override
-    public FundAccount queryAccountFund(Long accountId) {
-        UserAccount account = fundAccountService.findFundAccountById(accountId);
-        Long masterId = account.getParentId() == 0 ? account.getAccountId() : account.getParentId();
-        return fundAccountService.findAccountFundById(masterId);
-    }
-
-    /**
-     * {@inheritDoc}
      *
      * maxPwdErrors为负数时表示不限制错误次数
      */
     @Override
     public UserAccount checkTradePermission(long accountId, String password, int maxPwdErrors) {
         AssertUtils.notEmpty(password, "password missed");
-        UserAccount account = fundAccountService.findFundAccountById(accountId);
+        UserAccount account = fundAccountService.findUserAccountById(accountId);
         if (account.getState() != AccountState.NORMAL.getCode()) {
             throw new PaymentChannelException(ErrorCode.INVALID_ACCOUNT_STATE,
                 "资金账户已" + AccountState.getName(account.getState()));
@@ -172,10 +162,11 @@ public class AccountChannelServiceImpl implements IAccountChannelService {
      */
     @Override
     public UserAccount checkTradePermission(long accountId) {
-        UserAccount account = fundAccountService.findFundAccountById(accountId);
+        UserAccount account = fundAccountService.findUserAccountById(accountId);
         if (account.getState() != AccountState.NORMAL.getCode()) {
             throw new PaymentChannelException(ErrorCode.INVALID_ACCOUNT_STATE,
-                "资金账户已" + AccountState.getName(account.getState()));        }
+                "资金账户已" + AccountState.getName(account.getState()));
+        }
         return account;
     }
 
@@ -196,7 +187,7 @@ public class AccountChannelServiceImpl implements IAccountChannelService {
     public void checkAccountTradeState(UserAccount account) {
         AccountStateMachine.accountStateCheck(account);
         if (account.getParentId() != 0) {
-            UserAccount parent = fundAccountService.findFundAccountById(account.getParentId());
+            UserAccount parent = fundAccountService.findUserAccountById(account.getParentId());
             AccountStateMachine.accountStateCheck(parent);
         }
     }

@@ -1,6 +1,5 @@
 package com.diligrp.xtrade.upay.trade.service.impl;
 
-import com.diligrp.xtrade.shared.exception.ServiceAccessException;
 import com.diligrp.xtrade.shared.sequence.IKeyGenerator;
 import com.diligrp.xtrade.shared.sequence.SnowflakeKeyManager;
 import com.diligrp.xtrade.shared.util.ObjectUtils;
@@ -9,10 +8,10 @@ import com.diligrp.xtrade.upay.channel.domain.IFundTransaction;
 import com.diligrp.xtrade.upay.channel.service.IAccountChannelService;
 import com.diligrp.xtrade.upay.channel.type.ChannelType;
 import com.diligrp.xtrade.upay.core.ErrorCode;
-import com.diligrp.xtrade.upay.core.dao.IMerchantDao;
 import com.diligrp.xtrade.upay.core.domain.MerchantPermit;
 import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
 import com.diligrp.xtrade.upay.core.model.UserAccount;
+import com.diligrp.xtrade.upay.core.service.IAccessPermitService;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
 import com.diligrp.xtrade.upay.trade.dao.IPaymentFeeDao;
 import com.diligrp.xtrade.upay.trade.dao.IRefundPaymentDao;
@@ -29,6 +28,7 @@ import com.diligrp.xtrade.upay.trade.model.PaymentFee;
 import com.diligrp.xtrade.upay.trade.model.RefundPayment;
 import com.diligrp.xtrade.upay.trade.model.TradeOrder;
 import com.diligrp.xtrade.upay.trade.model.TradePayment;
+import com.diligrp.xtrade.upay.trade.service.IPaymentProtocolService;
 import com.diligrp.xtrade.upay.trade.service.IPaymentService;
 import com.diligrp.xtrade.upay.trade.type.PaymentState;
 import com.diligrp.xtrade.upay.trade.type.TradeState;
@@ -62,10 +62,13 @@ public class FeePaymentServiceImpl implements IPaymentService {
     private IPaymentFeeDao paymentFeeDao;
 
     @Resource
-    private IMerchantDao merchantDao;
+    private IAccessPermitService accessPermitService;
 
     @Resource
     private IAccountChannelService accountChannelService;
+
+    @Resource
+    private IPaymentProtocolService paymentProtocolService;
 
     @Resource
     private SnowflakeKeyManager snowflakeKeyManager;
@@ -94,11 +97,18 @@ public class FeePaymentServiceImpl implements IPaymentService {
         }
 
         // 处理账户余额缴费
-        TransactionStatus status = null;
+        UserAccount account = null;
         LocalDateTime now = LocalDateTime.now();
-        UserAccount account = payment.getChannelId() == ChannelType.CASH.getCode() ? // 现金缴费不校验密码（办卡/换卡工本费）
-            accountChannelService.checkTradePermission(payment.getAccountId()) :
-            accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
+        if (payment.getChannelId() == ChannelType.CASH.getCode()) { // 现金缴费不校验密码（办卡/换卡工本费）
+            account = accountChannelService.checkTradePermission(payment.getAccountId());
+        } else if (payment.getProtocolId() == null) { // 交易密码校验
+            account = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
+        } else { // 免密支付
+            account = paymentProtocolService.checkProtocolPermission(payment.getAccountId(),
+                payment.getProtocolId(), payment.getAmount());
+        }
+
+        TransactionStatus status = null;
         accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
         String paymentId = String.valueOf(keyGenerator.nextId());
@@ -119,17 +129,16 @@ public class FeePaymentServiceImpl implements IPaymentService {
         );
         accountChannelService.submit(feeTransaction);
 
-        TradeStateDto tradeState = TradeStateDto.of(trade.getTradeId(), TradeState.SUCCESS.getCode(),
-            trade.getVersion(), now);
+        TradeStateDto tradeState = TradeStateDto.of(trade.getTradeId(), TradeState.SUCCESS.getCode(), trade.getVersion(), now);
         int result = tradeOrderDao.compareAndSetState(tradeState);
         if (result == 0) {
             throw new TradePaymentException(ErrorCode.DATA_CONCURRENT_UPDATED, "系统正忙，请稍后重试");
         }
 
         TradePayment paymentDo = TradePayment.builder().paymentId(paymentId).tradeId(trade.getTradeId())
-            .channelId(payment.getChannelId()).accountId(trade.getAccountId())
-            .name(trade.getName()).cardNo(null).amount(trade.getAmount()).fee(0L).state(PaymentState.SUCCESS.getCode())
-            .description(TradeType.PAY_FEE.getName()).version(0).createdTime(now).build();
+            .channelId(payment.getChannelId()).accountId(trade.getAccountId()).name(trade.getName())
+            .cardNo(null).amount(trade.getAmount()).fee(0L).protocolId(payment.getProtocolId())
+            .state(PaymentState.SUCCESS.getCode()).description(TradeType.PAY_FEE.getName()).version(0).createdTime(now).build();
         tradePaymentDao.insertTradePayment(paymentDo);
 
         List<PaymentFee> paymentFeeDos = fees.stream().map(fee ->
@@ -165,9 +174,7 @@ public class FeePaymentServiceImpl implements IPaymentService {
         UserAccount account = accountChannelService.checkTradePermission(trade.getAccountId());
         accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
         // 获取交易订单中的商户收益账号信息，并处理商户退款
-        MerchantPermit merchant = merchantDao.findMerchantById(trade.getMchId()).map(mer -> MerchantPermit.of(
-            mer.getMchId(), mer.getCode(), mer.getProfitAccount(), mer.getVouchAccount(), mer.getPledgeAccount()))
-            .orElseThrow(() -> new ServiceAccessException(ErrorCode.OBJECT_NOT_FOUND, "商户信息未注册"));
+        MerchantPermit merchant = accessPermitService.loadMerchantPermit(trade.getMchId());
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
         String paymentId = String.valueOf(keyGenerator.nextId());
         AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);

@@ -1,6 +1,5 @@
 package com.diligrp.xtrade.upay.trade.service.impl;
 
-import com.diligrp.xtrade.shared.exception.ServiceAccessException;
 import com.diligrp.xtrade.shared.sequence.IKeyGenerator;
 import com.diligrp.xtrade.shared.sequence.SnowflakeKeyManager;
 import com.diligrp.xtrade.shared.util.ObjectUtils;
@@ -9,10 +8,10 @@ import com.diligrp.xtrade.upay.channel.domain.IFundTransaction;
 import com.diligrp.xtrade.upay.channel.service.IAccountChannelService;
 import com.diligrp.xtrade.upay.channel.type.ChannelType;
 import com.diligrp.xtrade.upay.core.ErrorCode;
-import com.diligrp.xtrade.upay.core.dao.IMerchantDao;
 import com.diligrp.xtrade.upay.core.domain.MerchantPermit;
 import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
 import com.diligrp.xtrade.upay.core.model.UserAccount;
+import com.diligrp.xtrade.upay.core.service.IAccessPermitService;
 import com.diligrp.xtrade.upay.core.service.IFundAccountService;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
 import com.diligrp.xtrade.upay.trade.dao.IPaymentFeeDao;
@@ -65,13 +64,13 @@ public class TradePaymentServiceImpl implements IPaymentService {
     private IRefundPaymentDao refundPaymentDao;
 
     @Resource
-    private IMerchantDao merchantDao;
-
-    @Resource
     private IAccountChannelService accountChannelService;
 
     @Resource
     private IFundAccountService fundAccountService;
+
+    @Resource
+    private IAccessPermitService accessPermitService;
 
     @Resource
     private SnowflakeKeyManager snowflakeKeyManager;
@@ -112,7 +111,7 @@ public class TradePaymentServiceImpl implements IPaymentService {
         TransactionStatus status = accountChannelService.submit(fromTransaction);
 
         // 处理卖家收款和卖家佣金
-        UserAccount toAccount = fundAccountService.findFundAccountById(trade.getAccountId());
+        UserAccount toAccount = fundAccountService.findUserAccountById(trade.getAccountId());
         accountChannelService.checkAccountTradeState(toAccount); // 寿光专用业务逻辑
         AccountChannel toChannel = AccountChannel.of(paymentId, toAccount.getAccountId(), toAccount.getParentId());
         IFundTransaction toTransaction = toChannel.openTransaction(trade.getType(), now);
@@ -178,9 +177,7 @@ public class TradePaymentServiceImpl implements IPaymentService {
         LocalDateTime now = LocalDateTime.now();
         UserAccount fromAccount = accountChannelService.checkTradePermission(trade.getAccountId());
         accountChannelService.checkAccountTradeState(fromAccount); // 寿光专用业务逻辑
-        MerchantPermit merchant = merchantDao.findMerchantById(trade.getMchId()).map(mer -> MerchantPermit.of(
-            mer.getMchId(), mer.getCode(), mer.getProfitAccount(), mer.getVouchAccount(), mer.getPledgeAccount()))
-            .orElseThrow(() -> new ServiceAccessException(ErrorCode.OBJECT_NOT_FOUND, "商户信息未注册"));
+        MerchantPermit merchant = accessPermitService.loadMerchantPermit(trade.getMchId());
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
         String paymentId = String.valueOf(keyGenerator.nextId());
 
@@ -196,7 +193,7 @@ public class TradePaymentServiceImpl implements IPaymentService {
         TransactionStatus status = accountChannelService.submit(fromTransaction);
 
         // 处理买家收款和退佣金
-        UserAccount toAccount = fundAccountService.findFundAccountById(payment.getAccountId());
+        UserAccount toAccount = fundAccountService.findUserAccountById(payment.getAccountId());
         accountChannelService.checkAccountTradeState(toAccount); // 寿光专用业务逻辑
         AccountChannel toChannel = AccountChannel.of(paymentId, toAccount.getAccountId(), toAccount.getParentId());
         IFundTransaction toTransaction = toChannel.openTransaction(TradeType.CANCEL_TRADE.getCode(), now);
