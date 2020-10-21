@@ -334,7 +334,7 @@ CREATE TABLE `upay_user_protocol` (
   `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
   `protocol_id` BIGINT NOT NULL COMMENT '协议ID',
   `account_id` BIGINT NOT NULL COMMENT '账号ID',
-  `name` VARCHAR(20) COMMENT '用户名',
+  `name` VARCHAR(40) COMMENT '用户名',
   `type` TINYINT UNSIGNED NOT NULL COMMENT '协议类型',
   `min_amount` BIGINT NOT NULL COMMENT '最小金额-分',
   `max_amount` BIGINT NOT NULL COMMENT '最大金额-分',
