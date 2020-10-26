@@ -8,8 +8,11 @@ bootJar {
 
 dependencies {
     api project(':upay-trade')
-    implementation 'com.alibaba.cloud:spring-cloud-starter-alibaba-nacos-discovery:2.2.0.RELEASE'
-    implementation 'com.alibaba.cloud:spring-cloud-starter-alibaba-nacos-config:2.2.0.RELEASE'
+    implementation 'com.alibaba.cloud:spring-cloud-starter-alibaba-nacos-discovery:2.2.3.RELEASE'
+    implementation 'com.alibaba.cloud:spring-cloud-starter-alibaba-nacos-config:2.2.3.RELEASE'
+    implementation 'com.alibaba.cloud:spring-cloud-starter-alibaba-sentinel:2.2.3.RELEASE'
+    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign:2.2.3.RELEASE'
+    implementation 'com.alibaba.csp:sentinel-datasource-nacos:1.8.0'
 
     runtimeOnly 'mysql:mysql-connector-java'
 }
