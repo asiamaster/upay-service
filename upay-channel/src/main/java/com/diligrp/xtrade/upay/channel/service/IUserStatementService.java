@@ -11,7 +11,7 @@ import com.diligrp.xtrade.upay.channel.domain.TradeStatement;
  * @author: brenthuang
  * @date: 2020/10/14
  */
-public interface IChannelStatementService {
+public interface IUserStatementService {
     /**
      * 分页查询客户交易明细
      */

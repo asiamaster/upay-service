@@ -10,6 +10,8 @@ public class TradeStateDto {
     private String tradeId;
     // 金额 - 预支付交易或发生退款时需要更新实际付款金额
     private Long amount;
+    // 原交易金额 - 预支付交易或发生退款时需要更新实际付款金额
+    private Long maxAmount;
     // 费用
     private Long fee;
     // 状态
@@ -33,6 +35,14 @@ public class TradeStateDto {
 
     public void setAmount(Long amount) {
         this.amount = amount;
+    }
+
+    public Long getMaxAmount() {
+        return maxAmount;
+    }
+
+    public void setMaxAmount(Long maxAmount) {
+        this.maxAmount = maxAmount;
     }
 
     public Long getFee() {
@@ -68,17 +78,20 @@ public class TradeStateDto {
     }
 
     public static TradeStateDto of(String tradeId, Integer state, Integer version, LocalDateTime modifiedTime) {
-        return TradeStateDto.of(tradeId, null, state, version, modifiedTime);
+        return TradeStateDto.of(tradeId, null, null, state, version, modifiedTime);
     }
 
-    public static TradeStateDto of(String tradeId, Long amount, Integer state, Integer version, LocalDateTime modifiedTime) {
-        return TradeStateDto.of(tradeId, amount, null, state, version, modifiedTime);
+    public static TradeStateDto of(String tradeId, Long amount, Long maxAmount, Integer state,
+                                   Integer version, LocalDateTime modifiedTime) {
+        return TradeStateDto.of(tradeId, amount, maxAmount, null, state, version, modifiedTime);
     }
 
-    public static TradeStateDto of(String tradeId, Long amount, Long fee, Integer state, Integer version, LocalDateTime modifiedTime) {
+    public static TradeStateDto of(String tradeId, Long amount, Long maxAmount, Long fee, Integer state,
+                                   Integer version, LocalDateTime modifiedTime) {
         TradeStateDto tradeState = new TradeStateDto();
         tradeState.setTradeId(tradeId);
         tradeState.setAmount(amount);
+        tradeState.setMaxAmount(maxAmount);
         tradeState.setFee(fee);
         tradeState.setState(state);
         tradeState.setVersion(version);
