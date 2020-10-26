@@ -3,10 +3,13 @@ package com.diligrp.xtrade.upay.trade.service.impl;
 import com.diligrp.xtrade.shared.sequence.IKeyGenerator;
 import com.diligrp.xtrade.shared.sequence.SnowflakeKeyManager;
 import com.diligrp.xtrade.shared.util.ObjectUtils;
+import com.diligrp.xtrade.upay.channel.dao.IUserStatementDao;
 import com.diligrp.xtrade.upay.channel.domain.AccountChannel;
 import com.diligrp.xtrade.upay.channel.domain.IFundTransaction;
+import com.diligrp.xtrade.upay.channel.model.UserStatement;
 import com.diligrp.xtrade.upay.channel.service.IAccountChannelService;
 import com.diligrp.xtrade.upay.channel.type.ChannelType;
+import com.diligrp.xtrade.upay.channel.type.StatementType;
 import com.diligrp.xtrade.upay.core.ErrorCode;
 import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
 import com.diligrp.xtrade.upay.core.model.UserAccount;
@@ -45,6 +48,9 @@ public class PredepositPaymentServiceImpl implements IPaymentService {
 
     @Resource
     private ITradeOrderDao tradeOrderDao;
+
+    @Resource
+    private IUserStatementDao userStatementDao;
 
     @Resource
     private IAccountChannelService accountChannelService;
@@ -90,6 +96,15 @@ public class PredepositPaymentServiceImpl implements IPaymentService {
             .name(trade.getName()).cardNo(null).amount(payment.getAmount()).fee(0L).state(PaymentState.SUCCESS.getCode())
             .description(tradeName(payment.getChannelId())).version(0).createdTime(now).build();
         tradePaymentDao.insertTradePayment(paymentDo);
+
+        // 生成存款账户业务账单
+        UserStatement statement = UserStatement.builder().appId(trade.getAppId()).tradeId(trade.getTradeId())
+            .paymentId(paymentDo.getPaymentId()).channelId(paymentDo.getChannelId()).accountId(paymentDo.getAccountId())
+            .type(StatementType.DEPOSIT.getCode()).typeName(StatementType.DEPOSIT.getName())
+            .amount(trade.getAmount()).fee(0L).balance(status.getBalance() + status.getAmount())
+            .frozenAmount(status.getFrozenBalance() + status.getFrozenAmount()).serialNo(trade.getSerialNo()).state(4)
+            .createdTime(now).build();
+        userStatementDao.insertUserStatement(statement);
 
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, paymentId, status);
     }

@@ -5,14 +5,17 @@ import com.diligrp.xtrade.shared.sequence.KeyGeneratorManager;
 import com.diligrp.xtrade.shared.sequence.SnowflakeKeyManager;
 import com.diligrp.xtrade.shared.util.ObjectUtils;
 import com.diligrp.xtrade.upay.channel.dao.IFrozenOrderDao;
+import com.diligrp.xtrade.upay.channel.dao.IUserStatementDao;
 import com.diligrp.xtrade.upay.channel.domain.AccountChannel;
 import com.diligrp.xtrade.upay.channel.domain.FrozenStateDto;
 import com.diligrp.xtrade.upay.channel.domain.IFundTransaction;
 import com.diligrp.xtrade.upay.channel.model.FrozenOrder;
+import com.diligrp.xtrade.upay.channel.model.UserStatement;
 import com.diligrp.xtrade.upay.channel.service.IAccountChannelService;
 import com.diligrp.xtrade.upay.channel.type.ChannelType;
 import com.diligrp.xtrade.upay.channel.type.FrozenState;
 import com.diligrp.xtrade.upay.channel.type.FrozenType;
+import com.diligrp.xtrade.upay.channel.type.StatementType;
 import com.diligrp.xtrade.upay.core.ErrorCode;
 import com.diligrp.xtrade.upay.core.domain.MerchantPermit;
 import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
@@ -46,6 +49,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -69,6 +73,9 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
 
     @Resource
     private IFrozenOrderDao frozenOrderDao;
+
+    @Resource
+    private IUserStatementDao userStatementDao;
 
     @Resource
     private IAccountChannelService accountChannelService;
@@ -197,16 +204,6 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
         });
         status.setRelation(accountChannelService.submit(toTransaction));
 
-        // 处理商户收益
-        if (!fees.isEmpty()) {
-            AccountChannel merChannel = AccountChannel.of(payment.getPaymentId(), merchant.getProfitAccount(), 0L);
-            IFundTransaction merTransaction = merChannel.openTransaction(trade.getType(), now);
-            fees.forEach(fee ->
-                merTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName())
-            );
-            accountChannelService.submit(merTransaction);
-        }
-
         // 修改冻结订单"已解冻"状态
         FrozenStateDto frozenState = FrozenStateDto.of(frozenOrder.getFrozenId(), FrozenState.UNFROZEN.getCode(),
             frozenOrder.getVersion(), now);
@@ -215,7 +212,7 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
         }
         // 卖家佣金存储在TradeOrder订单模型中
         long toFee = fees.stream().filter(Fee::forSeller).mapToLong(Fee::getAmount).sum();
-        TradeStateDto tradeState = TradeStateDto.of(trade.getTradeId(), confirm.getAmount(), toFee,
+        TradeStateDto tradeState = TradeStateDto.of(trade.getTradeId(), confirm.getAmount(), confirm.getAmount(), toFee,
             TradeState.SUCCESS.getCode(), trade.getVersion(), now);
         int result = tradeOrderDao.compareAndSetState(tradeState);
         if (result == 0) {
@@ -234,6 +231,33 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
                 PaymentFee.of(payment.getPaymentId(), fee.getUseFor(), fee.getAmount(), fee.getType(), fee.getTypeName(), now)
             ).collect(Collectors.toList());
             paymentFeeDao.insertPaymentFees(paymentFeeDos);
+        }
+
+        // 生成交易双方的业务账单
+        List<UserStatement> statements = new ArrayList<>(2);
+        UserStatement.builder().appId(trade.getAppId()).tradeId(trade.getTradeId())
+            .paymentId(payment.getPaymentId()).channelId(payment.getChannelId()).accountId(payment.getAccountId())
+            .type(StatementType.TRADE.getCode()).typeName(StatementType.TRADE.getName())
+            .amount(- (confirm.getAmount() + fromFee)).fee(fromFee).balance(status.getBalance() + status.getAmount())
+            .frozenAmount(status.getFrozenBalance() + status.getFrozenAmount()).serialNo(trade.getSerialNo()).state(4)
+            .createdTime(now).collect(statements);
+        TransactionStatus relation = status.getRelation();
+        UserStatement.builder().appId(trade.getAppId()).tradeId(trade.getTradeId())
+            .paymentId(payment.getPaymentId()).channelId(payment.getChannelId()).accountId(trade.getAccountId())
+            .type(StatementType.TRADE.getCode()).typeName(StatementType.TRADE.getName())
+            .amount(confirm.getAmount() - toFee).fee(toFee).balance(relation.getBalance() + relation.getAmount())
+            .frozenAmount(relation.getFrozenBalance() + relation.getFrozenAmount()).serialNo(trade.getSerialNo()).state(4)
+            .createdTime(now).collect(statements);
+        userStatementDao.insertUserStatements(statements);
+
+        // 处理商户收益 - 最后处理园区收益，保证尽快释放共享数据的行锁以提高系统并发
+        if (!fees.isEmpty()) {
+            AccountChannel merChannel = AccountChannel.of(payment.getPaymentId(), merchant.getProfitAccount(), 0L);
+            IFundTransaction merTransaction = merChannel.openTransaction(trade.getType(), now);
+            fees.forEach(fee ->
+                merTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName())
+            );
+            accountChannelService.submit(merTransaction);
         }
 
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, payment.getPaymentId(), status);

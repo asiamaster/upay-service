@@ -4,18 +4,29 @@ import com.diligrp.xtrade.shared.mybatis.MybatisMapperSupport;
 import com.diligrp.xtrade.upay.channel.domain.TradeQuery;
 import com.diligrp.xtrade.upay.channel.domain.TradeStatement;
 import com.diligrp.xtrade.upay.channel.domain.SumTradeStatement;
+import com.diligrp.xtrade.upay.channel.model.UserStatement;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
 /**
- * 账户余额快照数据访问层
+ * 用户业务账单数据访问层
  *
  * @author: brenthuang
- * @date: 2020/07/29
+ * @date: 2020/10/23
  */
-@Repository("channelStatementDao")
-public interface IChannelStatementDao extends MybatisMapperSupport {
+@Repository("userStatementDao")
+public interface IUserStatementDao extends MybatisMapperSupport {
+    /**
+     * 添加用户业务账单
+     */
+    void insertUserStatement(UserStatement statement);
+
+    /**
+     * 批量添加用户业务账单
+     */
+    void insertUserStatements(List<UserStatement> statements);
+
     /**
      * 查询客户交易明细
      */

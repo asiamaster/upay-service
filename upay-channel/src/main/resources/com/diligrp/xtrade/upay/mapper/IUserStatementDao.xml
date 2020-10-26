@@ -2,7 +2,26 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="com.diligrp.xtrade.upay.channel.dao.IChannelStatementDao">
+<mapper namespace="com.diligrp.xtrade.upay.channel.dao.IUserStatementDao">
+
+    <insert id="insertUserStatement" parameterType="com.diligrp.xtrade.upay.channel.model.UserStatement">
+        INSERT INTO upay_user_statement(`app_id`, `trade_id`, `payment_id`, `channel_id`, `account_id`, `type`,
+            `type_name`, `amount`, `fee`, `balance`, `frozen_amount`, `serialNo`, `state`, `created_time`)
+        VALUES
+            (#{appId}, #{tradeId}, #{paymentId}, #{channelId}, #{accountId}, #{type}, #{typeName},
+             #{amount}, #{fee}, #{balance}, #{frozenAmount}, #{serialNo}, #{state}, #{createdTime})
+    </insert>
+
+    <insert id="insertUserStatements" parameterType="java.util.List">
+        INSERT INTO upay_user_statement(`app_id`, `trade_id`, `payment_id`, `channel_id`, `account_id`, `type`,
+            `type_name`, `amount`, `fee`, `balance`, `frozen_amount`, `serialNo`, `state`, `created_time`)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.appId}, #{item.tradeId}, #{item.paymentId}, #{item.channelId}, #{item.accountId}, #{item.type}, #{item.typeName},
+            #{item.amount}, #{item.fee}, #{item.balance}, #{item.frozenAmount}, #{item.serialNo}, #{item.state}, #{item.createdTime})
+        </foreach>
+    </insert>
+
     <select id="listTradeStatements" parameterType="com.diligrp.xtrade.upay.channel.domain.TradeQuery" resultType="com.diligrp.xtrade.upay.channel.domain.TradeStatement">
         SELECT
             uto.trade_id AS tradeId, uto.type, uto.serial_no AS serialNo, uto.account_id AS accountId1, uto.fee AS fee1,

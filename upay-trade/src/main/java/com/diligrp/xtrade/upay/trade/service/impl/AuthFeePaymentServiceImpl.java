@@ -5,14 +5,17 @@ import com.diligrp.xtrade.shared.sequence.KeyGeneratorManager;
 import com.diligrp.xtrade.shared.sequence.SnowflakeKeyManager;
 import com.diligrp.xtrade.shared.util.ObjectUtils;
 import com.diligrp.xtrade.upay.channel.dao.IFrozenOrderDao;
+import com.diligrp.xtrade.upay.channel.dao.IUserStatementDao;
 import com.diligrp.xtrade.upay.channel.domain.AccountChannel;
 import com.diligrp.xtrade.upay.channel.domain.FrozenStateDto;
 import com.diligrp.xtrade.upay.channel.domain.IFundTransaction;
 import com.diligrp.xtrade.upay.channel.model.FrozenOrder;
+import com.diligrp.xtrade.upay.channel.model.UserStatement;
 import com.diligrp.xtrade.upay.channel.service.IAccountChannelService;
 import com.diligrp.xtrade.upay.channel.type.ChannelType;
 import com.diligrp.xtrade.upay.channel.type.FrozenState;
 import com.diligrp.xtrade.upay.channel.type.FrozenType;
+import com.diligrp.xtrade.upay.channel.type.StatementType;
 import com.diligrp.xtrade.upay.core.ErrorCode;
 import com.diligrp.xtrade.upay.core.domain.MerchantPermit;
 import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
@@ -66,6 +69,9 @@ public class AuthFeePaymentServiceImpl extends FeePaymentServiceImpl implements 
 
     @Resource
     private IPaymentFeeDao paymentFeeDao;
+
+    @Resource
+    private IUserStatementDao userStatementDao;
 
     @Resource
     private IAccountChannelService accountChannelService;
@@ -179,14 +185,6 @@ public class AuthFeePaymentServiceImpl extends FeePaymentServiceImpl implements 
         );
         TransactionStatus status = accountChannelService.submit(transaction);
 
-        // 园区收益账户收款
-        AccountChannel merChannel = AccountChannel.of(payment.getPaymentId(), merchant.getProfitAccount(), 0L);
-        IFundTransaction feeTransaction = merChannel.openTransaction(trade.getType(), now);
-        fees.forEach(fee ->
-            feeTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName())
-        );
-        accountChannelService.submit(feeTransaction);
-
         // 修改冻结订单"已解冻"状态
         FrozenStateDto frozenState = FrozenStateDto.of(frozenOrder.getFrozenId(), FrozenState.UNFROZEN.getCode(),
             frozenOrder.getVersion(), now);
@@ -194,7 +192,7 @@ public class AuthFeePaymentServiceImpl extends FeePaymentServiceImpl implements 
             throw new TradePaymentException(ErrorCode.DATA_CONCURRENT_UPDATED, "系统忙，请稍后再试");
         }
         // "预授权缴费"的交易单中金额修改成"实际缴费金额"，交易订单中max_amount金额为冻结金额
-        TradeStateDto tradeState = TradeStateDto.of(trade.getTradeId(), totalFee,
+        TradeStateDto tradeState = TradeStateDto.of(trade.getTradeId(), totalFee, totalFee,
             TradeState.SUCCESS.getCode(), trade.getVersion(), now);
         if (tradeOrderDao.compareAndSetState(tradeState) == 0) {
             throw new TradePaymentException(ErrorCode.DATA_CONCURRENT_UPDATED, "系统忙，请稍后再试");
@@ -209,6 +207,24 @@ public class AuthFeePaymentServiceImpl extends FeePaymentServiceImpl implements 
             PaymentFee.of(payment.getPaymentId(), fee.getAmount(), fee.getType(), fee.getTypeName(), now)
         ).collect(Collectors.toList());
         paymentFeeDao.insertPaymentFees(paymentFees);
+
+        // 生成缴费账户的业务账单
+        String typeName = StatementType.PAY_FEE.getName() + (ObjectUtils.isNull(trade.getDescription()) ?
+            "" : "-" + trade.getDescription());
+        UserStatement statement = UserStatement.builder().appId(trade.getAppId()).tradeId(trade.getTradeId())
+            .paymentId(payment.getPaymentId()).channelId(payment.getChannelId()).accountId(payment.getAccountId())
+            .type(StatementType.PAY_FEE.getCode()).typeName(typeName).amount(-totalFee).fee(0L)
+            .balance(status.getBalance() + status.getAmount()).frozenAmount(status.getFrozenBalance() + status.getFrozenAmount())
+            .serialNo(trade.getSerialNo()).state(4).createdTime(now).build();
+        userStatementDao.insertUserStatement(statement);
+
+        // 园区收益账户收款 - 最后处理园区收益，保证尽快释放共享数据的行锁以提高系统并发
+        AccountChannel merChannel = AccountChannel.of(payment.getPaymentId(), merchant.getProfitAccount(), 0L);
+        IFundTransaction feeTransaction = merChannel.openTransaction(trade.getType(), now);
+        fees.forEach(fee ->
+            feeTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName())
+        );
+        accountChannelService.submit(feeTransaction);
 
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, payment.getPaymentId(), status);
     }

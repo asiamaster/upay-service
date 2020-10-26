@@ -5,14 +5,12 @@ import com.diligrp.xtrade.shared.domain.ServiceRequest;
 import com.diligrp.xtrade.shared.sapi.CallableComponent;
 import com.diligrp.xtrade.shared.util.AssertUtils;
 import com.diligrp.xtrade.upay.boss.domain.ListTrade;
-import com.diligrp.xtrade.upay.boss.domain.TradePermission;
 import com.diligrp.xtrade.upay.boss.domain.TradeStatementDto;
 import com.diligrp.xtrade.upay.boss.domain.TradeStatementResult;
 import com.diligrp.xtrade.upay.channel.domain.SumTradeStatement;
 import com.diligrp.xtrade.upay.channel.domain.TradeQuery;
 import com.diligrp.xtrade.upay.channel.domain.TradeStatement;
-import com.diligrp.xtrade.upay.channel.service.IAccountChannelService;
-import com.diligrp.xtrade.upay.channel.service.IChannelStatementService;
+import com.diligrp.xtrade.upay.channel.service.IUserStatementService;
 
 import javax.annotation.Resource;
 import java.time.LocalDate;
@@ -27,7 +25,7 @@ import java.util.stream.Collectors;
 public class TradeStatementComponent {
 
     @Resource
-    private IChannelStatementService channelStatementService;
+    private IUserStatementService channelStatementService;
 
     /**
      * 账户状态和交易密码校验

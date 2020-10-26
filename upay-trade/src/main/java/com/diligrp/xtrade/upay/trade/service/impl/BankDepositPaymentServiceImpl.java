@@ -3,10 +3,13 @@ package com.diligrp.xtrade.upay.trade.service.impl;
 import com.diligrp.xtrade.shared.sequence.IKeyGenerator;
 import com.diligrp.xtrade.shared.sequence.SnowflakeKeyManager;
 import com.diligrp.xtrade.shared.util.ObjectUtils;
+import com.diligrp.xtrade.upay.channel.dao.IUserStatementDao;
 import com.diligrp.xtrade.upay.channel.domain.AccountChannel;
 import com.diligrp.xtrade.upay.channel.domain.IFundTransaction;
+import com.diligrp.xtrade.upay.channel.model.UserStatement;
 import com.diligrp.xtrade.upay.channel.service.IAccountChannelService;
 import com.diligrp.xtrade.upay.channel.type.ChannelType;
+import com.diligrp.xtrade.upay.channel.type.StatementType;
 import com.diligrp.xtrade.upay.core.ErrorCode;
 import com.diligrp.xtrade.upay.core.domain.MerchantPermit;
 import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
@@ -58,6 +61,9 @@ public class BankDepositPaymentServiceImpl implements IPaymentService {
     private IPaymentFeeDao paymentFeeDao;
 
     @Resource
+    private IUserStatementDao userStatementDao;
+
+    @Resource
     private IAccountChannelService accountChannelService;
 
     @Resource
@@ -95,17 +101,6 @@ public class BankDepositPaymentServiceImpl implements IPaymentService {
         });
         TransactionStatus status = accountChannelService.submit(transaction);
 
-        // 处理商户退费
-        if (!fees.isEmpty()) {
-            MerchantPermit merchant = payment.getObject(MerchantPermit.class.getName(), MerchantPermit.class);
-            AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);
-            IFundTransaction feeTransaction = merChannel.openTransaction(trade.getType(), now);
-            fees.forEach(fee ->
-                feeTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName())
-            );
-            accountChannelService.submit(feeTransaction);
-        }
-
         TradeStateDto tradeState = TradeStateDto.of(trade.getTradeId(), TradeState.SUCCESS.getCode(), trade.getVersion(), now);
         int result = tradeOrderDao.compareAndSetState(tradeState);
         if (result == 0) {
@@ -119,9 +114,29 @@ public class BankDepositPaymentServiceImpl implements IPaymentService {
         tradePaymentDao.insertTradePayment(paymentDo);
         if (!fees.isEmpty()) {
             List<PaymentFee> paymentFeeDos = fees.stream().map(fee ->
-                    PaymentFee.of(paymentId, fee.getAmount(), fee.getType(), fee.getTypeName(), now)
+                PaymentFee.of(paymentId, fee.getAmount(), fee.getType(), fee.getTypeName(), now)
             ).collect(Collectors.toList());
             paymentFeeDao.insertPaymentFees(paymentFeeDos);
+        }
+
+        // 生成充值账户的业务账单, 网银充值是退手续费
+        UserStatement statement = UserStatement.builder().appId(trade.getAppId()).tradeId(trade.getTradeId())
+            .paymentId(paymentDo.getPaymentId()).channelId(payment.getChannelId()).accountId(payment.getAccountId())
+            .type(StatementType.DEPOSIT.getCode()).typeName(StatementType.DEPOSIT.getName())
+            .amount(trade.getAmount() + totalFee).fee(totalFee).balance(status.getBalance() + status.getAmount())
+            .frozenAmount(status.getFrozenBalance() + status.getFrozenAmount()).serialNo(trade.getSerialNo()).state(4)
+            .createdTime(now).build();
+        userStatementDao.insertUserStatement(statement);
+
+        // 处理商户退费 - 最后处理园区收益，保证尽快释放共享数据的行锁以提高系统并发
+        if (!fees.isEmpty()) {
+            MerchantPermit merchant = payment.getObject(MerchantPermit.class.getName(), MerchantPermit.class);
+            AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);
+            IFundTransaction feeTransaction = merChannel.openTransaction(trade.getType(), now);
+            fees.forEach(fee ->
+                feeTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName())
+            );
+            accountChannelService.submit(feeTransaction);
         }
 
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, paymentId, status);

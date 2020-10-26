@@ -3,10 +3,13 @@ package com.diligrp.xtrade.upay.trade.service.impl;
 import com.diligrp.xtrade.shared.sequence.IKeyGenerator;
 import com.diligrp.xtrade.shared.sequence.SnowflakeKeyManager;
 import com.diligrp.xtrade.shared.util.ObjectUtils;
+import com.diligrp.xtrade.upay.channel.dao.IUserStatementDao;
 import com.diligrp.xtrade.upay.channel.domain.AccountChannel;
 import com.diligrp.xtrade.upay.channel.domain.IFundTransaction;
+import com.diligrp.xtrade.upay.channel.model.UserStatement;
 import com.diligrp.xtrade.upay.channel.service.IAccountChannelService;
 import com.diligrp.xtrade.upay.channel.type.ChannelType;
+import com.diligrp.xtrade.upay.channel.type.StatementType;
 import com.diligrp.xtrade.upay.core.ErrorCode;
 import com.diligrp.xtrade.upay.core.domain.MerchantPermit;
 import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
@@ -55,6 +58,9 @@ public class WithdrawPaymentServiceImpl implements IPaymentService {
     private IPaymentFeeDao paymentFeeDao;
 
     @Resource
+    private IUserStatementDao userStatementDao;
+
+    @Resource
     private IAccountChannelService accountChannelService;
 
     @Resource
@@ -91,17 +97,6 @@ public class WithdrawPaymentServiceImpl implements IPaymentService {
         });
         TransactionStatus status = accountChannelService.submit(transaction);
 
-        // 处理商户收益
-        if (!fees.isEmpty()) {
-            MerchantPermit merchant = payment.getObject(MerchantPermit.class.getName(), MerchantPermit.class);
-            AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);
-            IFundTransaction merTransaction = merChannel.openTransaction(trade.getType(), now);
-            fees.forEach(fee ->
-                merTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName())
-            );
-            accountChannelService.submit(merTransaction);
-        }
-
         TradeStateDto tradeState = TradeStateDto.of(trade.getTradeId(), TradeState.SUCCESS.getCode(),
             trade.getVersion(), now);
         int result = tradeOrderDao.compareAndSetState(tradeState);
@@ -120,6 +115,26 @@ public class WithdrawPaymentServiceImpl implements IPaymentService {
                 PaymentFee.of(paymentId, fee.getAmount(), fee.getType(), fee.getTypeName(), now)
             ).collect(Collectors.toList());
             paymentFeeDao.insertPaymentFees(paymentFeeDos);
+        }
+
+        // 生成提现账户的业务账单
+        UserStatement statement = UserStatement.builder().appId(trade.getAppId()).tradeId(trade.getTradeId())
+            .paymentId(paymentDo.getPaymentId()).channelId(paymentDo.getChannelId()).accountId(paymentDo.getAccountId())
+            .type(StatementType.WITHDRAW.getCode()).typeName(StatementType.WITHDRAW.getName())
+            .amount(-trade.getAmount() - totalFee).fee(totalFee).balance(status.getBalance() + status.getAmount())
+            .frozenAmount(status.getFrozenBalance() + status.getFrozenAmount()).serialNo(trade.getSerialNo()).state(4)
+            .createdTime(now).build();
+        userStatementDao.insertUserStatement(statement);
+
+        // 处理商户收益 - 最后处理园区收益，保证尽快释放共享数据的行锁以提高系统并发
+        if (!fees.isEmpty()) {
+            MerchantPermit merchant = payment.getObject(MerchantPermit.class.getName(), MerchantPermit.class);
+            AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);
+            IFundTransaction merTransaction = merChannel.openTransaction(trade.getType(), now);
+            fees.forEach(fee ->
+                merTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName())
+            );
+            accountChannelService.submit(merTransaction);
         }
 
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, paymentId, status);
