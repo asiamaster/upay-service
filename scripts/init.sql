@@ -42,3 +42,5 @@ INSERT INTO upay_data_dictionary(type, group_code, code, name, value, descriptio
 VALUES (1, 'SG', 'maxProtocolAmount30', '进门收费最大免密支付金额', '10000000000', '设置最大免密支付金额', NOW());
 INSERT INTO upay_data_dictionary(type, group_code, code, name, value, description, created_time)
 VALUES (1, 'SG', 'maxProtocolAmount40', '本地配送最大免密支付金额', '10000', '设置最大免密支付金额', NOW());
+INSERT INTO upay_data_dictionary(type, group_code, code, name, value, description, created_time)
+VALUES (1, 'SG', 'maxProtocolAmount50', '出门缴费最大免密支付金额', '10000', '设置最大免密支付金额', NOW());
