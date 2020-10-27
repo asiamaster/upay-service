@@ -3,16 +3,18 @@ package com.diligrp.xtrade.upay.boss.domain;
 import java.time.LocalDate;
 
 /**
- * 账户交易记录查询
+ * 客户账单查询
  *
  * @author: brenthuang
  * @date: 2020/10/15
  */
-public class ListTrade {
+public class ListUserStatement {
     // 页号
     private Integer pageNo = 1;
     // 每页记录数
     private Integer pageSize = 30;
+    // 账单类型
+    private Integer type;
     // 资金账号
     private Long accountId;
     // 开始时间
@@ -34,6 +36,14 @@ public class ListTrade {
 
     public void setPageSize(Integer pageSize) {
         this.pageSize = pageSize;
+    }
+
+    public Integer getType() {
+        return type;
+    }
+
+    public void setType(Integer type) {
+        this.type = type;
     }
 
     public Long getAccountId() {

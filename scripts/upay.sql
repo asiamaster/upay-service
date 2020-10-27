@@ -347,7 +347,7 @@ CREATE TABLE `upay_user_statement` (
   `fee` BIGINT NOT NULL COMMENT '费用-分',
   `balance` BIGINT NOT NULL COMMENT '期末余额',
   `frozen_amount` BIGINT NOT NULL COMMENT '期末冻结金额',
-  `serialNo` VARCHAR(40) COMMENT '业务单号',
+  `serial_no` VARCHAR(40) COMMENT '业务单号',
   `state` TINYINT UNSIGNED NOT NULL COMMENT '状态',
   `created_time` DATETIME COMMENT '创建时间',
   PRIMARY KEY (`id`),

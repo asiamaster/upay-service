@@ -1,7 +1,7 @@
 package com.diligrp.xtrade.upay.boss.domain;
 
 import com.diligrp.xtrade.shared.util.ObjectUtils;
-import com.diligrp.xtrade.upay.channel.domain.TradeStatement;
+import com.diligrp.xtrade.upay.channel.domain.UserStatementDto;
 import com.diligrp.xtrade.upay.core.ErrorCode;
 import com.diligrp.xtrade.upay.core.exception.PaymentServiceException;
 import com.diligrp.xtrade.upay.trade.type.TradeType;
@@ -136,7 +136,7 @@ public class TradeStatementDto {
         this.refundTime = refundTime;
     }
 
-    public static TradeStatementDto from(long accountId, TradeStatement trade) {
+    public static TradeStatementDto from(long accountId, UserStatementDto trade) {
         TradeStatementDto dto = new TradeStatementDto();
         dto.setTradeId(trade.getTradeId());
         dto.setType(trade.getType());
@@ -152,7 +152,7 @@ public class TradeStatementDto {
         return dto;
     }
 
-    private static void typeName(TradeStatement trade, TradeStatementDto dto) {
+    private static void typeName(UserStatementDto trade, TradeStatementDto dto) {
         if (trade.getType() == TradeType.DEPOSIT.getCode() || trade.getType() ==  TradeType.BANK_DEPOSIT.getCode()) {
             dto.setTypeName("充值");
         } else if (trade.getType() == TradeType.WITHDRAW.getCode()) {
@@ -167,7 +167,7 @@ public class TradeStatementDto {
         }
     }
 
-    private static void amount(long accountId, TradeStatement trade, TradeStatementDto dto) {
+    private static void amount(long accountId, UserStatementDto trade, TradeStatementDto dto) {
         if (trade.getType() == TradeType.DEPOSIT.getCode() || trade.getType() ==  TradeType.BANK_DEPOSIT.getCode()
             || trade.getType() == TradeType.PRE_DEPOSIT.getCode()) {
             dto.setAmount(trade.getAmount() - trade.getFee2());

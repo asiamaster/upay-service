@@ -6,7 +6,7 @@
 
     <insert id="insertUserStatement" parameterType="com.diligrp.xtrade.upay.channel.model.UserStatement">
         INSERT INTO upay_user_statement(`app_id`, `trade_id`, `payment_id`, `channel_id`, `account_id`, `type`,
-            `type_name`, `amount`, `fee`, `balance`, `frozen_amount`, `serialNo`, `state`, `created_time`)
+            `type_name`, `amount`, `fee`, `balance`, `frozen_amount`, `serial_no`, `state`, `created_time`)
         VALUES
             (#{appId}, #{tradeId}, #{paymentId}, #{channelId}, #{accountId}, #{type}, #{typeName},
              #{amount}, #{fee}, #{balance}, #{frozenAmount}, #{serialNo}, #{state}, #{createdTime})
@@ -14,7 +14,7 @@
 
     <insert id="insertUserStatements" parameterType="java.util.List">
         INSERT INTO upay_user_statement(`app_id`, `trade_id`, `payment_id`, `channel_id`, `account_id`, `type`,
-            `type_name`, `amount`, `fee`, `balance`, `frozen_amount`, `serialNo`, `state`, `created_time`)
+            `type_name`, `amount`, `fee`, `balance`, `frozen_amount`, `serial_no`, `state`, `created_time`)
         VALUES
         <foreach collection="list" item="item" separator=",">
             (#{item.appId}, #{item.tradeId}, #{item.paymentId}, #{item.channelId}, #{item.accountId}, #{item.type}, #{item.typeName},
@@ -22,49 +22,50 @@
         </foreach>
     </insert>
 
-    <select id="listTradeStatements" parameterType="com.diligrp.xtrade.upay.channel.domain.TradeQuery" resultType="com.diligrp.xtrade.upay.channel.domain.TradeStatement">
+    <select id="listTradeStatements" parameterType="com.diligrp.xtrade.upay.channel.domain.UserStatementQuery" resultType="com.diligrp.xtrade.upay.channel.domain.UserStatementDto">
         SELECT
-            uto.trade_id AS tradeId, uto.type, uto.serial_no AS serialNo, uto.account_id AS accountId1, uto.fee AS fee1,
-            uto.state, uto.description, utp.channel_id AS channelId, utp.account_id AS accountId2, utp.amount, utp.fee AS fee2,
-            utp.created_time AS payTime, urp.amount AS refundAmount, urp.created_time AS refundTime
+            uus.trade_id AS tradeId, uus.channel_id AS channelId, uus.account_id AS accountId, uus.type, uus.type_name AS typeName,
+            uus.amount, uus.fee, uus.serial_no AS serialNo, uto.state, (uto.max_amount - uto.amount) AS refundAmount
         FROM
-            upay_trade_order uto
+            upay_user_statement uus
         INNER JOIN
-            upay_trade_payment utp ON uto.trade_id = utp.trade_id
-        LEFT JOIN
-            upay_refund_payment urp ON uto.trade_id = urp.trade_id AND uto.state IN (5, 6)
+            upay_trade_order uto ON uus.trade_id = uto.trade_id
         WHERE
-            uto.state IN (4, 5, 6) AND (uto.account_id = #{accountId} OR utp.account_id = #{accountId})
+            uto.account_id = #{accountId}
+            <if test="type != null">
+                AND uus.type = #{type}
+            </if>
             <if test="startDate != null">
-                <![CDATA[AND utp.created_time > #{startDate}]]>
+                <![CDATA[AND uus.created_time > #{startDate}]]>
             </if>
             <if test="endDate != null">
-                <![CDATA[AND utp.created_time < #{endDate}]]>
+                <![CDATA[AND uus.created_time < #{endDate}]]>
             </if>
-        ORDER BY utp.created_time DESC
+        ORDER BY uus.created_time DESC
         LIMIT #{start}, #{limit}
     </select>
 
-    <select id="countTradeStatements" parameterType="com.diligrp.xtrade.upay.channel.domain.TradeQuery" resultType="long">
+    <select id="countTradeStatements" parameterType="com.diligrp.xtrade.upay.channel.domain.UserStatementQuery" resultType="long">
         SELECT
             COUNT(*)
         FROM
-            upay_trade_order uto
+            upay_user_statement uus
         INNER JOIN
-            upay_trade_payment utp ON uto.trade_id = utp.trade_id
-        LEFT JOIN
-            upay_refund_payment urp ON uto.trade_id = urp.trade_id AND uto.state IN (5, 6)
+            upay_trade_order uto ON uus.trade_id = uto.trade_id
         WHERE
-            uto.state IN (4, 5, 6) AND (uto.account_id = #{accountId} OR utp.account_id = #{accountId})
-            <if test="startDate != null">
-                <![CDATA[AND utp.created_time > #{startDate}]]>
-            </if>
-            <if test="endDate != null">
-                <![CDATA[AND utp.created_time < #{endDate}]]>
-            </if>
+            uto.account_id = #{accountId}
+        <if test="type != null">
+            AND uus.type = #{type}
+        </if>
+        <if test="startDate != null">
+            <![CDATA[AND uus.created_time > #{startDate}]]>
+        </if>
+        <if test="endDate != null">
+            <![CDATA[AND uus.created_time < #{endDate}]]>
+        </if>
     </select>
 
-    <select id="sumTradeStatements" parameterType="com.diligrp.xtrade.upay.channel.domain.TradeQuery" resultType="com.diligrp.xtrade.upay.channel.domain.SumTradeStatement">
+    <select id="sumTradeStatements" parameterType="com.diligrp.xtrade.upay.channel.domain.UserStatementQuery" resultType="com.diligrp.xtrade.upay.channel.domain.SumUserStatement">
         SELECT
             SUM(CASE WHEN action = 1 THEN amount ELSE 0 END) AS income, SUM(CASE WHEN action = 2 THEN -amount ELSE 0 END) AS output
         FROM

@@ -1,47 +1,40 @@
 package com.diligrp.xtrade.upay.channel.service.impl;
 
-import com.diligrp.xtrade.shared.domain.PageMessage;
 import com.diligrp.xtrade.upay.channel.dao.IUserStatementDao;
-import com.diligrp.xtrade.upay.channel.domain.SumTradeStatement;
-import com.diligrp.xtrade.upay.channel.domain.TradeQuery;
-import com.diligrp.xtrade.upay.channel.domain.TradeStatement;
+import com.diligrp.xtrade.upay.channel.domain.SumUserStatement;
+import com.diligrp.xtrade.upay.channel.domain.UserStatementDto;
+import com.diligrp.xtrade.upay.channel.domain.UserStatementQuery;
 import com.diligrp.xtrade.upay.channel.service.IUserStatementService;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.Collections;
 import java.util.List;
 
 /**
- * 渠道流水服务接口
+ * 客户账单服务接口
  *
  * @author: brenthuang
  * @date: 2020/10/14
  */
-@Service("channelStatementService")
+@Service("userStatementService")
 public class UserStatementServiceImpl implements IUserStatementService {
 
     @Resource
-    private IUserStatementDao channelStatementDao;
+    private IUserStatementDao userStatementDao;
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public PageMessage<TradeStatement> listTradeStatements(TradeQuery query) {
-        long total = channelStatementDao.countTradeStatements(query);
-        List<TradeStatement> trades = Collections.emptyList();
-        if (total > 0) {
-            trades = channelStatementDao.listTradeStatements(query);
-        }
-        return PageMessage.success(total, trades);
+    public List<UserStatementDto> listUserStatements(UserStatementQuery query) {
+        return userStatementDao.listUserStatements(query);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public SumTradeStatement sumTradeStatements(TradeQuery query) {
-        return channelStatementDao.sumTradeStatements(query);
+    public SumUserStatement sumUserStatements(UserStatementQuery query) {
+        return userStatementDao.sumUserStatements(query);
     }
 }

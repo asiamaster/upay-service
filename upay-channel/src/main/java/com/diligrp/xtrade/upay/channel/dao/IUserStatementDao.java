@@ -1,16 +1,16 @@
 package com.diligrp.xtrade.upay.channel.dao;
 
 import com.diligrp.xtrade.shared.mybatis.MybatisMapperSupport;
-import com.diligrp.xtrade.upay.channel.domain.TradeQuery;
-import com.diligrp.xtrade.upay.channel.domain.TradeStatement;
-import com.diligrp.xtrade.upay.channel.domain.SumTradeStatement;
+import com.diligrp.xtrade.upay.channel.domain.UserStatementQuery;
+import com.diligrp.xtrade.upay.channel.domain.UserStatementDto;
+import com.diligrp.xtrade.upay.channel.domain.SumUserStatement;
 import com.diligrp.xtrade.upay.channel.model.UserStatement;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
 /**
- * 用户业务账单数据访问层
+ * 客户账单数据访问层
  *
  * @author: brenthuang
  * @date: 2020/10/23
@@ -18,27 +18,27 @@ import java.util.List;
 @Repository("userStatementDao")
 public interface IUserStatementDao extends MybatisMapperSupport {
     /**
-     * 添加用户业务账单
+     * 添加用户客户账单
      */
     void insertUserStatement(UserStatement statement);
 
     /**
-     * 批量添加用户业务账单
+     * 批量添加客户账单
      */
     void insertUserStatements(List<UserStatement> statements);
 
     /**
-     * 查询客户交易明细
+     * 查询客户账单明细
      */
-    List<TradeStatement> listTradeStatements(TradeQuery query);
+    List<UserStatementDto> listUserStatements(UserStatementQuery query);
 
     /**
-     * 查询客户交易总记录数
+     * 查询客户账单总记录数
      */
-    long countTradeStatements(TradeQuery query);
+    long countUserStatements(UserStatementQuery query);
 
     /**
-     * 查询客户总收入和总支出
+     * 查询客户账单汇总数据：总记录数、总收入和总支出
      */
-    SumTradeStatement sumTradeStatements(TradeQuery query);
+    SumUserStatement sumUserStatements(UserStatementQuery query);
 }
