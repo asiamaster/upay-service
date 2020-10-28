@@ -65,4 +65,28 @@
         </if>
         GROUP BY uus.account_id
     </select>
+
+    <select id="findUserStatement" parameterType="com.diligrp.xtrade.upay.channel.domain.UserStatementFilter" resultType="com.diligrp.xtrade.upay.channel.domain.UserStatementDto">
+        SELECT
+            uus.trade_id AS tradeId, uus.channel_id AS channelId, uus.account_id AS accountId, uus.type, uus.type_name AS typeName,
+            uus.amount, uus.fee, uus.serial_no AS serialNo, uto.state, (uto.max_amount - uto.amount) AS refundAmount, uus.created_time AS createdTime
+        FROM
+            upay_user_statement uus
+        INNER JOIN
+            upay_trade_order uto ON uus.trade_id = uto.trade_id
+        WHERE
+            uus.trade_id = #{tradeId} AND uus.account_id = #{accountId} AND uus.type != 70
+    </select>
+
+    <select id="listRefundStatements" parameterType="com.diligrp.xtrade.upay.channel.domain.UserStatementFilter" resultType="com.diligrp.xtrade.upay.channel.domain.UserStatementDto">
+        SELECT
+            uus.trade_id AS tradeId, uus.channel_id AS channelId, uus.account_id AS accountId, uus.type, uus.type_name AS typeName,
+            uus.amount, uus.fee, uus.serial_no AS serialNo, uto.state, (uto.max_amount - uto.amount) AS refundAmount, uus.created_time AS createdTime
+        FROM
+            upay_user_statement uus
+        INNER JOIN
+            upay_trade_order uto ON uus.trade_id = uto.trade_id
+        WHERE
+            uus.trade_id = #{tradeId} AND uus.account_id = #{accountId} AND uus.type = 70
+    </select>
 </mapper>

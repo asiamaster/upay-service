@@ -15,6 +15,8 @@ public class ListUserStatement {
     private Integer pageSize = 30;
     // 账单类型
     private Integer type;
+    // 交易ID
+    private String tradeId;
     // 资金账号
     private Long accountId;
     // 开始时间
@@ -44,6 +46,14 @@ public class ListUserStatement {
 
     public void setType(Integer type) {
         this.type = type;
+    }
+
+    public String getTradeId() {
+        return tradeId;
+    }
+
+    public void setTradeId(String tradeId) {
+        this.tradeId = tradeId;
     }
 
     public Long getAccountId() {

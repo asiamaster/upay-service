@@ -1,6 +1,7 @@
 package com.diligrp.xtrade.upay.channel.dao;
 
 import com.diligrp.xtrade.shared.mybatis.MybatisMapperSupport;
+import com.diligrp.xtrade.upay.channel.domain.UserStatementFilter;
 import com.diligrp.xtrade.upay.channel.domain.UserStatementQuery;
 import com.diligrp.xtrade.upay.channel.domain.UserStatementDto;
 import com.diligrp.xtrade.upay.channel.domain.SumUserStatement;
@@ -36,4 +37,14 @@ public interface IUserStatementDao extends MybatisMapperSupport {
      * 查询客户账单汇总数据：总记录数、总收入和总支出
      */
     SumUserStatement sumUserStatements(UserStatementQuery query);
+
+    /**
+     * 根据交易号和账号ID查询客户交易（非"退款"）账单
+     */
+    UserStatementDto findUserStatement(UserStatementFilter filter);
+
+    /**
+     * 查询客户退款账单
+     */
+    List<UserStatementDto> listRefundStatements(UserStatementFilter filter);
 }

@@ -7,6 +7,7 @@ import com.diligrp.xtrade.upay.boss.domain.ListUserStatement;
 import com.diligrp.xtrade.upay.boss.domain.UserStatementResult;
 import com.diligrp.xtrade.upay.channel.domain.SumUserStatement;
 import com.diligrp.xtrade.upay.channel.domain.UserStatementDto;
+import com.diligrp.xtrade.upay.channel.domain.UserStatementFilter;
 import com.diligrp.xtrade.upay.channel.domain.UserStatementQuery;
 import com.diligrp.xtrade.upay.channel.service.IUserStatementService;
 import com.diligrp.xtrade.upay.core.model.UserAccount;
@@ -30,7 +31,7 @@ public class UserStatementComponent {
     private IFundAccountService fundAccountService;
 
     /**
-     * 账户状态和交易密码校验
+     * 分页查询客户账单明细
      */
     public UserStatementResult list(ServiceRequest<ListUserStatement> request) {
         ListUserStatement data = request.getData();
@@ -49,5 +50,33 @@ public class UserStatementComponent {
             return UserStatementResult.success(sum.getTotal(), statements, sum.getIncome(), sum.getOutput());
         }
         return UserStatementResult.success(0, Collections.emptyList(), 0, 0);
+    }
+
+    /**
+     * 根据交易号和资金账号查询"交易"账单(有且只有一条)
+     */
+    public UserStatementDto findOne(ServiceRequest<ListUserStatement> request) {
+        ListUserStatement data = request.getData();
+        AssertUtils.notEmpty(data.getTradeId(), "tradeId missed");
+        AssertUtils.notNull(data.getAccountId(), "accountId missed");
+
+        UserStatementFilter filter = UserStatementFilter.of(data.getTradeId(), data.getAccountId());
+        UserAccount userAccount = fundAccountService.findUserAccountById(data.getAccountId());
+        userAccount.ifChildAccount(account -> filter.setAccountId(account.getParentId()));
+        return userStatementService.findUserStatement(filter);
+    }
+
+    /**
+     * 根据交易号和资金账号查询"交易"账单(有且只有一条)
+     */
+    public List<UserStatementDto> listRefunds(ServiceRequest<ListUserStatement> request) {
+        ListUserStatement data = request.getData();
+        AssertUtils.notEmpty(data.getTradeId(), "tradeId missed");
+        AssertUtils.notNull(data.getAccountId(), "accountId missed");
+
+        UserStatementFilter filter = UserStatementFilter.of(data.getTradeId(), data.getAccountId());
+        UserAccount userAccount = fundAccountService.findUserAccountById(data.getAccountId());
+        userAccount.ifChildAccount(account -> filter.setAccountId(account.getParentId()));
+        return userStatementService.listRefundStatements(filter);
     }
 }

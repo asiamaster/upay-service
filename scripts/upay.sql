@@ -352,8 +352,7 @@ CREATE TABLE `upay_user_statement` (
   `state` TINYINT UNSIGNED NOT NULL COMMENT '状态',
   `created_time` DATETIME COMMENT '创建时间',
   PRIMARY KEY (`id`),
-  KEY `idx_user_statement_tradeId` (`trade_id`) USING BTREE,
-  KEY `idx_user_statement_paymentId` (`payment_id`) USING BTREE,
+  KEY `idx_user_statement_tradeId` (`trade_id`, `account_id`) USING BTREE,
   KEY `idx_user_statement_accountId` (`account_id`, `type`) USING BTREE,
   KEY `idx_user_statement_createdTime` (`created_time`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
