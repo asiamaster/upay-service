@@ -122,8 +122,8 @@ public class RefundFeePaymentServiceImpl implements IPaymentService {
         paymentFeeDao.insertPaymentFees(paymentFeeDos);
 
         // 处理退费账户业务账单
-        UserStatement statement = UserStatement.builder().appId(trade.getAppId()).tradeId(trade.getTradeId())
-            .paymentId(paymentDo.getPaymentId()).channelId(paymentDo.getChannelId()).accountId(paymentDo.getAccountId())
+        UserStatement statement = UserStatement.builder().tradeId(trade.getTradeId()).paymentId(paymentDo.getPaymentId())
+            .channelId(paymentDo.getChannelId()).accountId(paymentDo.getAccountId(), account.getParentId())
             .type(StatementType.REFUND_FEE.getCode()).typeName(StatementType.REFUND_FEE.getName())
             .amount(totalFee).fee(0L).balance(status.getBalance() + status.getAmount())
             .frozenAmount(status.getFrozenBalance() + status.getFrozenAmount()).serialNo(trade.getSerialNo()).state(4)

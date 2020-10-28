@@ -332,15 +332,16 @@ CREATE TABLE `upay_frozen_order` (
 -- 产生一条业务账单，且只会记录交易结果不会记录交易过程；比如：交易金额记录的是实际
 -- 入账或出账金额（充值1000元，手续费4元，业务流水中交易金额为996元，费用为4元）。
 -- 交易金额都是带符号的，正数表示入账，负数表示出账；费用金额始终为正数。
+-- 子账号用于标识主账号的资金流水为子账号交易产生，子账号无账户资金。
 -- --------------------------------------------------------------------
 DROP TABLE IF EXISTS `upay_user_statement`;
 CREATE TABLE `upay_user_statement` (
   `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
-  `app_id` BIGINT NOT NULL COMMENT '应用ID',
   `trade_id` VARCHAR(40) NOT NULL COMMENT '交易ID',
   `payment_id` VARCHAR(40) NOT NULL COMMENT '支付ID',
   `channel_id` TINYINT UNSIGNED NOT NULL COMMENT '支付渠道',
-  `account_id` BIGINT NOT NULL COMMENT '账号ID',
+  `account_id` BIGINT NOT NULL COMMENT '主账号ID',
+  `child_id` BIGINT COMMENT '子账号ID',
   `type` TINYINT UNSIGNED NOT NULL COMMENT '流水类型',
   `type_name` VARCHAR(80) NOT NULL COMMENT '流水说明',
   `amount` BIGINT NOT NULL COMMENT '交易金额-分',

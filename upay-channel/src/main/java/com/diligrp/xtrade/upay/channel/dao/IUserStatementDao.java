@@ -33,11 +33,6 @@ public interface IUserStatementDao extends MybatisMapperSupport {
     List<UserStatementDto> listUserStatements(UserStatementQuery query);
 
     /**
-     * 查询客户账单总记录数
-     */
-    long countUserStatements(UserStatementQuery query);
-
-    /**
      * 查询客户账单汇总数据：总记录数、总收入和总支出
      */
     SumUserStatement sumUserStatements(UserStatementQuery query);

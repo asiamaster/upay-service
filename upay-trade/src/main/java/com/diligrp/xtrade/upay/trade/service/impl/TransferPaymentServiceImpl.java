@@ -114,15 +114,15 @@ public class TransferPaymentServiceImpl implements IPaymentService {
 
         // 生成转账双方的业务账单
         List<UserStatement> statements = new ArrayList<>(2);
-        UserStatement.builder().appId(trade.getAppId()).tradeId(trade.getTradeId())
-            .paymentId(paymentDo.getPaymentId()).channelId(paymentDo.getChannelId()).accountId(paymentDo.getAccountId())
+        UserStatement.builder().tradeId(trade.getTradeId()).paymentId(paymentDo.getPaymentId())
+            .channelId(paymentDo.getChannelId()).accountId(paymentDo.getAccountId(), fromAccount.getParentId())
             .type(StatementType.TRANSFER.getCode()).typeName(StatementType.TRANSFER.getName())
             .amount(- paymentDo.getAmount()).fee(0L).balance(status.getBalance() + status.getAmount())
             .frozenAmount(status.getFrozenBalance() + status.getFrozenAmount()).serialNo(trade.getSerialNo()).state(4)
             .createdTime(now).collect(statements);
         TransactionStatus relation = status.getRelation();
-        UserStatement.builder().appId(trade.getAppId()).tradeId(trade.getTradeId())
-            .paymentId(paymentDo.getPaymentId()).channelId(paymentDo.getChannelId()).accountId(trade.getAccountId())
+        UserStatement.builder().tradeId(trade.getTradeId()).paymentId(paymentDo.getPaymentId())
+            .channelId(paymentDo.getChannelId()).accountId(trade.getAccountId(), toAccount.getParentId())
             .type(StatementType.TRANSFER.getCode()).typeName(StatementType.TRANSFER.getName())
             .amount(paymentDo.getAmount()).fee(0L).balance(relation.getBalance() + relation.getAmount())
             .frozenAmount(relation.getFrozenBalance() + relation.getFrozenAmount()).serialNo(trade.getSerialNo()).state(4)

@@ -146,8 +146,8 @@ public class FeePaymentServiceImpl implements IPaymentService {
 
         // 只有通过账户余额进行缴费才生成缴费账户业务账单
         if (payment.getChannelId() == ChannelType.ACCOUNT.getCode()) {
-            UserStatement statement = UserStatement.builder().appId(trade.getAppId()).tradeId(trade.getTradeId())
-                .paymentId(paymentDo.getPaymentId()).channelId(paymentDo.getChannelId()).accountId(paymentDo.getAccountId())
+            UserStatement statement = UserStatement.builder().tradeId(trade.getTradeId()).paymentId(paymentDo.getPaymentId())
+                .channelId(paymentDo.getChannelId()).accountId(paymentDo.getAccountId(), account.getParentId())
                 .type(StatementType.PAY_FEE.getCode())
                 .typeName(StatementType.PAY_FEE.getName() + "-" + ObjectUtils.trimToEmpty(trade.getDescription()))
                 .amount(- totalFee).fee(0L).balance(status.getBalance() + status.getAmount())
@@ -228,8 +228,8 @@ public class FeePaymentServiceImpl implements IPaymentService {
         String typeName = ObjectUtils.isNull(trade.getDescription()) ? StatementType.PAY_FEE.getName() + "-"
             + StatementType.REFUND.getName() : trade.getDescription() + "-" + StatementType.REFUND.getName();
         if (payment.getChannelId() == ChannelType.ACCOUNT.getCode()) {
-            UserStatement statement = UserStatement.builder().appId(trade.getAppId()).tradeId(trade.getTradeId())
-                .paymentId(paymentId).channelId(payment.getChannelId()).accountId(payment.getAccountId())
+            UserStatement statement = UserStatement.builder().tradeId(trade.getTradeId()).paymentId(paymentId)
+                .channelId(payment.getChannelId()).accountId(payment.getAccountId(), account.getParentId())
                 .type(StatementType.REFUND.getCode()).typeName(typeName).amount(totalFees).fee(0L)
                 .balance(status.getBalance() + status.getAmount()).frozenAmount(status.getFrozenBalance()
                 + status.getFrozenAmount()).serialNo(trade.getSerialNo()).state(4).createdTime(now).build();

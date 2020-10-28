@@ -116,8 +116,8 @@ public class DepositPaymentServiceImpl implements IPaymentService {
         }
 
         // 生成充值账户的业务账单
-        UserStatement statement = UserStatement.builder().appId(trade.getAppId()).tradeId(trade.getTradeId())
-            .paymentId(paymentDo.getPaymentId()).channelId(paymentDo.getChannelId()).accountId(paymentDo.getAccountId())
+        UserStatement statement = UserStatement.builder().tradeId(trade.getTradeId()).paymentId(paymentDo.getPaymentId())
+            .channelId(paymentDo.getChannelId()).accountId(paymentDo.getAccountId(), account.getParentId())
             .type(StatementType.DEPOSIT.getCode()).typeName(StatementType.DEPOSIT.getName())
             .amount(trade.getAmount() - totalFee).fee(totalFee).balance(status.getBalance() + status.getAmount())
             .frozenAmount(status.getFrozenBalance() + status.getFrozenAmount()).serialNo(trade.getSerialNo()).state(4)

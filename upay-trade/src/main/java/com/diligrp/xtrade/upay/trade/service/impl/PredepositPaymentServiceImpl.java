@@ -98,8 +98,8 @@ public class PredepositPaymentServiceImpl implements IPaymentService {
         tradePaymentDao.insertTradePayment(paymentDo);
 
         // 生成存款账户业务账单
-        UserStatement statement = UserStatement.builder().appId(trade.getAppId()).tradeId(trade.getTradeId())
-            .paymentId(paymentDo.getPaymentId()).channelId(paymentDo.getChannelId()).accountId(paymentDo.getAccountId())
+        UserStatement statement = UserStatement.builder().tradeId(trade.getTradeId()).paymentId(paymentDo.getPaymentId())
+            .channelId(paymentDo.getChannelId()).accountId(paymentDo.getAccountId(), account.getParentId())
             .type(StatementType.DEPOSIT.getCode()).typeName(StatementType.DEPOSIT.getName())
             .amount(trade.getAmount()).fee(0L).balance(status.getBalance() + status.getAmount())
             .frozenAmount(status.getFrozenBalance() + status.getFrozenAmount()).serialNo(trade.getSerialNo()).state(4)

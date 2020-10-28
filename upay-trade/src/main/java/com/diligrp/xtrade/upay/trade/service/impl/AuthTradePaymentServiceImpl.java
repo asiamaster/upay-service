@@ -235,15 +235,15 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
 
         // 生成交易双方的业务账单
         List<UserStatement> statements = new ArrayList<>(2);
-        UserStatement.builder().appId(trade.getAppId()).tradeId(trade.getTradeId())
-            .paymentId(payment.getPaymentId()).channelId(payment.getChannelId()).accountId(payment.getAccountId())
+        UserStatement.builder().tradeId(trade.getTradeId()).paymentId(payment.getPaymentId())
+            .channelId(payment.getChannelId()).accountId(payment.getAccountId(), fromAccount.getParentId())
             .type(StatementType.TRADE.getCode()).typeName(StatementType.TRADE.getName())
             .amount(- (confirm.getAmount() + fromFee)).fee(fromFee).balance(status.getBalance() + status.getAmount())
             .frozenAmount(status.getFrozenBalance() + status.getFrozenAmount()).serialNo(trade.getSerialNo()).state(4)
             .createdTime(now).collect(statements);
         TransactionStatus relation = status.getRelation();
-        UserStatement.builder().appId(trade.getAppId()).tradeId(trade.getTradeId())
-            .paymentId(payment.getPaymentId()).channelId(payment.getChannelId()).accountId(trade.getAccountId())
+        UserStatement.builder().tradeId(trade.getTradeId()).paymentId(payment.getPaymentId())
+            .channelId(payment.getChannelId()).accountId(trade.getAccountId(), toAccount.getParentId())
             .type(StatementType.TRADE.getCode()).typeName(StatementType.TRADE.getName())
             .amount(confirm.getAmount() - toFee).fee(toFee).balance(relation.getBalance() + relation.getAmount())
             .frozenAmount(relation.getFrozenBalance() + relation.getFrozenAmount()).serialNo(trade.getSerialNo()).state(4)
