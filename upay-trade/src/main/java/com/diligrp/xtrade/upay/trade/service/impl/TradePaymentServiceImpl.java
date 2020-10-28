@@ -153,15 +153,15 @@ public class TradePaymentServiceImpl implements IPaymentService {
 
         // 生成交易双方的业务账单
         List<UserStatement> statements = new ArrayList<>(2);
-        UserStatement.builder().appId(trade.getAppId()).tradeId(trade.getTradeId())
-            .paymentId(paymentDo.getPaymentId()).channelId(paymentDo.getChannelId()).accountId(paymentDo.getAccountId())
+        UserStatement.builder().tradeId(trade.getTradeId()).paymentId(paymentDo.getPaymentId())
+            .channelId(paymentDo.getChannelId()).accountId(paymentDo.getAccountId(), fromAccount.getParentId())
             .type(StatementType.TRADE.getCode()).typeName(StatementType.TRADE.getName())
             .amount(- (paymentDo.getAmount() + fromFee)).fee(fromFee).balance(status.getBalance() + status.getAmount())
             .frozenAmount(status.getFrozenBalance() + status.getFrozenAmount()).serialNo(trade.getSerialNo()).state(4)
             .createdTime(now).collect(statements);
         TransactionStatus relation = status.getRelation();
-        UserStatement.builder().appId(trade.getAppId()).tradeId(trade.getTradeId())
-            .paymentId(paymentDo.getPaymentId()).channelId(paymentDo.getChannelId()).accountId(trade.getAccountId())
+        UserStatement.builder().tradeId(trade.getTradeId()).paymentId(paymentDo.getPaymentId())
+            .channelId(paymentDo.getChannelId()).accountId(trade.getAccountId(), toAccount.getParentId())
             .type(StatementType.TRADE.getCode()).typeName(StatementType.TRADE.getName())
             .amount(paymentDo.getAmount() - toFee).fee(toFee).balance(relation.getBalance() + relation.getAmount())
             .frozenAmount(relation.getFrozenBalance() + relation.getFrozenAmount()).serialNo(trade.getSerialNo()).state(4)
@@ -246,15 +246,15 @@ public class TradePaymentServiceImpl implements IPaymentService {
         // 生成交易双方的业务账单
         List<UserStatement> statements = new ArrayList<>(2);
         TransactionStatus relation = status.getRelation();
-        UserStatement.builder().appId(trade.getAppId()).tradeId(trade.getTradeId())
-            .paymentId(payment.getPaymentId()).channelId(payment.getChannelId()).accountId(payment.getAccountId())
+        UserStatement.builder().tradeId(trade.getTradeId()).paymentId(payment.getPaymentId())
+            .channelId(payment.getChannelId()).accountId(payment.getAccountId(), toAccount.getParentId())
             .type(StatementType.REFUND.getCode()).typeName(StatementType.REFUND.getName())
             .amount(payment.getAmount() + payment.getFee()).fee(payment.getFee())
             .balance(relation.getBalance() + relation.getAmount())
             .frozenAmount(relation.getFrozenBalance() + relation.getFrozenAmount())
             .serialNo(trade.getSerialNo()).state(4).createdTime(now).collect(statements);
-        UserStatement.builder().appId(trade.getAppId()).tradeId(trade.getTradeId())
-            .paymentId(payment.getPaymentId()).channelId(payment.getChannelId()).accountId(trade.getAccountId())
+        UserStatement.builder().tradeId(trade.getTradeId()).paymentId(payment.getPaymentId())
+            .channelId(payment.getChannelId()).accountId(trade.getAccountId(), fromAccount.getParentId())
             .type(StatementType.REFUND.getCode()).typeName(StatementType.REFUND.getName())
             .amount(- payment.getAmount() + trade.getFee()).fee(trade.getFee())
             .balance(status.getBalance() + status.getAmount())

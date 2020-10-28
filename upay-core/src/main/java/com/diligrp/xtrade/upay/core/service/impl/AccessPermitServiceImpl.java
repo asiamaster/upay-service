@@ -103,17 +103,17 @@ public class AccessPermitServiceImpl implements IAccessPermitService {
         RegisterAccount profileAccount = RegisterAccount.builder().customerId(0L).type(AccountType.MERCHANT.getCode())
             .useFor(UseFor.FOR_PROFIT.getCode()).code(null).name(request.getName()).gender(null).mobile(request.getMobile())
             .email(null).idCode(null).address(request.getAddress()).password(request.getPassword()).build();
-        long profileId = fundAccountService.createFundAccount(request.getMchId(), profileAccount);
+        long profileId = fundAccountService.createUserAccount(request.getMchId(), profileAccount);
         // 生成担保账号
         RegisterAccount vouchAccount = RegisterAccount.builder().customerId(0L).type(AccountType.MERCHANT.getCode())
             .useFor(UseFor.FOR_VOUCH.getCode()).code(null).name(request.getName()).gender(null).mobile(request.getMobile())
             .email(null).idCode(null).address(request.getAddress()).password(request.getPassword()).build();
-        long vouchId = fundAccountService.createFundAccount(request.getMchId(), vouchAccount);
+        long vouchId = fundAccountService.createUserAccount(request.getMchId(), vouchAccount);
         // 生成担保账号
         RegisterAccount pledgeAccount = RegisterAccount.builder().customerId(0L).type(AccountType.MERCHANT.getCode())
             .useFor(UseFor.FOR_PLEDGE.getCode()).code(null).name(request.getName()).gender(null).mobile(request.getMobile())
             .email(null).idCode(null).address(request.getAddress()).password(request.getPassword()).build();
-        long pledgeId = fundAccountService.createFundAccount(request.getMchId(), pledgeAccount);
+        long pledgeId = fundAccountService.createUserAccount(request.getMchId(), pledgeAccount);
 
         Merchant merchant = Merchant.builder().mchId(request.getMchId()).code(request.getCode()).name(request.getName())
             .profitAccount(profileId).vouchAccount(vouchId).pledgeAccount(pledgeId).address(request.getAddress())

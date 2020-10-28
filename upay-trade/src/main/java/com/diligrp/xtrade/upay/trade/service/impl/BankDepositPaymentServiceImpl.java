@@ -120,8 +120,8 @@ public class BankDepositPaymentServiceImpl implements IPaymentService {
         }
 
         // 生成充值账户的业务账单, 网银充值是退手续费
-        UserStatement statement = UserStatement.builder().appId(trade.getAppId()).tradeId(trade.getTradeId())
-            .paymentId(paymentDo.getPaymentId()).channelId(payment.getChannelId()).accountId(payment.getAccountId())
+        UserStatement statement = UserStatement.builder().tradeId(trade.getTradeId()).paymentId(paymentDo.getPaymentId())
+            .channelId(payment.getChannelId()).accountId(payment.getAccountId(), account.getParentId())
             .type(StatementType.DEPOSIT.getCode()).typeName(StatementType.DEPOSIT.getName())
             .amount(trade.getAmount() + totalFee).fee(totalFee).balance(status.getBalance() + status.getAmount())
             .frozenAmount(status.getFrozenBalance() + status.getFrozenAmount()).serialNo(trade.getSerialNo()).state(4)

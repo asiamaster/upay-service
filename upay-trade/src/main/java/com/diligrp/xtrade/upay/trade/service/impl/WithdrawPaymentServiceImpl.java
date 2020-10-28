@@ -118,8 +118,8 @@ public class WithdrawPaymentServiceImpl implements IPaymentService {
         }
 
         // 生成提现账户的业务账单
-        UserStatement statement = UserStatement.builder().appId(trade.getAppId()).tradeId(trade.getTradeId())
-            .paymentId(paymentDo.getPaymentId()).channelId(paymentDo.getChannelId()).accountId(paymentDo.getAccountId())
+        UserStatement statement = UserStatement.builder().tradeId(trade.getTradeId()).paymentId(paymentDo.getPaymentId())
+            .channelId(paymentDo.getChannelId()).accountId(paymentDo.getAccountId(), account.getParentId())
             .type(StatementType.WITHDRAW.getCode()).typeName(StatementType.WITHDRAW.getName())
             .amount(-trade.getAmount() - totalFee).fee(totalFee).balance(status.getBalance() + status.getAmount())
             .frozenAmount(status.getFrozenBalance() + status.getFrozenAmount()).serialNo(trade.getSerialNo()).state(4)

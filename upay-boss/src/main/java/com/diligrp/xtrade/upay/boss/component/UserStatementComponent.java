@@ -9,6 +9,8 @@ import com.diligrp.xtrade.upay.channel.domain.SumUserStatement;
 import com.diligrp.xtrade.upay.channel.domain.UserStatementDto;
 import com.diligrp.xtrade.upay.channel.domain.UserStatementQuery;
 import com.diligrp.xtrade.upay.channel.service.IUserStatementService;
+import com.diligrp.xtrade.upay.core.model.UserAccount;
+import com.diligrp.xtrade.upay.core.service.IFundAccountService;
 
 import javax.annotation.Resource;
 import java.time.LocalDate;
@@ -24,10 +26,13 @@ public class UserStatementComponent {
     @Resource
     private IUserStatementService userStatementService;
 
+    @Resource
+    private IFundAccountService fundAccountService;
+
     /**
      * 账户状态和交易密码校验
      */
-    public UserStatementResult listTrades(ServiceRequest<ListUserStatement> request) {
+    public UserStatementResult list(ServiceRequest<ListUserStatement> request) {
         ListUserStatement data = request.getData();
         AssertUtils.notNull(data.getAccountId(), "accountId missed");
         AssertUtils.isTrue(data.getPageNo() > 0, "invalid pageNo");
@@ -36,6 +41,8 @@ public class UserStatementComponent {
         UserStatementQuery query = UserStatementQuery.of(data.getType(), data.getAccountId(), data.getStartDate(), endDate);
         query.from(data.getPageNo(), data.getPageSize());
 
+        UserAccount userAccount = fundAccountService.findUserAccountById(data.getAccountId());
+        userAccount.ifChildAccount(account -> query.setAccountId(account.getParentId()));
         SumUserStatement sum = userStatementService.sumUserStatements(query);
         if (sum != null && sum.getTotal() > 0) {
             List<UserStatementDto> statements = userStatementService.listUserStatements(query);

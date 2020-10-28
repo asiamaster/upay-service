@@ -11,22 +11,22 @@ public interface IFundAccountService {
     /**
      * 创建资金账号
      */
-    long createFundAccount(Long mchId, RegisterAccount account);
+    long createUserAccount(Long mchId, RegisterAccount account);
 
     /**
      * 冻结资金账号
      */
-    void freezeFundAccount(Long accountId);
+    void freezeUserAccount(Long accountId);
 
     /**
      * 解冻资金账号
      */
-    void unfreezeFundAccount(Long accountId);
+    void unfreezeUserAccount(Long accountId);
 
     /**
      * 注销资金账号
      */
-    void unregisterFundAccount(Long mchId, Long accountId);
+    void unregisterUserAccount(Long mchId, Long accountId);
 
     /**
      * 根据账号ID查询用户账户

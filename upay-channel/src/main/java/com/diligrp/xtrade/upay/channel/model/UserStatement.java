@@ -9,8 +9,6 @@ import java.util.List;
  * 业务流水账单数据模型
  */
 public class UserStatement extends BaseDo {
-    // 应用ID
-    private Long appId;
     // 交易ID
     private String tradeId;
     // 支付ID
@@ -19,6 +17,8 @@ public class UserStatement extends BaseDo {
     private Integer channelId;
     // 账号ID
     private Long accountId;
+    // 子账号ID
+    private Long childId;
     // 流水类型
     private Integer type;
     // 流水说明
@@ -35,14 +35,6 @@ public class UserStatement extends BaseDo {
     private String serialNo;
     // 状态
     private Integer state;
-
-    public Long getAppId() {
-        return appId;
-    }
-
-    public void setAppId(Long appId) {
-        this.appId = appId;
-    }
 
     public String getTradeId() {
         return tradeId;
@@ -74,6 +66,14 @@ public class UserStatement extends BaseDo {
 
     public void setAccountId(Long accountId) {
         this.accountId = accountId;
+    }
+
+    public Long getChildId() {
+        return childId;
+    }
+
+    public void setChildId(Long childId) {
+        this.childId = childId;
     }
 
     public Integer getType() {
@@ -145,11 +145,6 @@ public class UserStatement extends BaseDo {
     }
 
     public class Builder {
-        public Builder appId(Long appId) {
-            UserStatement.this.appId = appId;
-            return this;
-        }
-
         public Builder tradeId(String tradeId) {
             UserStatement.this.tradeId = tradeId;
             return this;
@@ -165,8 +160,14 @@ public class UserStatement extends BaseDo {
             return this;
         }
 
-        public Builder accountId(Long accountId) {
-            UserStatement.this.accountId = accountId;
+        public Builder accountId(Long accountId, Long parentId) {
+            // accountId始终存放主资金账号
+            if (parentId == 0) {
+                UserStatement.this.accountId = accountId;
+            } else {
+                UserStatement.this.accountId = parentId;
+                UserStatement.this.childId = accountId;
+            }
             return this;
         }
 
