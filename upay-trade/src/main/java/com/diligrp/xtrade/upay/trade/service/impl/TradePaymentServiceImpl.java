@@ -248,14 +248,14 @@ public class TradePaymentServiceImpl implements IPaymentService {
         TransactionStatus relation = status.getRelation();
         UserStatement.builder().tradeId(trade.getTradeId()).paymentId(payment.getPaymentId())
             .channelId(payment.getChannelId()).accountId(payment.getAccountId(), toAccount.getParentId())
-            .type(StatementType.REFUND.getCode()).typeName(StatementType.REFUND.getName())
+            .type(StatementType.REFUND.getCode()).typeName(StatementType.TRADE.getName() + "-" +StatementType.REFUND.getName())
             .amount(payment.getAmount() + payment.getFee()).fee(payment.getFee())
             .balance(relation.getBalance() + relation.getAmount())
             .frozenAmount(relation.getFrozenBalance() + relation.getFrozenAmount())
             .serialNo(trade.getSerialNo()).state(4).createdTime(now).collect(statements);
         UserStatement.builder().tradeId(trade.getTradeId()).paymentId(payment.getPaymentId())
             .channelId(payment.getChannelId()).accountId(trade.getAccountId(), fromAccount.getParentId())
-            .type(StatementType.REFUND.getCode()).typeName(StatementType.REFUND.getName())
+            .type(StatementType.REFUND.getCode()).typeName(StatementType.TRADE.getName() + "-" +StatementType.REFUND.getName())
             .amount(- payment.getAmount() + trade.getFee()).fee(trade.getFee())
             .balance(status.getBalance() + status.getAmount())
             .frozenAmount(status.getFrozenBalance() + status.getFrozenAmount())
