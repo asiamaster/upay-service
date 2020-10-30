@@ -113,7 +113,7 @@ CREATE TABLE `upay_user_account` (
   `type` TINYINT UNSIGNED NOT NULL COMMENT '账号类型',
   `use_for` TINYINT UNSIGNED NOT NULL COMMENT '业务用途',
   `permission` INT NOT NULL COMMENT '账号权限',
-  `name` VARCHAR(20) NOT NULL COMMENT '用户名',
+  `name` VARCHAR(40) NOT NULL COMMENT '用户名',
   `gender` TINYINT UNSIGNED COMMENT '性别',
   `mobile` VARCHAR(20) NOT NULL COMMENT '手机号',
   `email` VARCHAR(40) COMMENT '邮箱地址',
@@ -203,7 +203,7 @@ CREATE TABLE `upay_trade_order` (
   `serial_no` VARCHAR(40) COMMENT '外部流水号',
   `cycle_no` VARCHAR(40) COMMENT '账务周期号',
   `account_id` BIGINT NOT NULL COMMENT '账号ID',
-  `name` VARCHAR(20) COMMENT '账号名称',
+  `name` VARCHAR(40) COMMENT '账号名称',
   `amount` BIGINT NOT NULL COMMENT '金额-分',
   `max_amount` BIGINT NOT NULL COMMENT '初始金额-分',
   `fee` BIGINT NOT NULL COMMENT '费用金额-分',
@@ -234,7 +234,7 @@ CREATE TABLE `upay_trade_payment` (
   `trade_id` VARCHAR(40) NOT NULL COMMENT '交易ID',
   `channel_id` TINYINT UNSIGNED NOT NULL COMMENT '支付渠道',
   `account_id` BIGINT NOT NULL COMMENT '账号ID',
-  `name` VARCHAR(20) COMMENT '账号名称',
+  `name` VARCHAR(40) COMMENT '账号名称',
   `card_no` VARCHAR(20) COMMENT '银行卡号',
   `amount` BIGINT NOT NULL COMMENT '金额-分',
   `fee` BIGINT NOT NULL COMMENT '费用金额-分',
@@ -308,7 +308,7 @@ CREATE TABLE `upay_frozen_order` (
   `payment_id` VARCHAR(40) COMMENT '支付ID',
   `account_id` BIGINT NOT NULL COMMENT '账号ID',
   `child_id` BIGINT COMMENT '子账号ID',
-  `name` VARCHAR(20) COMMENT '用户名',
+  `name` VARCHAR(40) COMMENT '用户名',
   `type` TINYINT UNSIGNED NOT NULL COMMENT '冻结类型-系统冻结 交易冻结',
   `amount` BIGINT NOT NULL COMMENT '金额-分',
   `state` TINYINT UNSIGNED NOT NULL COMMENT '冻结状态-冻结 解冻',
@@ -326,6 +326,38 @@ CREATE TABLE `upay_frozen_order` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------------------
+-- 业务账单表
+-- 说明：记录资金账号的业务流水，包含退款记录（退款不是交易不会产生交易订单，数据模型
+-- 与交易模型也是独立的）；与收支明细不同，业务账单一笔支付交易，每个资金账号只会
+-- 产生一条业务账单，且只会记录交易结果不会记录交易过程；比如：交易金额记录的是实际
+-- 入账或出账金额（充值1000元，手续费4元，业务流水中交易金额为996元，费用为4元）。
+-- 交易金额都是带符号的，正数表示入账，负数表示出账；费用金额始终为正数。
+-- 子账号用于标识主账号的资金流水为子账号交易产生，子账号无账户资金。
+-- --------------------------------------------------------------------
+DROP TABLE IF EXISTS `upay_user_statement`;
+CREATE TABLE `upay_user_statement` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `trade_id` VARCHAR(40) NOT NULL COMMENT '交易ID',
+  `payment_id` VARCHAR(40) NOT NULL COMMENT '支付ID',
+  `channel_id` TINYINT UNSIGNED NOT NULL COMMENT '支付渠道',
+  `account_id` BIGINT NOT NULL COMMENT '主账号ID',
+  `child_id` BIGINT COMMENT '子账号ID',
+  `type` TINYINT UNSIGNED NOT NULL COMMENT '流水类型',
+  `type_name` VARCHAR(80) NOT NULL COMMENT '流水说明',
+  `amount` BIGINT NOT NULL COMMENT '交易金额-分',
+  `fee` BIGINT NOT NULL COMMENT '费用-分',
+  `balance` BIGINT NOT NULL COMMENT '期末余额',
+  `frozen_amount` BIGINT NOT NULL COMMENT '期末冻结金额',
+  `serial_no` VARCHAR(40) COMMENT '业务单号',
+  `state` TINYINT UNSIGNED NOT NULL COMMENT '状态',
+  `created_time` DATETIME COMMENT '创建时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_user_statement_tradeId` (`trade_id`, `account_id`) USING BTREE,
+  KEY `idx_user_statement_accountId` (`account_id`, `type`) USING BTREE,
+  KEY `idx_user_statement_createdTime` (`created_time`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------------------
 -- 免密支付协议表
 -- 说明：一个资金账号可以有多个不同类型的免密协议，且免密协议只能在指定金额范围内有效；
 -- --------------------------------------------------------------------
@@ -334,7 +366,7 @@ CREATE TABLE `upay_user_protocol` (
   `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
   `protocol_id` BIGINT NOT NULL COMMENT '协议ID',
   `account_id` BIGINT NOT NULL COMMENT '账号ID',
-  `name` VARCHAR(20) COMMENT '用户名',
+  `name` VARCHAR(40) COMMENT '用户名',
   `type` TINYINT UNSIGNED NOT NULL COMMENT '协议类型',
   `min_amount` BIGINT NOT NULL COMMENT '最小金额-分',
   `max_amount` BIGINT NOT NULL COMMENT '最大金额-分',

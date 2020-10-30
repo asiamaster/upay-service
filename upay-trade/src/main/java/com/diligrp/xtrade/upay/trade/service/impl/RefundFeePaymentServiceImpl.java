@@ -3,10 +3,13 @@ package com.diligrp.xtrade.upay.trade.service.impl;
 import com.diligrp.xtrade.shared.sequence.IKeyGenerator;
 import com.diligrp.xtrade.shared.sequence.SnowflakeKeyManager;
 import com.diligrp.xtrade.shared.util.ObjectUtils;
+import com.diligrp.xtrade.upay.channel.dao.IUserStatementDao;
 import com.diligrp.xtrade.upay.channel.domain.AccountChannel;
 import com.diligrp.xtrade.upay.channel.domain.IFundTransaction;
+import com.diligrp.xtrade.upay.channel.model.UserStatement;
 import com.diligrp.xtrade.upay.channel.service.IAccountChannelService;
 import com.diligrp.xtrade.upay.channel.type.ChannelType;
+import com.diligrp.xtrade.upay.channel.type.StatementType;
 import com.diligrp.xtrade.upay.core.ErrorCode;
 import com.diligrp.xtrade.upay.core.domain.MerchantPermit;
 import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
@@ -54,6 +57,9 @@ public class RefundFeePaymentServiceImpl implements IPaymentService {
     private IPaymentFeeDao paymentFeeDao;
 
     @Resource
+    private IUserStatementDao userStatementDao;
+
+    @Resource
     private IAccountChannelService accountChannelService;
 
     @Resource
@@ -86,7 +92,6 @@ public class RefundFeePaymentServiceImpl implements IPaymentService {
         }
 
         // 退费业务只支持账户/余额渠道
-        TransactionStatus status = null;
         LocalDateTime now = LocalDateTime.now();
         UserAccount account = fundAccountService.findUserAccountById(payment.getAccountId());
         accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
@@ -97,15 +102,7 @@ public class RefundFeePaymentServiceImpl implements IPaymentService {
         fees.forEach(fee ->
             transaction.income(fee.getAmount(), fee.getType(), fee.getTypeName())
         );
-        status = accountChannelService.submit(transaction);
-
-        // 处理商户收款
-        AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);
-        IFundTransaction feeTransaction = merChannel.openTransaction(trade.getType(), now);
-        fees.forEach(fee ->
-            feeTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName())
-        );
-        accountChannelService.submit(feeTransaction);
+        TransactionStatus status = accountChannelService.submit(transaction);
 
         TradeStateDto tradeState = TradeStateDto.of(trade.getTradeId(), TradeState.SUCCESS.getCode(), trade.getVersion(), now);
         int result = tradeOrderDao.compareAndSetState(tradeState);
@@ -123,6 +120,23 @@ public class RefundFeePaymentServiceImpl implements IPaymentService {
             PaymentFee.of(paymentId, fee.getAmount(), fee.getType(), fee.getTypeName(), now)
         ).collect(Collectors.toList());
         paymentFeeDao.insertPaymentFees(paymentFeeDos);
+
+        // 处理退费账户业务账单
+        UserStatement statement = UserStatement.builder().tradeId(trade.getTradeId()).paymentId(paymentDo.getPaymentId())
+            .channelId(paymentDo.getChannelId()).accountId(paymentDo.getAccountId(), account.getParentId())
+            .type(StatementType.REFUND_FEE.getCode()).typeName(StatementType.REFUND_FEE.getName())
+            .amount(totalFee).fee(0L).balance(status.getBalance() + status.getAmount())
+            .frozenAmount(status.getFrozenBalance() + status.getFrozenAmount()).serialNo(trade.getSerialNo()).state(4)
+            .createdTime(now).build();
+        userStatementDao.insertUserStatement(statement);
+
+        // 处理商户退款 - 最后处理园区收益，保证尽快释放共享数据的行锁以提高系统并发
+        AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);
+        IFundTransaction feeTransaction = merChannel.openTransaction(trade.getType(), now);
+        fees.forEach(fee ->
+            feeTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName())
+        );
+        accountChannelService.submit(feeTransaction);
 
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, paymentId, status);
     }

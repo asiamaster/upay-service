@@ -1,6 +1,8 @@
 package com.diligrp.xtrade.upay.boss.domain;
 
 import com.diligrp.xtrade.shared.domain.Message;
+import com.diligrp.xtrade.upay.channel.domain.UserStatementDto;
+import com.diligrp.xtrade.upay.core.ErrorCode;
 
 import java.util.List;
 
@@ -10,7 +12,7 @@ import java.util.List;
  * @author: brenthuang
  * @date: 2020/10/14
  */
-public class TradeStatementResult extends Message<List<TradeStatementDto>> {
+public class UserStatementResult extends Message<List<UserStatementDto>> {
     // 总记录数
     private long total;
     // 总收入
@@ -42,8 +44,8 @@ public class TradeStatementResult extends Message<List<TradeStatementDto>> {
         this.output = output;
     }
 
-    public static TradeStatementResult success(long total, List<TradeStatementDto> data, long income, long output) {
-        TradeStatementResult result = new TradeStatementResult();
+    public static UserStatementResult success(long total, List<UserStatementDto> data, long income, long output) {
+        UserStatementResult result = new UserStatementResult();
         result.setCode(CODE_SUCCESS);
         result.setTotal(total);
         result.setData(data);
@@ -53,17 +55,17 @@ public class TradeStatementResult extends Message<List<TradeStatementDto>> {
         return result;
     }
 
-    public static TradeStatementResult failure(String message) {
-        TradeStatementResult result = new TradeStatementResult();
-        result.setCode(CODE_FAILURE);
+    public static UserStatementResult failure(String message) {
+        UserStatementResult result = new UserStatementResult();
+        result.setCode(ErrorCode.SYSTEM_UNKNOWN_ERROR);
         result.setTotal(0);
         result.setData(null);
         result.setMessage(message);
         return result;
     }
 
-    public static TradeStatementResult failure(int code, String message) {
-        TradeStatementResult result = new TradeStatementResult();
+    public static UserStatementResult failure(int code, String message) {
+        UserStatementResult result = new UserStatementResult();
         result.setCode(code);
         result.setTotal(0);
         result.setData(null);

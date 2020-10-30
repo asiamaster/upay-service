@@ -3,10 +3,13 @@ package com.diligrp.xtrade.upay.trade.service.impl;
 import com.diligrp.xtrade.shared.sequence.IKeyGenerator;
 import com.diligrp.xtrade.shared.sequence.SnowflakeKeyManager;
 import com.diligrp.xtrade.shared.util.ObjectUtils;
+import com.diligrp.xtrade.upay.channel.dao.IUserStatementDao;
 import com.diligrp.xtrade.upay.channel.domain.AccountChannel;
 import com.diligrp.xtrade.upay.channel.domain.IFundTransaction;
+import com.diligrp.xtrade.upay.channel.model.UserStatement;
 import com.diligrp.xtrade.upay.channel.service.IAccountChannelService;
 import com.diligrp.xtrade.upay.channel.type.ChannelType;
+import com.diligrp.xtrade.upay.channel.type.StatementType;
 import com.diligrp.xtrade.upay.core.ErrorCode;
 import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
 import com.diligrp.xtrade.upay.core.model.UserAccount;
@@ -30,6 +33,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -44,6 +48,9 @@ public class TransferPaymentServiceImpl implements IPaymentService {
 
     @Resource
     private ITradeOrderDao tradeOrderDao;
+
+    @Resource
+    private IUserStatementDao userStatementDao;
 
     @Resource
     private IAccountChannelService accountChannelService;
@@ -105,6 +112,22 @@ public class TransferPaymentServiceImpl implements IPaymentService {
             .description(TradeType.TRANSFER.getName()).version(0).createdTime(now).build();
         tradePaymentDao.insertTradePayment(paymentDo);
 
+        // 生成转账双方的业务账单
+        List<UserStatement> statements = new ArrayList<>(2);
+        UserStatement.builder().tradeId(trade.getTradeId()).paymentId(paymentDo.getPaymentId())
+            .channelId(paymentDo.getChannelId()).accountId(paymentDo.getAccountId(), fromAccount.getParentId())
+            .type(StatementType.TRANSFER.getCode()).typeName(StatementType.TRANSFER.getName())
+            .amount(- paymentDo.getAmount()).fee(0L).balance(status.getBalance() + status.getAmount())
+            .frozenAmount(status.getFrozenBalance() + status.getFrozenAmount()).serialNo(trade.getSerialNo()).state(4)
+            .createdTime(now).collect(statements);
+        TransactionStatus relation = status.getRelation();
+        UserStatement.builder().tradeId(trade.getTradeId()).paymentId(paymentDo.getPaymentId())
+            .channelId(paymentDo.getChannelId()).accountId(trade.getAccountId(), toAccount.getParentId())
+            .type(StatementType.TRANSFER.getCode()).typeName(StatementType.TRANSFER.getName())
+            .amount(paymentDo.getAmount()).fee(0L).balance(relation.getBalance() + relation.getAmount())
+            .frozenAmount(relation.getFrozenBalance() + relation.getFrozenAmount()).serialNo(trade.getSerialNo()).state(4)
+            .createdTime(now).collect(statements);
+        userStatementDao.insertUserStatements(statements);
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, paymentId, status);
     }
 

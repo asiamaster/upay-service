@@ -15,7 +15,6 @@ import com.diligrp.xtrade.upay.core.ErrorCode;
 import com.diligrp.xtrade.upay.core.domain.FundTransaction;
 import com.diligrp.xtrade.upay.core.domain.RegisterAccount;
 import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
-import com.diligrp.xtrade.upay.core.model.FundAccount;
 import com.diligrp.xtrade.upay.core.model.UserAccount;
 import com.diligrp.xtrade.upay.core.service.IFundAccountService;
 import com.diligrp.xtrade.upay.core.service.IFundStreamEngine;
@@ -60,7 +59,7 @@ public class AccountChannelServiceImpl implements IAccountChannelService {
      */
     @Override
     public long registerFundAccount(Long mchId, RegisterAccount account) {
-        return fundAccountService.createFundAccount(mchId, account);
+        return fundAccountService.createUserAccount(mchId, account);
     }
 
     /**
@@ -68,7 +67,7 @@ public class AccountChannelServiceImpl implements IAccountChannelService {
      */
     @Override
     public void unregisterFundAccount(Long mchId, Long accountId) {
-        fundAccountService.unregisterFundAccount(mchId, accountId);
+        fundAccountService.unregisterUserAccount(mchId, accountId);
     }
 
     /**
@@ -89,7 +88,7 @@ public class AccountChannelServiceImpl implements IAccountChannelService {
      */
     @Override
     public void freezeFundAccount(Long accountId) {
-        fundAccountService.freezeFundAccount(accountId);
+        fundAccountService.freezeUserAccount(accountId);
     }
 
     /**
@@ -97,7 +96,7 @@ public class AccountChannelServiceImpl implements IAccountChannelService {
      */
     @Override
     public void unfreezeFundAccount(Long accountId) {
-        fundAccountService.unfreezeFundAccount(accountId);
+        fundAccountService.unfreezeUserAccount(accountId);
     }
 
     /**
@@ -141,7 +140,7 @@ public class AccountChannelServiceImpl implements IAccountChannelService {
                 Long errors = incAndGetErrors(dailyKey);
                 // 超过密码最大错误次数，冻结账户
                 if (errors >= maxPwdErrors) {
-                    fundAccountService.freezeFundAccount(accountId);
+                    fundAccountService.freezeUserAccount(accountId);
                     throw new PaymentChannelException(ErrorCode.INVALID_ACCOUNT_PASSWORD, "交易密码错误，已经锁定账户");
                 } else if (errors == maxPwdErrors - 1) {
                     throw new PaymentChannelException(ErrorCode.INVALID_ACCOUNT_PASSWORD, "交易密码错误，再输入错误一次将锁定账户");

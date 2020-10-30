@@ -3,10 +3,13 @@ package com.diligrp.xtrade.upay.trade.service.impl;
 import com.diligrp.xtrade.shared.sequence.IKeyGenerator;
 import com.diligrp.xtrade.shared.sequence.SnowflakeKeyManager;
 import com.diligrp.xtrade.shared.util.ObjectUtils;
+import com.diligrp.xtrade.upay.channel.dao.IUserStatementDao;
 import com.diligrp.xtrade.upay.channel.domain.AccountChannel;
 import com.diligrp.xtrade.upay.channel.domain.IFundTransaction;
+import com.diligrp.xtrade.upay.channel.model.UserStatement;
 import com.diligrp.xtrade.upay.channel.service.IAccountChannelService;
 import com.diligrp.xtrade.upay.channel.type.ChannelType;
+import com.diligrp.xtrade.upay.channel.type.StatementType;
 import com.diligrp.xtrade.upay.core.ErrorCode;
 import com.diligrp.xtrade.upay.core.domain.MerchantPermit;
 import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
@@ -60,6 +63,9 @@ public class FeePaymentServiceImpl implements IPaymentService {
 
     @Resource
     private IPaymentFeeDao paymentFeeDao;
+
+    @Resource
+    private IUserStatementDao userStatementDao;
 
     @Resource
     private IAccessPermitService accessPermitService;
@@ -121,14 +127,6 @@ public class FeePaymentServiceImpl implements IPaymentService {
             status = accountChannelService.submit(transaction);
         }
 
-        // 处理商户收款
-        AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);
-        IFundTransaction feeTransaction = merChannel.openTransaction(trade.getType(), now);
-        fees.forEach(fee ->
-            feeTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName())
-        );
-        accountChannelService.submit(feeTransaction);
-
         TradeStateDto tradeState = TradeStateDto.of(trade.getTradeId(), TradeState.SUCCESS.getCode(), trade.getVersion(), now);
         int result = tradeOrderDao.compareAndSetState(tradeState);
         if (result == 0) {
@@ -145,6 +143,26 @@ public class FeePaymentServiceImpl implements IPaymentService {
             PaymentFee.of(paymentId, fee.getAmount(), fee.getType(), fee.getTypeName(), now)
         ).collect(Collectors.toList());
         paymentFeeDao.insertPaymentFees(paymentFeeDos);
+
+        // 只有通过账户余额进行缴费才生成缴费账户业务账单
+        if (payment.getChannelId() == ChannelType.ACCOUNT.getCode()) {
+            String typeName = StatementType.PAY_FEE.getName() + (ObjectUtils.isNull(trade.getDescription()) ?
+                "" : "-" + trade.getDescription());
+            UserStatement statement = UserStatement.builder().tradeId(trade.getTradeId()).paymentId(paymentDo.getPaymentId())
+                .channelId(paymentDo.getChannelId()).accountId(paymentDo.getAccountId(), account.getParentId())
+                .type(StatementType.PAY_FEE.getCode()).typeName(typeName).amount(- totalFee).fee(0L)
+                .balance(status.getBalance() + status.getAmount()).frozenAmount(status.getFrozenBalance() + status.getFrozenAmount())
+                .serialNo(trade.getSerialNo()).state(4).createdTime(now).build();
+            userStatementDao.insertUserStatement(statement);
+        }
+
+        // 处理商户收款 - 最后处理园区收益，保证尽快释放共享数据的行锁以提高系统并发
+        AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);
+        IFundTransaction feeTransaction = merChannel.openTransaction(trade.getType(), now);
+        fees.forEach(fee ->
+            feeTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName())
+        );
+        accountChannelService.submit(feeTransaction);
 
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, paymentId, status);
     }
@@ -173,16 +191,10 @@ public class FeePaymentServiceImpl implements IPaymentService {
         LocalDateTime now = LocalDateTime.now();
         UserAccount account = accountChannelService.checkTradePermission(trade.getAccountId());
         accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
-        // 获取交易订单中的商户收益账号信息，并处理商户退款
+        // 获取交易订单中的商户收益账号信息
         MerchantPermit merchant = accessPermitService.loadMerchantPermit(trade.getMchId());
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
         String paymentId = String.valueOf(keyGenerator.nextId());
-        AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);
-        IFundTransaction feeTransaction = merChannel.openTransaction(TradeType.CANCEL_TRADE.getCode(), now);
-        fees.forEach(fee ->
-            feeTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName())
-        );
-        accountChannelService.submit(feeTransaction);
 
         // 处理客户收款
         TransactionStatus status = null;
@@ -206,10 +218,31 @@ public class FeePaymentServiceImpl implements IPaymentService {
             throw new TradePaymentException(ErrorCode.DATA_CONCURRENT_UPDATED, "系统忙，请稍后再试");
         }
         // 撤销交易订单
-        TradeStateDto tradeState = TradeStateDto.of(trade.getTradeId(), TradeState.CANCELED.getCode(), trade.getVersion(), now);
+        TradeStateDto tradeState = TradeStateDto.of(trade.getTradeId(), 0L, null,
+            TradeState.CANCELED.getCode(), trade.getVersion(), now);
         if (tradeOrderDao.compareAndSetState(tradeState) == 0) {
             throw new TradePaymentException(ErrorCode.DATA_CONCURRENT_UPDATED, "系统忙，请稍后再试");
         }
+
+        // 生成退款账户业务账单
+        String typeName = ObjectUtils.isNull(trade.getDescription()) ? StatementType.PAY_FEE.getName() + "-"
+            + StatementType.REFUND.getName() : trade.getDescription() + "-" + StatementType.REFUND.getName();
+        if (payment.getChannelId() == ChannelType.ACCOUNT.getCode()) {
+            UserStatement statement = UserStatement.builder().tradeId(trade.getTradeId()).paymentId(paymentId)
+                .channelId(payment.getChannelId()).accountId(payment.getAccountId(), account.getParentId())
+                .type(StatementType.REFUND.getCode()).typeName(typeName).amount(totalFees).fee(0L)
+                .balance(status.getBalance() + status.getAmount()).frozenAmount(status.getFrozenBalance()
+                + status.getFrozenAmount()).serialNo(trade.getSerialNo()).state(4).createdTime(now).build();
+            userStatementDao.insertUserStatement(statement);
+        }
+
+        // 处理商户退款 - 最后处理园区收益，保证尽快释放共享数据的行锁以提高系统并发
+        AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);
+        IFundTransaction feeTransaction = merChannel.openTransaction(TradeType.CANCEL_TRADE.getCode(), now);
+        fees.forEach(fee ->
+            feeTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName())
+        );
+        accountChannelService.submit(feeTransaction);
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, paymentId, status);
     }
 

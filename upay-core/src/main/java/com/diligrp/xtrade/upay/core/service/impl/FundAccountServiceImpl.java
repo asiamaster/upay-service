@@ -52,7 +52,7 @@ public class FundAccountServiceImpl implements IFundAccountService {
      */
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
-    public long createFundAccount(Long mchId, RegisterAccount account) {
+    public long createUserAccount(Long mchId, RegisterAccount account) {
         AccountType.getType(account.getType())
             .orElseThrow(() -> new FundAccountException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "无效的账号类型"));
         UseFor.getType(account.getUseFor())
@@ -97,7 +97,7 @@ public class FundAccountServiceImpl implements IFundAccountService {
      */
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
-    public void freezeFundAccount(Long accountId) {
+    public void freezeUserAccount(Long accountId) {
         Optional<UserAccount> accountOpt = fundAccountDao.findUserAccountById(accountId);
         accountOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
         accountOpt.ifPresent(AccountStateMachine::freezeAccountCheck);
@@ -115,7 +115,7 @@ public class FundAccountServiceImpl implements IFundAccountService {
      */
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
-    public void unfreezeFundAccount(Long accountId) {
+    public void unfreezeUserAccount(Long accountId) {
         Optional<UserAccount> accountOpt = fundAccountDao.findUserAccountById(accountId);
         accountOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
         accountOpt.ifPresent(AccountStateMachine::unfreezeAccountCheck);
@@ -135,7 +135,7 @@ public class FundAccountServiceImpl implements IFundAccountService {
      */
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
-    public void unregisterFundAccount(Long mchId, Long accountId) {
+    public void unregisterUserAccount(Long mchId, Long accountId) {
         Optional<UserAccount> accountOpt = fundAccountDao.findUserAccountById(accountId);
         UserAccount account = accountOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
         if (!ObjectUtils.equals(account.getMchId(), mchId)) {

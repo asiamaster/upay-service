@@ -3,10 +3,13 @@ package com.diligrp.xtrade.upay.trade.service.impl;
 import com.diligrp.xtrade.shared.sequence.IKeyGenerator;
 import com.diligrp.xtrade.shared.sequence.SnowflakeKeyManager;
 import com.diligrp.xtrade.shared.util.ObjectUtils;
+import com.diligrp.xtrade.upay.channel.dao.IUserStatementDao;
 import com.diligrp.xtrade.upay.channel.domain.AccountChannel;
 import com.diligrp.xtrade.upay.channel.domain.IFundTransaction;
+import com.diligrp.xtrade.upay.channel.model.UserStatement;
 import com.diligrp.xtrade.upay.channel.service.IAccountChannelService;
 import com.diligrp.xtrade.upay.channel.type.ChannelType;
+import com.diligrp.xtrade.upay.channel.type.StatementType;
 import com.diligrp.xtrade.upay.core.ErrorCode;
 import com.diligrp.xtrade.upay.core.domain.MerchantPermit;
 import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
@@ -40,6 +43,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -62,6 +66,9 @@ public class TradePaymentServiceImpl implements IPaymentService {
 
     @Resource
     private IRefundPaymentDao refundPaymentDao;
+
+    @Resource
+    private IUserStatementDao userStatementDao;
 
     @Resource
     private IAccountChannelService accountChannelService;
@@ -121,17 +128,6 @@ public class TradePaymentServiceImpl implements IPaymentService {
         });
         status.setRelation(accountChannelService.submit(toTransaction));
 
-        // 处理商户收益
-        if (!fees.isEmpty()) {
-            MerchantPermit merchant = payment.getObject(MerchantPermit.class.getName(), MerchantPermit.class);
-            AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);
-            IFundTransaction merTransaction = merChannel.openTransaction(trade.getType(), now);
-            fees.forEach(fee ->
-                merTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName())
-            );
-            accountChannelService.submit(merTransaction);
-        }
-
         // 卖家佣金存储在TradeOrder订单模型中
         long toFee = fees.stream().filter(Fee::forSeller).mapToLong(Fee::getAmount).sum();
         TradeStateDto tradeState = TradeStateDto.of(trade.getTradeId(), null, toFee,
@@ -153,6 +149,34 @@ public class TradePaymentServiceImpl implements IPaymentService {
                     PaymentFee.of(paymentId, fee.getUseFor(), fee.getAmount(), fee.getType(), fee.getTypeName(), now)
             ).collect(Collectors.toList());
             paymentFeeDao.insertPaymentFees(paymentFeeDos);
+        }
+
+        // 生成交易双方的业务账单
+        List<UserStatement> statements = new ArrayList<>(2);
+        UserStatement.builder().tradeId(trade.getTradeId()).paymentId(paymentDo.getPaymentId())
+            .channelId(paymentDo.getChannelId()).accountId(paymentDo.getAccountId(), fromAccount.getParentId())
+            .type(StatementType.TRADE.getCode()).typeName(StatementType.TRADE.getName())
+            .amount(- (paymentDo.getAmount() + fromFee)).fee(fromFee).balance(status.getBalance() + status.getAmount())
+            .frozenAmount(status.getFrozenBalance() + status.getFrozenAmount()).serialNo(trade.getSerialNo()).state(4)
+            .createdTime(now).collect(statements);
+        TransactionStatus relation = status.getRelation();
+        UserStatement.builder().tradeId(trade.getTradeId()).paymentId(paymentDo.getPaymentId())
+            .channelId(paymentDo.getChannelId()).accountId(trade.getAccountId(), toAccount.getParentId())
+            .type(StatementType.TRADE.getCode()).typeName(StatementType.TRADE.getName())
+            .amount(paymentDo.getAmount() - toFee).fee(toFee).balance(relation.getBalance() + relation.getAmount())
+            .frozenAmount(relation.getFrozenBalance() + relation.getFrozenAmount()).serialNo(trade.getSerialNo()).state(4)
+            .createdTime(now).collect(statements);
+        userStatementDao.insertUserStatements(statements);
+
+        // 处理商户收益 - 最后处理园区收益，保证尽快释放共享数据的行锁以提高系统并发
+        if (!fees.isEmpty()) {
+            MerchantPermit merchant = payment.getObject(MerchantPermit.class.getName(), MerchantPermit.class);
+            AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);
+            IFundTransaction merTransaction = merChannel.openTransaction(trade.getType(), now);
+            fees.forEach(fee ->
+                merTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName())
+            );
+            accountChannelService.submit(merTransaction);
         }
 
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, paymentId, status);
@@ -203,16 +227,6 @@ public class TradePaymentServiceImpl implements IPaymentService {
         toTransaction.income(trade.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName());
         status.setRelation(accountChannelService.submit(toTransaction));
 
-        // 处理商户退佣金
-        if (!fees.isEmpty()) {
-            AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);
-            IFundTransaction merTransaction = merChannel.openTransaction(TradeType.CANCEL_TRADE.getCode(), now);
-            fees.forEach(fee ->
-                merTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName())
-            );
-            accountChannelService.submit(merTransaction);
-        }
-
         RefundPayment refund = RefundPayment.builder().paymentId(paymentId).type(TradeType.CANCEL_TRADE.getCode())
             .tradeId(trade.getTradeId()).tradeType(trade.getType()).amount(trade.getAmount()).fee(0L)
             .state(TradeState.SUCCESS.getCode()).description(null).version(0).createdTime(now).build();
@@ -227,6 +241,35 @@ public class TradePaymentServiceImpl implements IPaymentService {
         TradeStateDto tradeState = TradeStateDto.of(trade.getTradeId(), TradeState.CANCELED.getCode(), trade.getVersion(), now);
         if (tradeOrderDao.compareAndSetState(tradeState) == 0) {
             throw new TradePaymentException(ErrorCode.DATA_CONCURRENT_UPDATED, "系统忙，请稍后再试");
+        }
+
+        // 生成交易双方的业务账单
+        List<UserStatement> statements = new ArrayList<>(2);
+        TransactionStatus relation = status.getRelation();
+        UserStatement.builder().tradeId(trade.getTradeId()).paymentId(payment.getPaymentId())
+            .channelId(payment.getChannelId()).accountId(payment.getAccountId(), toAccount.getParentId())
+            .type(StatementType.REFUND.getCode()).typeName(StatementType.REFUND.getName())
+            .amount(payment.getAmount() + payment.getFee()).fee(payment.getFee())
+            .balance(relation.getBalance() + relation.getAmount())
+            .frozenAmount(relation.getFrozenBalance() + relation.getFrozenAmount())
+            .serialNo(trade.getSerialNo()).state(4).createdTime(now).collect(statements);
+        UserStatement.builder().tradeId(trade.getTradeId()).paymentId(payment.getPaymentId())
+            .channelId(payment.getChannelId()).accountId(trade.getAccountId(), fromAccount.getParentId())
+            .type(StatementType.REFUND.getCode()).typeName(StatementType.REFUND.getName())
+            .amount(- payment.getAmount() + trade.getFee()).fee(trade.getFee())
+            .balance(status.getBalance() + status.getAmount())
+            .frozenAmount(status.getFrozenBalance() + status.getFrozenAmount())
+            .serialNo(trade.getSerialNo()).state(4).createdTime(now).collect(statements);
+        userStatementDao.insertUserStatements(statements);
+
+        // 处理商户退佣金 - 最后处理园区收益，保证尽快释放共享数据的行锁以提高系统并发
+        if (!fees.isEmpty()) {
+            AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);
+            IFundTransaction merTransaction = merChannel.openTransaction(TradeType.CANCEL_TRADE.getCode(), now);
+            fees.forEach(fee ->
+                merTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName())
+            );
+            accountChannelService.submit(merTransaction);
         }
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, paymentId, status);
     }
