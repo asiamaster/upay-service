@@ -130,7 +130,7 @@ public class TradePaymentServiceImpl implements IPaymentService {
 
         // 卖家佣金存储在TradeOrder订单模型中
         long toFee = fees.stream().filter(Fee::forSeller).mapToLong(Fee::getAmount).sum();
-        TradeStateDto tradeState = TradeStateDto.of(trade.getTradeId(), null, toFee,
+        TradeStateDto tradeState = TradeStateDto.of(trade.getTradeId(), null, null, toFee,
             TradeState.SUCCESS.getCode(), trade.getVersion(), now);
         int result = tradeOrderDao.compareAndSetState(tradeState);
         if (result == 0) {
