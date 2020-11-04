@@ -4,10 +4,13 @@
 	<property name="LOG_NAME" value="dili-pay" />
 	<!--定义日志文件的存储地址 勿在 LogBack 的配置中使用相对路径 -->
 	<property name="LOG_HOME" value="logs" />
-
+	
 	<!-- 日志文件存放的历史天数 可以在nacos 或者 bootstrap.properties 中配置，此处配置的变量名为：log.maxHistory -->
 	<springProperty scope="context" name="maxHistory"
 		source="log.maxHistory" />
+		
+	<springProperty scope="context" name="build.profile.id"
+		source="spring.profiles.active" />
 
 	<!-- 日志控制台输出 -->
 	<appender name="CONSOLE"
