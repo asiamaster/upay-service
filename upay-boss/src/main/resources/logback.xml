@@ -6,9 +6,6 @@
 	<property name="LOG_HOME" value="logs" />
 	
 	<!-- 日志文件存放的历史天数 可以在nacos 或者 bootstrap.properties 中配置，此处配置的变量名为：log.maxHistory -->
-	<springProperty scope="context" name="maxHistory"
-		source="log.maxHistory" />
-		
 	<springProperty scope="context" name="build.profile.id"
 		source="spring.profiles.active" />
 
@@ -29,7 +26,7 @@
 			<fileNamePattern>${LOG_HOME}/%d{yyyy-MM-dd}/${LOG_NAME}_%i.log.zip
 			</fileNamePattern>
 			<!--日志文件保留天数(FileNamePattern中的%d 格式有关，如果yyyy-MM-dd 则是天数) -->
-			<maxHistory>${maxHistory}</maxHistory>
+			<maxHistory>10</maxHistory>
 			<!--日志文件最大的大小 -->
 			<maxFileSize>10MB</maxFileSize>
 		</rollingPolicy>
