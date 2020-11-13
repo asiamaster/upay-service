@@ -104,7 +104,7 @@ public class AuthFeePaymentServiceImpl extends FeePaymentServiceImpl implements 
         feesOpt.ifPresent(fees -> { throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "预授权冻结不支持收取费用"); });
 
         // 冻结资金
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now().withNano(0);
         UserAccount account = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
         accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
@@ -172,7 +172,7 @@ public class AuthFeePaymentServiceImpl extends FeePaymentServiceImpl implements 
         }
 
         // 获取商户收益账号信息
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now().withNano(0);
         UserAccount account = accountChannelService.checkTradePermission(payment.getAccountId(), confirm.getPassword(), -1);
         accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
         // 客户账号资金解冻并缴费
@@ -249,7 +249,7 @@ public class AuthFeePaymentServiceImpl extends FeePaymentServiceImpl implements 
             throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "缴费资金账号不一致");
         }
         // 撤销预授权，需验证缴费账户状态无须验证密码
-        LocalDateTime when = LocalDateTime.now();
+        LocalDateTime when = LocalDateTime.now().withNano(0);
         UserAccount account = accountChannelService.checkTradePermission(payment.getAccountId());
         accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
         Optional<FrozenOrder> orderOpt = frozenOrderDao.findFrozenOrderByPaymentId(payment.getPaymentId());

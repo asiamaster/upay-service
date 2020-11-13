@@ -92,7 +92,7 @@ public class RefundFeePaymentServiceImpl implements IPaymentService {
         }
 
         // 退费业务只支持账户/余额渠道
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now().withNano(0);
         UserAccount account = fundAccountService.findUserAccountById(payment.getAccountId());
         accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);

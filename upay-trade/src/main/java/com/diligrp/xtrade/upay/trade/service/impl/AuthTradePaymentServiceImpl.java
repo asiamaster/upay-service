@@ -110,7 +110,7 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
         feesOpt.ifPresent(fees -> { throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "预授权冻结不支持收取费用"); });
 
         // 冻结资金
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now().withNano(0);
         UserAccount fromAccount = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
         accountChannelService.checkAccountTradeState(fromAccount); // 寿光专用业务逻辑
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
@@ -175,7 +175,7 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
         }
 
         // 获取商户收益账号信息
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now().withNano(0);
         UserAccount fromAccount = accountChannelService.checkTradePermission(payment.getAccountId(), confirm.getPassword(), -1);
         accountChannelService.checkAccountTradeState(fromAccount); // 寿光专用业务逻辑
         if (!ObjectUtils.equals(fromAccount.getMchId(), trade.getMchId())) {
@@ -280,7 +280,7 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
         TradePayment payment = paymentOpt.orElseThrow(() -> new TradePaymentException(ErrorCode.OBJECT_NOT_FOUND, "支付记录不存在"));
 
         // 撤销预授权，需验证买方账户状态无须验证密码
-        LocalDateTime when = LocalDateTime.now();
+        LocalDateTime when = LocalDateTime.now().withNano(0);
         UserAccount account = accountChannelService.checkTradePermission(payment.getAccountId());
         accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
         Optional<FrozenOrder> orderOpt = frozenOrderDao.findFrozenOrderByPaymentId(payment.getPaymentId());

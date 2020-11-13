@@ -76,7 +76,7 @@ public class PredepositPaymentServiceImpl implements IPaymentService {
         feesOpt.ifPresent(fees -> { throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "预存款暂不支持收取费用"); });
 
         // 处理个人充值
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now().withNano(0);
         UserAccount account = accountChannelService.checkTradePermission(payment.getAccountId());
         accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
