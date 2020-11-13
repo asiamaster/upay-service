@@ -101,7 +101,7 @@ public class TradePaymentServiceImpl implements IPaymentService {
         fees.forEach(Fee::checkUseFor);
 
         // 处理买家付款和买家佣金
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now().withNano(0);
         UserAccount fromAccount = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
         accountChannelService.checkAccountTradeState(fromAccount); // 寿光专用业务逻辑
         if (!ObjectUtils.equals(fromAccount.getMchId(), trade.getMchId())) {
@@ -198,7 +198,7 @@ public class TradePaymentServiceImpl implements IPaymentService {
         TradePayment payment = paymentOpt.orElseThrow(() -> new TradePaymentException(ErrorCode.OBJECT_NOT_FOUND, "支付记录不存在"));
 
         // 撤销交易，需验证退款方账户状态无须验证密码
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now().withNano(0);
         UserAccount fromAccount = accountChannelService.checkTradePermission(trade.getAccountId());
         accountChannelService.checkAccountTradeState(fromAccount); // 寿光专用业务逻辑
         MerchantPermit merchant = accessPermitService.loadMerchantPermit(trade.getMchId());

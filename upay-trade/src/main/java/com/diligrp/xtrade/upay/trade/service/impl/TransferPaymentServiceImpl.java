@@ -78,7 +78,7 @@ public class TransferPaymentServiceImpl implements IPaymentService {
         feesOpt.ifPresent(fees -> { throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "转账暂不支持收取费用"); });
 
         // 交易转出
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now().withNano(0);
         UserAccount fromAccount = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
         accountChannelService.checkAccountTradeState(fromAccount); // 寿光专用业务逻辑
         if (!ObjectUtils.equals(fromAccount.getMchId(), trade.getMchId())) {

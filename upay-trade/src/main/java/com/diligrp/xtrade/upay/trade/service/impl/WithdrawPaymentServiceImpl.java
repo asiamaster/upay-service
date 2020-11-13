@@ -84,7 +84,7 @@ public class WithdrawPaymentServiceImpl implements IPaymentService {
         List<Fee> fees = feesOpt.orElseGet(Collections::emptyList);
 
         // 处理个人提现
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now().withNano(0);
         UserAccount account = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
         accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);

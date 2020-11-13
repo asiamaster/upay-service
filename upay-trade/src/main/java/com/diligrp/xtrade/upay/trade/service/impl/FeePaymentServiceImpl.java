@@ -104,7 +104,7 @@ public class FeePaymentServiceImpl implements IPaymentService {
 
         // 处理账户余额缴费
         UserAccount account = null;
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now().withNano(0);
         if (payment.getChannelId() == ChannelType.CASH.getCode()) { // 现金缴费不校验密码（办卡/换卡工本费）
             account = accountChannelService.checkTradePermission(payment.getAccountId());
         } else if (payment.getProtocolId() == null) { // 交易密码校验
@@ -188,7 +188,7 @@ public class FeePaymentServiceImpl implements IPaymentService {
         }
 
         // 撤销缴费，需验证缴费账户状态无须验证密码
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now().withNano(0);
         UserAccount account = accountChannelService.checkTradePermission(trade.getAccountId());
         accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
         // 获取交易订单中的商户收益账号信息
