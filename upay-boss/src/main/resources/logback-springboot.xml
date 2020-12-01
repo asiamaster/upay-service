@@ -23,8 +23,7 @@
 		<rollingPolicy
 			class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
 			<!--日志文件输出的文件名 -->
-			<fileNamePattern>${LOG_HOME}/%d{yyyy-MM-dd}/${LOG_NAME}_%i.log.zip
-			</fileNamePattern>
+			<fileNamePattern>${LOG_HOME}/%d{yyyy-MM-dd}/${LOG_NAME}_%i.log.zip</fileNamePattern>
 			<!--日志文件保留天数(FileNamePattern中的%d 格式有关，如果yyyy-MM-dd 则是天数) -->
 			<maxHistory>10</maxHistory>
 			<!--日志文件最大的大小 -->
@@ -32,8 +31,7 @@
 		</rollingPolicy>
 		<encoder
 			class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
-			<pattern>%d %-5level [${LOG_NAME}-${build.profile.id}] [%t] [%c:%L]
-				-| %msg%n</pattern>
+			<pattern>%d %-5level [${LOG_NAME}-${build.profile.id}] [%t] [%c:%L]-| %msg%n</pattern>
 		</encoder>
 	</appender>
 
