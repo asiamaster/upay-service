@@ -39,10 +39,10 @@ import java.util.Optional;
 public class FundAccountServiceImpl implements IFundAccountService {
 
     @Resource
-    private IUserAccountDao fundAccountDao;
+    private IUserAccountDao userAccountDao;
 
     @Resource
-    private IFundAccountDao accountFundDao;
+    private IFundAccountDao fundAccountDao;
 
     @Resource
     private KeyGeneratorManager keyGeneratorManager;
@@ -76,17 +76,17 @@ public class FundAccountServiceImpl implements IFundAccountService {
             .secretKey(secretKey).state(AccountState.NORMAL.getCode()).mchId(mchId).version(0).createdTime(when).build();
         // 创建子账户检查主资金账户状态
         userAccount.ifChildAccount(act -> {
-            Optional<UserAccount> masterOpt = fundAccountDao.findUserAccountById(account.getParentId());
+            Optional<UserAccount> masterOpt = userAccountDao.findUserAccountById(account.getParentId());
             masterOpt.ifPresent(AccountStateMachine::registerSubAccountCheck);
             masterOpt.orElseThrow(() -> new FundAccountException(ErrorCode.OPERATION_NOT_ALLOWED, "主资金账户不存在"));
         });
-        fundAccountDao.insertUserAccount(userAccount);
+        userAccountDao.insertUserAccount(userAccount);
 
         // 子账户无须创建账户资金，共享主账户资金
         userAccount.ifMasterAccount(act -> {
             FundAccount fundAccount = FundAccount.builder().accountId(accountId).balance(0L).frozenAmount(0L)
                 .vouchAmount(0L).version(0).createdTime(when).build();
-            accountFundDao.insertFundAccount(fundAccount);
+            fundAccountDao.insertFundAccount(fundAccount);
         });
 
         return accountId;
@@ -98,13 +98,13 @@ public class FundAccountServiceImpl implements IFundAccountService {
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public void freezeUserAccount(Long accountId) {
-        Optional<UserAccount> accountOpt = fundAccountDao.findUserAccountById(accountId);
+        Optional<UserAccount> accountOpt = userAccountDao.findUserAccountById(accountId);
         accountOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
         accountOpt.ifPresent(AccountStateMachine::freezeAccountCheck);
 
         AccountStateDto accountState = AccountStateDto.of(accountId, AccountState.FROZEN.getCode(),
             LocalDateTime.now(), accountOpt.get().getVersion());
-        Integer result = fundAccountDao.compareAndSetState(accountState);
+        Integer result = userAccountDao.compareAndSetState(accountState);
         if (result == 0) {
             throw new FundAccountException(ErrorCode.DATA_CONCURRENT_UPDATED, "系统正忙，请稍后重试");
         }
@@ -116,13 +116,13 @@ public class FundAccountServiceImpl implements IFundAccountService {
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public void unfreezeUserAccount(Long accountId) {
-        Optional<UserAccount> accountOpt = fundAccountDao.findUserAccountById(accountId);
+        Optional<UserAccount> accountOpt = userAccountDao.findUserAccountById(accountId);
         accountOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
         accountOpt.ifPresent(AccountStateMachine::unfreezeAccountCheck);
 
         AccountStateDto accountState = AccountStateDto.of(accountId, AccountState.NORMAL.getCode(),
             LocalDateTime.now(), accountOpt.get().getVersion());
-        Integer result = fundAccountDao.compareAndSetState(accountState);
+        Integer result = userAccountDao.compareAndSetState(accountState);
         if (result == 0) {
             throw new FundAccountException(ErrorCode.DATA_CONCURRENT_UPDATED, "系统正忙，请稍后重试");
         }
@@ -136,23 +136,23 @@ public class FundAccountServiceImpl implements IFundAccountService {
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public void unregisterUserAccount(Long mchId, Long accountId) {
-        Optional<UserAccount> accountOpt = fundAccountDao.findUserAccountById(accountId);
+        Optional<UserAccount> accountOpt = userAccountDao.findUserAccountById(accountId);
         UserAccount account = accountOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
         if (!ObjectUtils.equals(account.getMchId(), mchId)) {
             throw new FundAccountException(ErrorCode.OPERATION_NOT_ALLOWED, "不能注销该商户下的资金账号");
         }
         accountOpt.ifPresent(AccountStateMachine::unregisterAccountCheck);
-        Optional<FundAccount> fundOpt = accountFundDao.findFundAccountById(accountId);
+        Optional<FundAccount> fundOpt = fundAccountDao.findFundAccountById(accountId);
         fundOpt.ifPresent(AccountStateMachine::unregisterFundCheck);
 
         // 不能注销存在子账号的资金账号
         account.ifMasterAccount(act -> {
-            List<UserAccount> children = fundAccountDao.findUserAccountByParentId(account.getAccountId());
+            List<UserAccount> children = userAccountDao.findUserAccountByParentId(account.getAccountId());
             children.stream().forEach(AccountStateMachine::unregisterAccountByChildCheck);
         });
         AccountStateDto accountState = AccountStateDto.of(accountId, AccountState.VOID.getCode(),
             LocalDateTime.now(), accountOpt.get().getVersion());
-        Integer result = fundAccountDao.compareAndSetState(accountState);
+        Integer result = userAccountDao.compareAndSetState(accountState);
         if (result == 0) {
             throw new FundAccountException(ErrorCode.DATA_CONCURRENT_UPDATED, "系统正忙，请稍后重试");
         }
@@ -160,7 +160,7 @@ public class FundAccountServiceImpl implements IFundAccountService {
 
     @Override
     public UserAccount findUserAccountById(Long accountId) {
-        Optional<UserAccount> accountOpt = fundAccountDao.findUserAccountById(accountId);
+        Optional<UserAccount> accountOpt = userAccountDao.findUserAccountById(accountId);
         accountOpt.ifPresent(AccountStateMachine::voidAccountCheck);
         return accountOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
     }
@@ -176,10 +176,15 @@ public class FundAccountServiceImpl implements IFundAccountService {
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW, isolation = Isolation.READ_COMMITTED)
     public FundAccount findFundAccountById(Long accountId) {
-        Optional<FundAccount> fundOpt = accountFundDao.findFundAccountById(accountId);
+        Optional<FundAccount> fundOpt = fundAccountDao.findFundAccountById(accountId);
         return fundOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "账号资金不存在"));
     }
 
+    @Override
+    public FundAccount lockFundAccountById(Long accountId) {
+        Optional<FundAccount> fundOpt = fundAccountDao.lockFundAccountById(accountId);
+        return fundOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "账号资金不存在"));
+    }
 
     /**
      * {@inheritDoc}
@@ -189,12 +194,12 @@ public class FundAccountServiceImpl implements IFundAccountService {
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public void resetTradePassword(long accountId, String password) {
-        Optional<UserAccount> accountOpt = fundAccountDao.findUserAccountById(accountId);
+        Optional<UserAccount> accountOpt = userAccountDao.findUserAccountById(accountId);
         UserAccount account = accountOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
         accountOpt.ifPresent(AccountStateMachine::updateAccountCheck);
         String newPassword = PasswordUtils.encrypt(password, account.getSecretKey());
         account.setPassword(newPassword);
         account.setModifiedTime(LocalDateTime.now());
-        fundAccountDao.updateUserAccount(account);
+        userAccountDao.updateUserAccount(account);
     }
 }

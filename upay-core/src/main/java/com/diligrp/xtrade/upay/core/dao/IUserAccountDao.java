@@ -11,7 +11,7 @@ import java.util.Optional;
 /**
  * 资金账户数据访问层
  */
-@Repository("fundAccountDao")
+@Repository("userAccountDao")
 public interface IUserAccountDao extends MybatisMapperSupport {
     void insertUserAccount(UserAccount account);
 

@@ -134,7 +134,7 @@ public class WithdrawPaymentServiceImpl implements IPaymentService {
             fees.forEach(fee ->
                 merTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName())
             );
-            accountChannelService.submit(merTransaction);
+            accountChannelService.submitOne(merTransaction);
         }
 
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, paymentId, status);

@@ -132,7 +132,7 @@ public class DepositPaymentServiceImpl implements IPaymentService {
             fees.forEach(fee ->
                 feeTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName())
             );
-            accountChannelService.submit(feeTransaction);
+            accountChannelService.submitOne(feeTransaction);
         }
 
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, paymentId, status);

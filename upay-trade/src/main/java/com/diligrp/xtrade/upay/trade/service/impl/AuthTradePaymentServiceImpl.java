@@ -257,7 +257,7 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
             fees.forEach(fee ->
                 merTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName())
             );
-            accountChannelService.submit(merTransaction);
+            accountChannelService.submitOne(merTransaction);
         }
 
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, payment.getPaymentId(), status);

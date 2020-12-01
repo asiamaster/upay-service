@@ -28,6 +28,11 @@ public interface IAccountChannelService {
     TransactionStatus submit(IFundTransaction transaction);
 
     /**
+     * 提交资金事务，建议提交商户账户操作时才使用此方法
+     */
+    TransactionStatus submitOne(IFundTransaction transaction);
+
+    /**
      * 冻结平台账号
      */
     void freezeFundAccount(Long accountId);

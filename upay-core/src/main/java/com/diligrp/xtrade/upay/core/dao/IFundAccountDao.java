@@ -9,11 +9,15 @@ import java.util.Optional;
 /**
  * 账户资金数据访问层
  */
-@Repository("accountFundDao")
+@Repository("fundAccountDao")
 public interface IFundAccountDao extends MybatisMapperSupport {
     void insertFundAccount(FundAccount fund);
 
     Optional<FundAccount> findFundAccountById(Long accountId);
+
+    Optional<FundAccount> lockFundAccountById(Long accountId);
+
+    int updateFundAccountById(FundAccount fundAccount);
 
     int compareAndSetVersion(FundAccount fundAccount);
 }

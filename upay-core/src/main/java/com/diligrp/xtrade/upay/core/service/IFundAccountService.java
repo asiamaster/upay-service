@@ -39,6 +39,11 @@ public interface IFundAccountService {
     FundAccount findFundAccountById(Long accountId);
 
     /**
+     * 悲观锁锁定资金账号防止数据并发修改
+     */
+    FundAccount lockFundAccountById(Long accountId);
+
+    /**
      * 重置账户交易密码
      */
     void resetTradePassword(long accountId, String password);
