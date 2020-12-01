@@ -146,8 +146,8 @@ public class FeePaymentServiceImpl implements IPaymentService {
 
         // 只有通过账户余额进行缴费才生成缴费账户业务账单
         if (payment.getChannelId() == ChannelType.ACCOUNT.getCode()) {
-            String typeName = StatementType.PAY_FEE.getName() + (ObjectUtils.isNull(trade.getDescription()) ?
-                "" : "-" + trade.getDescription());
+            String typeName = StatementType.PAY_FEE.getName() + (ObjectUtils.isNull(trade.getDescription())
+                ? "" : "-" + trade.getDescription());
             UserStatement statement = UserStatement.builder().tradeId(trade.getTradeId()).paymentId(paymentDo.getPaymentId())
                 .channelId(paymentDo.getChannelId()).accountId(paymentDo.getAccountId(), account.getParentId())
                 .type(StatementType.PAY_FEE.getCode()).typeName(typeName).amount(- totalFee).fee(0L)
@@ -162,7 +162,7 @@ public class FeePaymentServiceImpl implements IPaymentService {
         fees.forEach(fee ->
             feeTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName())
         );
-        accountChannelService.submit(feeTransaction);
+        accountChannelService.submitOne(feeTransaction);
 
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, paymentId, status);
     }
@@ -242,7 +242,7 @@ public class FeePaymentServiceImpl implements IPaymentService {
         fees.forEach(fee ->
             feeTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName())
         );
-        accountChannelService.submit(feeTransaction);
+        accountChannelService.submitOne(feeTransaction);
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, paymentId, status);
     }
 

@@ -176,7 +176,7 @@ public class TradePaymentServiceImpl implements IPaymentService {
             fees.forEach(fee ->
                 merTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName())
             );
-            accountChannelService.submit(merTransaction);
+            accountChannelService.submitOne(merTransaction);
         }
 
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, paymentId, status);
@@ -269,7 +269,7 @@ public class TradePaymentServiceImpl implements IPaymentService {
             fees.forEach(fee ->
                 merTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName())
             );
-            accountChannelService.submit(merTransaction);
+            accountChannelService.submitOne(merTransaction);
         }
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, paymentId, status);
     }

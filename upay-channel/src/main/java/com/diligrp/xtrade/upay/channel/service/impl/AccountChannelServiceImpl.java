@@ -85,6 +85,19 @@ public class AccountChannelServiceImpl implements IAccountChannelService {
 
     /**
      * {@inheritDoc}
+     *
+     * 如果没有任何资金变动（资金收支或资金冻结）将抛出异常
+     */
+    @Override
+    public TransactionStatus submitOne(IFundTransaction transaction) {
+        Optional<FundTransaction> transactionOpt = transaction.fundTransaction();
+        FundTransaction fundTransaction = transactionOpt.orElseThrow(
+            () -> new PaymentChannelException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "无效资金事务"));
+        return fundStreamEngine.submitOne(fundTransaction);
+    }
+
+    /**
+     * {@inheritDoc}
      */
     @Override
     public void freezeFundAccount(Long accountId) {

@@ -136,7 +136,7 @@ public class BankDepositPaymentServiceImpl implements IPaymentService {
             fees.forEach(fee ->
                 feeTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName())
             );
-            accountChannelService.submit(feeTransaction);
+            accountChannelService.submitOne(feeTransaction);
         }
 
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, paymentId, status);

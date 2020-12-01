@@ -46,7 +46,7 @@ public class FrozenOrderServiceImpl implements IFrozenOrderService {
     private IFrozenOrderDao frozenOrderDao;
 
     @Resource
-    private IUserAccountDao fundAccountDao;
+    private IUserAccountDao userAccountDao;
 
     @Resource
     private KeyGeneratorManager keyGeneratorManager;
@@ -67,7 +67,7 @@ public class FrozenOrderServiceImpl implements IFrozenOrderService {
     public FrozenStatus freeze(FreezeFundDto request) {
         Optional<FrozenType> frozenTypeOpt = FrozenType.getType(request.getType());
         frozenTypeOpt.orElseThrow(() -> new PaymentChannelException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "不支持此冻结类型"));
-        Optional<UserAccount> accountOpt = fundAccountDao.findUserAccountById(request.getAccountId());
+        Optional<UserAccount> accountOpt = userAccountDao.findUserAccountById(request.getAccountId());
         UserAccount account = accountOpt.orElseThrow(() -> new PaymentChannelException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
         accountOpt.ifPresent(AccountStateMachine::frozenFundCheck);
 
@@ -106,7 +106,7 @@ public class FrozenOrderServiceImpl implements IFrozenOrderService {
         if (order.getType() == FrozenType.TRADE_FROZEN.getCode()) {
             throw new PaymentChannelException(ErrorCode.OPERATION_NOT_ALLOWED, "不能解冻交易冻结的资金");
         }
-        Optional<UserAccount> accountOpt = fundAccountDao.findUserAccountById(order.getAccountId());
+        Optional<UserAccount> accountOpt = userAccountDao.findUserAccountById(order.getAccountId());
         UserAccount account = accountOpt.orElseThrow(() -> new FundAccountException(ErrorCode.ACCOUNT_NOT_FOUND, "资金账号不存在"));
         accountOpt.ifPresent(AccountStateMachine::frozenFundCheck);
 
