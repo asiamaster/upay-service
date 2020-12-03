@@ -2,6 +2,7 @@ package com.diligrp.xtrade.upay.trade.service;
 
 import com.diligrp.xtrade.upay.core.ErrorCode;
 import com.diligrp.xtrade.upay.trade.domain.Confirm;
+import com.diligrp.xtrade.upay.trade.domain.Correct;
 import com.diligrp.xtrade.upay.trade.domain.Payment;
 import com.diligrp.xtrade.upay.trade.domain.PaymentResult;
 import com.diligrp.xtrade.upay.trade.domain.Refund;
@@ -44,7 +45,7 @@ public interface IPaymentService {
     /**
      * 交易冲正，不需要修改源订单状态
      */
-    default PaymentResult correct(TradeOrder trade, Refund correct) {
+    default PaymentResult correct(TradeOrder trade, Correct correct) {
         throw new TradePaymentException(ErrorCode.TRADE_NOT_SUPPORTED, "该交易不支持冲正操作");
     }
 

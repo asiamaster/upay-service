@@ -11,15 +11,7 @@ import com.diligrp.xtrade.upay.core.model.UserAccount;
 import com.diligrp.xtrade.upay.core.service.IFundAccountService;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
 import com.diligrp.xtrade.upay.trade.dao.ITradeOrderDao;
-import com.diligrp.xtrade.upay.trade.domain.Confirm;
-import com.diligrp.xtrade.upay.trade.domain.ConfirmRequest;
-import com.diligrp.xtrade.upay.trade.domain.Fee;
-import com.diligrp.xtrade.upay.trade.domain.Payment;
-import com.diligrp.xtrade.upay.trade.domain.PaymentRequest;
-import com.diligrp.xtrade.upay.trade.domain.PaymentResult;
-import com.diligrp.xtrade.upay.trade.domain.Refund;
-import com.diligrp.xtrade.upay.trade.domain.RefundRequest;
-import com.diligrp.xtrade.upay.trade.domain.TradeRequest;
+import com.diligrp.xtrade.upay.trade.domain.*;
 import com.diligrp.xtrade.upay.trade.exception.TradePaymentException;
 import com.diligrp.xtrade.upay.trade.model.TradeOrder;
 import com.diligrp.xtrade.upay.trade.service.IPaymentPlatformService;
@@ -170,6 +162,32 @@ public class PaymentPlatformServiceImpl implements IPaymentPlatformService, Bean
         Refund cancel = Refund.of(request.getAccountId(), trade.getAmount(), request.getPassword());
         cancel.put(MerchantPermit.class.getName(), application.getMerchant());
         return service.cancel(trade, cancel);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * 目前只有充值、提现允许进行交易冲正
+     */
+    @Override
+    public PaymentResult correct(ApplicationPermit application, CorrectRequest request) {
+        Optional<TradeOrder> tradeOpt = tradeOrderDao.findTradeOrderById(request.getTradeId());
+        TradeOrder trade = tradeOpt.orElseThrow(() -> new TradePaymentException(ErrorCode.TRADE_NOT_FOUND, "交易不存在"));
+        if (!ObjectUtils.equals(trade.getMchId(), application.getMerchant().getMchId())) {
+            throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "该商户下交易不存在");
+        }
+        if (!TradeState.forCorrect(trade.getState())) {
+            throw new TradePaymentException(ErrorCode.INVALID_TRADE_STATE, "无效的交易状态，不能进行交易冲正");
+        }
+        Optional<TradeType> typeOpt = TradeType.getType(trade.getType());
+        TradeType tradeType = typeOpt.orElseThrow(() -> new TradePaymentException(ErrorCode.TRADE_NOT_SUPPORTED, "不支持的交易类型"));
+        Optional<IPaymentService> serviceOpt = tradeService(tradeType);
+        IPaymentService service = serviceOpt.orElseThrow(() -> new TradePaymentException(ErrorCode.TRADE_NOT_SUPPORTED, "不支持的交易类型"));
+
+        Correct correct = Correct.of(request.getTradeId(), request.getAccountId(), request.getAmount());
+        correct.put(MerchantPermit.class.getName(), application.getMerchant());
+        request.fee().ifPresent(fee -> correct.put(Fee.class.getName(), fee));
+        return service.correct(trade, correct);
     }
 
     @Override

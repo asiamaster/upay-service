@@ -13,6 +13,11 @@
         <result column="created_time" property="createdTime"/>
     </resultMap>
 
+    <insert id="insertPaymentFee" parameterType="com.diligrp.xtrade.upay.trade.model.PaymentFee">
+        INSERT INTO upay_payment_fee(payment_id, use_for, amount, type, type_name, created_time)
+        VALUES (#{paymentId}, #{useFor}, #{amount}, #{type}, #{typeName}, #{createdTime})
+    </insert>
+
     <insert id="insertPaymentFees" parameterType="java.util.List">
         INSERT INTO upay_payment_fee(payment_id, use_for, amount, type, type_name, created_time)
         VALUES

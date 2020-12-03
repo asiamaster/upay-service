@@ -50,12 +50,34 @@ public enum TradeState implements IEnumType {
         return Arrays.asList(TradeState.values());
     }
 
+    /**
+     * 交易订单是否允许撤销
+     *
+     * @param state - 交易订单状态
+     * @return 是否允许撤销
+     */
     public static boolean forCancel(int state) {
         return state == TradeState.FROZEN.getCode() || state == TradeState.SUCCESS.getCode();
     }
 
+    /**
+     * 交易订单是否允许确认交易
+     *
+     * @param state - 交易订单状态
+     * @return 是否允许确认交易
+     */
     public static boolean forConfirm(int state) {
         return state == TradeState.FROZEN.getCode();
+    }
+
+    /**
+     * 交易订单是否允许交易冲正
+     *
+     * @param state - 交易订单状态
+     * @return 是否允许交易冲正
+     */
+    public static boolean forCorrect(int state) {
+        return state == TradeState.SUCCESS.getCode();
     }
 
     @Override

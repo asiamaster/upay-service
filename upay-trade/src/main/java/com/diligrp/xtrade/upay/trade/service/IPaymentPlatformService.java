@@ -2,6 +2,7 @@ package com.diligrp.xtrade.upay.trade.service;
 
 import com.diligrp.xtrade.upay.core.domain.ApplicationPermit;
 import com.diligrp.xtrade.upay.trade.domain.ConfirmRequest;
+import com.diligrp.xtrade.upay.trade.domain.CorrectRequest;
 import com.diligrp.xtrade.upay.trade.domain.PaymentRequest;
 import com.diligrp.xtrade.upay.trade.domain.PaymentResult;
 import com.diligrp.xtrade.upay.trade.domain.RefundRequest;
@@ -46,4 +47,13 @@ public interface IPaymentPlatformService {
      * @return 支付结果
      */
     PaymentResult cancel(ApplicationPermit application, RefundRequest request);
+
+    /**
+     * 交易冲正：目前只有充值、提现允许进行交易冲正
+     *
+     * @param application - 应用接入许可
+     * @param request - 交易冲正申请
+     * @return 处理结果
+     */
+    PaymentResult correct(ApplicationPermit application, CorrectRequest request);
 }

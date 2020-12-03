@@ -24,7 +24,9 @@ public enum StatementType implements IEnumType {
 
     TRANSFER("转账", 60),
 
-    REFUND("退款", 70);
+    REFUND("退款", 70),
+
+    CORRECT("冲正", 80);
 
     private String name;
     private int code;

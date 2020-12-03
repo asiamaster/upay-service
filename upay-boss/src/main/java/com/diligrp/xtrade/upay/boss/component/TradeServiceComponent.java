@@ -7,6 +7,7 @@ import com.diligrp.xtrade.upay.boss.domain.TradeId;
 import com.diligrp.xtrade.upay.core.domain.ApplicationPermit;
 import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
 import com.diligrp.xtrade.upay.trade.domain.ConfirmRequest;
+import com.diligrp.xtrade.upay.trade.domain.CorrectRequest;
 import com.diligrp.xtrade.upay.trade.domain.PaymentRequest;
 import com.diligrp.xtrade.upay.trade.domain.PaymentResult;
 import com.diligrp.xtrade.upay.trade.domain.RefundRequest;
@@ -104,6 +105,27 @@ public class TradeServiceComponent {
         ApplicationPermit application = request.getContext().getObject(ApplicationPermit.class.getName(), ApplicationPermit.class);
         PaymentResult result = paymentPlatformService.cancel(application, cancel);
         // 如有余额信息则返回余额信息
+        return result.getStatus();
+    }
+
+    /**
+     * 交易冲正, 只有充值和提现才允许交易冲正
+     */
+    public TransactionStatus correct(ServiceRequest<CorrectRequest> request) {
+        CorrectRequest correct = request.getData();
+        AssertUtils.notEmpty(correct.getTradeId(), "tradeId missed");
+        AssertUtils.notNull(correct.getAccountId(), "accountId missed");
+        // 冲正金额有效性检查放在各服务内判断，充值和提现冲正金额有效性校验不同
+        AssertUtils.notNull(correct.getAmount(), "amount missed");
+        correct.fee().ifPresent(fee -> {
+            AssertUtils.notNull(fee.getType(), "fee type missed");
+            AssertUtils.notNull(fee.getTypeName(), "fee name missed");
+            // 费用有效性检查放在各服务内判断，充值和提现冲正费用有效性校验不同
+            AssertUtils.notNull(fee.getAmount(), "fee amount missed");
+        });
+
+        ApplicationPermit application = request.getContext().getObject(ApplicationPermit.class.getName(), ApplicationPermit.class);
+        PaymentResult result = paymentPlatformService.correct(application, correct);
         return result.getStatus();
     }
 }
