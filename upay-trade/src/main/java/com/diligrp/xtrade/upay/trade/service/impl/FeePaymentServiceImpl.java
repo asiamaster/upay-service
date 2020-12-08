@@ -105,7 +105,7 @@ public class FeePaymentServiceImpl implements IPaymentService {
         // 处理账户余额缴费
         UserAccount account = null;
         LocalDateTime now = LocalDateTime.now().withNano(0);
-        if (payment.getChannelId() == ChannelType.CASH.getCode()) { // 现金缴费不校验密码（办卡/换卡工本费）
+        if (!ChannelType.ACCOUNT.equalTo(payment.getChannelId())) { // 非账户缴费不校验密码（办卡/换卡工本费）
             account = accountChannelService.checkTradePermission(payment.getAccountId());
         } else if (payment.getProtocolId() == null) { // 交易密码校验
             account = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
@@ -121,9 +121,7 @@ public class FeePaymentServiceImpl implements IPaymentService {
         if (payment.getChannelId() == ChannelType.ACCOUNT.getCode()) {
             AccountChannel channel = AccountChannel.of(paymentId, account.getAccountId(), account.getParentId());
             IFundTransaction transaction = channel.openTransaction(trade.getType(), now);
-            fees.forEach(fee ->
-                transaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName())
-            );
+            fees.forEach(fee -> transaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName()));
             status = accountChannelService.submit(transaction);
         }
 
@@ -159,9 +157,7 @@ public class FeePaymentServiceImpl implements IPaymentService {
         // 处理商户收款 - 最后处理园区收益，保证尽快释放共享数据的行锁以提高系统并发
         AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);
         IFundTransaction feeTransaction = merChannel.openTransaction(trade.getType(), now);
-        fees.forEach(fee ->
-            feeTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName())
-        );
+        fees.forEach(fee -> feeTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName()));
         accountChannelService.submitOne(feeTransaction);
 
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, paymentId, status);
@@ -198,12 +194,10 @@ public class FeePaymentServiceImpl implements IPaymentService {
 
         // 处理客户收款
         TransactionStatus status = null;
-        if (payment.getChannelId() == ChannelType.ACCOUNT.getCode()) {
+        if (ChannelType.ACCOUNT.equalTo(payment.getChannelId())) {
             AccountChannel channel = AccountChannel.of(paymentId, account.getAccountId(), account.getParentId());
             IFundTransaction transaction = channel.openTransaction(TradeType.CANCEL_TRADE.getCode(), now);
-            fees.forEach(fee ->
-                transaction.income(fee.getAmount(), fee.getType(), fee.getTypeName())
-            );
+            fees.forEach(fee -> transaction.income(fee.getAmount(), fee.getType(), fee.getTypeName()));
             status = accountChannelService.submit(transaction);
         }
 
@@ -227,7 +221,7 @@ public class FeePaymentServiceImpl implements IPaymentService {
         // 生成退款账户业务账单
         String typeName = ObjectUtils.isNull(trade.getDescription()) ? StatementType.PAY_FEE.getName() + "-"
             + StatementType.REFUND.getName() : trade.getDescription() + "-" + StatementType.REFUND.getName();
-        if (payment.getChannelId() == ChannelType.ACCOUNT.getCode()) {
+        if (ChannelType.ACCOUNT.equalTo(payment.getChannelId())) {
             UserStatement statement = UserStatement.builder().tradeId(trade.getTradeId()).paymentId(paymentId)
                 .channelId(payment.getChannelId()).accountId(payment.getAccountId(), account.getParentId())
                 .type(StatementType.REFUND.getCode()).typeName(typeName).amount(totalFees).fee(0L)
@@ -239,9 +233,7 @@ public class FeePaymentServiceImpl implements IPaymentService {
         // 处理商户退款 - 最后处理园区收益，保证尽快释放共享数据的行锁以提高系统并发
         AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);
         IFundTransaction feeTransaction = merChannel.openTransaction(TradeType.CANCEL_TRADE.getCode(), now);
-        fees.forEach(fee ->
-            feeTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName())
-        );
+        fees.forEach(fee -> feeTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName()));
         accountChannelService.submitOne(feeTransaction);
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, paymentId, status);
     }

@@ -24,7 +24,10 @@ public enum ChannelType implements IEnumType {
 
     ALI_PAY("支付宝渠道", 11),
 
-    SJ_BANK("盛京银行", 20);
+    SJ_BANK("盛京银行", 28),
+
+    // 用于补单时不关心支付渠道时使用
+    VIRTUAL("虚拟渠道", 50);
 
     private String name;
     private int code;
@@ -86,7 +89,7 @@ public enum ChannelType implements IEnumType {
      * 判断渠道是否可用于退费业务
      */
     public static boolean forRefundFee(int code) {
-        return code == ACCOUNT.getCode();
+        return code == CASH.getCode() || code == ACCOUNT.getCode() || code == E_BANK.getCode();
     }
 
     /**
@@ -107,8 +110,8 @@ public enum ChannelType implements IEnumType {
      * 判断渠道是否可用于综合缴费业务
      */
     public static boolean forAllFee(int code) {
-        return code == ACCOUNT.getCode() || code == CASH.getCode() || code == POS.getCode() ||
-             code == E_BANK.getCode() || code == WX_PAY.getCode() || code == ALI_PAY.getCode();
+        return code == ACCOUNT.getCode() || code == CASH.getCode() || code == POS.getCode() || code == E_BANK.getCode() ||
+            code == WX_PAY.getCode() || code == ALI_PAY.getCode() || code == VIRTUAL.getCode();
     }
 
     @Override
