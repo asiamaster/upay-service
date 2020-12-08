@@ -245,9 +245,7 @@ public class AuthFeePaymentServiceImpl extends FeePaymentServiceImpl implements 
         // "预授权缴费"不存在组合支付的情况, 因此一个交易订单只对应一条支付记录
         Optional<TradePayment> paymentOpt = tradePaymentDao.findOneTradePayment(trade.getTradeId());
         TradePayment payment = paymentOpt.orElseThrow(() -> new TradePaymentException(ErrorCode.OBJECT_NOT_FOUND, "支付记录不存在"));
-        if (!payment.getAccountId().equals(cancel.getAccountId())) {
-            throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "缴费资金账号不一致");
-        }
+
         // 撤销预授权，需验证缴费账户状态无须验证密码
         LocalDateTime when = LocalDateTime.now().withNano(0);
         UserAccount account = accountChannelService.checkTradePermission(payment.getAccountId());

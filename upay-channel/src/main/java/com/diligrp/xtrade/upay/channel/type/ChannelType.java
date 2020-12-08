@@ -18,7 +18,13 @@ public enum ChannelType implements IEnumType {
 
     POS("POS渠道", 3),
 
-    E_BANK("网银渠道", 4);
+    E_BANK("网银渠道", 4),
+
+    WX_PAY("微信渠道", 10),
+
+    ALI_PAY("支付宝渠道", 11),
+
+    SJ_BANK("盛京银行", 20);
 
     private String name;
     private int code;
@@ -26,6 +32,10 @@ public enum ChannelType implements IEnumType {
     ChannelType(String name, int code) {
         this.name = name;
         this.code = code;
+    }
+
+    public boolean equalTo(int code) {
+        return this.code == code;
     }
 
     public static Optional<ChannelType> getType(int code) {
@@ -91,6 +101,14 @@ public enum ChannelType implements IEnumType {
      */
     public static boolean forPreAuthFee(int code) {
         return code == ACCOUNT.getCode();
+    }
+
+    /**
+     * 判断渠道是否可用于综合缴费业务
+     */
+    public static boolean forAllFee(int code) {
+        return code == ACCOUNT.getCode() || code == CASH.getCode() || code == POS.getCode() ||
+             code == E_BANK.getCode() || code == WX_PAY.getCode() || code == ALI_PAY.getCode();
     }
 
     @Override

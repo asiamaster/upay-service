@@ -293,6 +293,23 @@ CREATE TABLE `upay_payment_fee` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------------------
+-- 抵扣项费用表
+-- 说明：缴费时允许使用订金等进行抵扣
+-- --------------------------------------------------------------------
+DROP TABLE IF EXISTS `upay_deduct_fee`;
+CREATE TABLE `upay_deduct_fee` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `payment_id` VARCHAR(40) NOT NULL COMMENT '支付ID',
+  `use_for` TINYINT UNSIGNED COMMENT '费用用途',
+  `amount` BIGINT NOT NULL COMMENT '金额-分',
+  `type` INT NOT NULL COMMENT '费用类型',
+  `type_name` VARCHAR(80) COMMENT '费用描述',
+  `created_time` DATETIME COMMENT '创建时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_deduct_fee_paymentId` (`payment_id`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------------------
 -- 资金冻结表
 -- 说明：支付时进行交易冻结，而非创建交易时冻结资金
 -- 资金流水动作包含收入和支出，支出时流水金额amount为负值，否则为正值；

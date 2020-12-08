@@ -5,30 +5,27 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * 交易撤销、交易退款和交易冲正请求模型
+ * 交易撤销、交易退款请求模型
  */
 public class Refund extends HashMap<String, Object> {
-    // 交易账户ID
-    private Long accountId;
+    // 原交易号
+    private String tradeId;
     // 操作金额
     private Long amount;
-    // 支付密码
-    private String password;
 
-    public static Refund of(Long accountId, Long amount, String password) {
+    public static Refund of(String tradeId, Long amount) {
         Refund refund = new Refund();
-        refund.setAccountId(accountId);
+        refund.setTradeId(tradeId);
         refund.setAmount(amount);
-        refund.setPassword(password);
         return refund;
     }
 
-    public Long getAccountId() {
-        return accountId;
+    public String getTradeId() {
+        return tradeId;
     }
 
-    public void setAccountId(Long accountId) {
-        this.accountId = accountId;
+    public void setTradeId(String tradeId) {
+        this.tradeId = tradeId;
     }
 
     public Long getAmount() {
@@ -37,14 +34,6 @@ public class Refund extends HashMap<String, Object> {
 
     public void setAmount(Long amount) {
         this.amount = amount;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
     }
 
     public String getString(String param) {

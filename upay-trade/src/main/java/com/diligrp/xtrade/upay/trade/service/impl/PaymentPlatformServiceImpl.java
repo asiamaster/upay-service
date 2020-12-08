@@ -62,7 +62,8 @@ public class PaymentPlatformServiceImpl implements IPaymentPlatformService, Bean
         tradeType.orElseThrow(() -> new TradePaymentException(ErrorCode.TRADE_NOT_SUPPORTED, "不支持的交易类型"));
         UserAccount account = fundAccountService.findUserAccountById(trade.getAccountId());
         accountChannelService.checkAccountTradeState(account);
-        if (!ObjectUtils.equals(account.getMchId(), application.getMerchant().getMchId())) {
+        // 杭州市场无账户，虚拟一个mchId=0的账户保证处理逻辑一致
+        if (account.getMchId() != 0 && !ObjectUtils.equals(account.getMchId(), application.getMerchant().getMchId())) {
             throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "该商户下资金账号不存在");
         }
 
@@ -109,6 +110,7 @@ public class PaymentPlatformServiceImpl implements IPaymentPlatformService, Bean
             request.getPassword(), request.getProtocolId());
         payment.put(MerchantPermit.class.getName(), application.getMerchant());
         request.fees().ifPresent(fees -> payment.put(Fee.class.getName(), fees));
+        request.deductFees().ifPresent(fees -> payment.put(Fee.class.getName() + ".deduct", fees));
 
         return service.commit(trade, payment);
     }
@@ -141,6 +143,31 @@ public class PaymentPlatformServiceImpl implements IPaymentPlatformService, Bean
 
     /**
      * {@inheritDoc}
+     */
+    @Override
+    public PaymentResult refund(ApplicationPermit application, RefundRequest request) {
+        Optional<TradeOrder> tradeOpt = tradeOrderDao.findTradeOrderById(request.getTradeId());
+        TradeOrder trade = tradeOpt.orElseThrow(() -> new TradePaymentException(ErrorCode.TRADE_NOT_FOUND, "交易不存在"));
+        if (!ObjectUtils.equals(trade.getMchId(), application.getMerchant().getMchId())) {
+            throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "该商户下交易不存在");
+        }
+        if (!TradeState.forRefund(trade.getState())) {
+            throw new TradePaymentException(ErrorCode.INVALID_TRADE_STATE, "无效的交易状态，不能进行交易退款");
+        }
+        Optional<TradeType> typeOpt = TradeType.getType(trade.getType());
+        TradeType tradeType = typeOpt.orElseThrow(() -> new TradePaymentException(ErrorCode.TRADE_NOT_SUPPORTED, "不支持的交易类型"));
+        Optional<IPaymentService> serviceOpt = tradeService(tradeType);
+        IPaymentService service = serviceOpt.orElseThrow(() -> new TradePaymentException(ErrorCode.TRADE_NOT_SUPPORTED, "不支持的交易类型"));
+
+        Refund refund = Refund.of(trade.getTradeId(), request.getAmount());
+        refund.put(MerchantPermit.class.getName(), application.getMerchant());
+        request.fees().ifPresent(fees -> refund.put(Fee.class.getName(), fees));
+        request.deductFees().ifPresent(fees -> refund.put(Fee.class.getName() + ".deduct", fees));
+        return service.refund(trade, refund);
+    }
+
+    /**
+     * {@inheritDoc}
      *
      * 正常业务撤销将对资金进行逆向操作；对于预授权业务，确认交易前撤销只解冻资金，确认交易后撤销进行资金逆向操作
      */
@@ -159,7 +186,7 @@ public class PaymentPlatformServiceImpl implements IPaymentPlatformService, Bean
         Optional<IPaymentService> serviceOpt = tradeService(tradeType);
         IPaymentService service = serviceOpt.orElseThrow(() -> new TradePaymentException(ErrorCode.TRADE_NOT_SUPPORTED, "不支持的交易类型"));
 
-        Refund cancel = Refund.of(request.getAccountId(), trade.getAmount(), request.getPassword());
+        Refund cancel = Refund.of(trade.getTradeId(), trade.getAmount());
         cancel.put(MerchantPermit.class.getName(), application.getMerchant());
         return service.cancel(trade, cancel);
     }

@@ -29,4 +29,21 @@
     <select id="findPaymentFees" parameterType="string" resultMap="PaymentFeeMap">
         SELECT * FROM upay_payment_fee WHERE payment_id = #{paymentId} ORDER BY ID
     </select>
+
+    <insert id="insertDeductFee" parameterType="com.diligrp.xtrade.upay.trade.model.PaymentFee">
+        INSERT INTO upay_deduct_fee(payment_id, use_for, amount, type, type_name, created_time)
+        VALUES (#{paymentId}, #{useFor}, #{amount}, #{type}, #{typeName}, #{createdTime})
+    </insert>
+
+    <insert id="insertDeductFees" parameterType="java.util.List">
+        INSERT INTO upay_deduct_fee(payment_id, use_for, amount, type, type_name, created_time)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.paymentId}, #{item.useFor}, #{item.amount}, #{item.type}, #{item.typeName}, #{item.createdTime})
+        </foreach>
+    </insert>
+
+    <select id="findDeductFees" parameterType="string" resultMap="PaymentFeeMap">
+        SELECT * FROM upay_deduct_fee WHERE payment_id = #{paymentId} ORDER BY ID
+    </select>
 </mapper>

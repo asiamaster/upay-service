@@ -20,6 +20,8 @@ public class PaymentRequest {
     private String cardNo;
     // 费用列表
     private List<Fee> fees;
+    // 抵扣费用 - 综合收费专用
+    private List<Fee> deductFees;
     // 免密协议号
     private Long protocolId;
 
@@ -71,6 +73,14 @@ public class PaymentRequest {
         this.fees = fees;
     }
 
+    public List<Fee> getDeductFees() {
+        return deductFees;
+    }
+
+    public void setDeductFees(List<Fee> deductFees) {
+        this.deductFees = deductFees;
+    }
+
     public Long getProtocolId() {
         return protocolId;
     }
@@ -81,5 +91,9 @@ public class PaymentRequest {
 
     public Optional<List<Fee>> fees() {
         return fees != null && fees.size() > 0 ? Optional.of(fees) : Optional.empty();
+    }
+
+    public Optional<List<Fee>> deductFees() {
+        return deductFees != null && deductFees.size() > 0 ? Optional.of(deductFees) : Optional.empty();
     }
 }

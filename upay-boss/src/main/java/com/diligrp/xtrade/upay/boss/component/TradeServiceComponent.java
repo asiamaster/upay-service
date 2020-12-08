@@ -60,6 +60,13 @@ public class TradeServiceComponent {
             AssertUtils.notNull(fee.getAmount(), "fee amount missed");
             AssertUtils.isTrue(fee.getAmount() > 0, "Invalid fee amount");
         }));
+        // 抵扣费用参数校验 - 综合收费使用
+        payment.deductFees().ifPresent(fees -> fees.stream().forEach(fee -> {
+            AssertUtils.notNull(fee.getType(), "deduct fee type missed");
+            AssertUtils.notNull(fee.getTypeName(), "deduct fee name missed");
+            AssertUtils.notNull(fee.getAmount(), "deduct fee amount missed");
+            AssertUtils.isTrue(fee.getAmount() > 0, "Invalid deduct fee amount");
+        }));
 
         ApplicationPermit permit = request.getContext().getObject(ApplicationPermit.class.getName(), ApplicationPermit.class);
         PaymentResult result = paymentPlatformService.commit(permit, payment);
@@ -90,6 +97,34 @@ public class TradeServiceComponent {
         ApplicationPermit permit = request.getContext().getObject(ApplicationPermit.class.getName(), ApplicationPermit.class);
         PaymentResult result = paymentPlatformService.confirm(permit, confirm);
         // 如有余额信息则返回余额信息
+        return result.getStatus();
+    }
+
+    /**
+     * 交易冲正, 只有充值和提现才允许交易冲正
+     */
+    public TransactionStatus refund(ServiceRequest<RefundRequest> request) {
+        RefundRequest refund = request.getData();
+        AssertUtils.notEmpty(refund.getTradeId(), "tradeId missed");
+        // 退款金额有效性检查放在各服务内判断
+        AssertUtils.notNull(refund.getAmount(), "amount missed");
+        // 费用参数校验
+        refund.fees().ifPresent(fees -> fees.stream().forEach(fee -> {
+            AssertUtils.notNull(fee.getType(), "fee type missed");
+            AssertUtils.notNull(fee.getTypeName(), "fee name missed");
+            AssertUtils.notNull(fee.getAmount(), "fee amount missed");
+            AssertUtils.isTrue(fee.getAmount() > 0, "Invalid fee amount");
+        }));
+        // 抵扣费用参数校验 - 综合收费使用
+        refund.deductFees().ifPresent(fees -> fees.stream().forEach(fee -> {
+            AssertUtils.notNull(fee.getType(), "deduct fee type missed");
+            AssertUtils.notNull(fee.getTypeName(), "deduct fee name missed");
+            AssertUtils.notNull(fee.getAmount(), "deduct fee amount missed");
+            AssertUtils.isTrue(fee.getAmount() > 0, "Invalid deduct fee amount");
+        }));
+
+        ApplicationPermit application = request.getContext().getObject(ApplicationPermit.class.getName(), ApplicationPermit.class);
+        PaymentResult result = paymentPlatformService.refund(application, refund);
         return result.getStatus();
     }
 

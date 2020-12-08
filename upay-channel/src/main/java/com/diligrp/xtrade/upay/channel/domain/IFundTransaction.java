@@ -8,6 +8,22 @@ import java.util.Optional;
  * 资金事务接口
  */
 public interface IFundTransaction {
+
+    /**
+     * 根据金额判断是资金收入还是资金支出
+     *
+     * @param amount - 操作金额
+     * @param type - 资金项类型
+     * @param typeName - 资金项说明
+     */
+    default void consume(long amount, int type, String typeName) {
+        if (amount > 0) {
+            income(amount, type, typeName);
+        } else if (amount < 0) {
+            outgo(amount, type, typeName);
+        }
+    }
+
     /**
      * 资金收入
      *
