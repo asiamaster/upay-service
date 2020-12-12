@@ -6,4 +6,5 @@ bootJar.enabled = false
 
 dependencies {
     api project(':upay-core')
+    api project(':upay-pipeline')
 }

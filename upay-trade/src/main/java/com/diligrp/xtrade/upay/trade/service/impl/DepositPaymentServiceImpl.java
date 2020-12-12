@@ -41,7 +41,6 @@ import com.diligrp.xtrade.upay.trade.type.TradeType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.Assert;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
@@ -110,9 +109,7 @@ public class DepositPaymentServiceImpl implements IPaymentService {
         AccountChannel channel = AccountChannel.of(paymentId, account.getAccountId(), account.getParentId());
         IFundTransaction transaction = channel.openTransaction(trade.getType(), now);
         transaction.income(trade.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName());
-        fees.forEach(fee -> {
-            transaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName());
-        });
+        fees.forEach(fee -> transaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName()));
         TransactionStatus status = accountChannelService.submit(transaction);
 
         TradeStateDto tradeState = TradeStateDto.of(trade.getTradeId(), TradeState.SUCCESS.getCode(), trade.getVersion(), now);
@@ -147,10 +144,8 @@ public class DepositPaymentServiceImpl implements IPaymentService {
             MerchantPermit merchant = payment.getObject(MerchantPermit.class.getName(), MerchantPermit.class);
             AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);
             IFundTransaction feeTransaction = merChannel.openTransaction(trade.getType(), now);
-            fees.forEach(fee ->
-                feeTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName())
-            );
-            accountChannelService.submitOne(feeTransaction);
+            fees.forEach(fee -> feeTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName()));
+            accountChannelService.submitExclusively(feeTransaction);
         }
 
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, paymentId, status);
@@ -182,9 +177,7 @@ public class DepositPaymentServiceImpl implements IPaymentService {
         AccountChannel channel = AccountChannel.of(paymentId, account.getAccountId(), account.getParentId());
         IFundTransaction transaction = channel.openTransaction(TradeType.CORRECT_TRADE.getCode(), now);
         transaction.outgo(Math.abs(correct.getAmount()), FundType.FUND.getCode(), FundType.FUND.getName());
-        feeOpt.ifPresent(fee -> {
-            transaction.income(Math.abs(fee.getAmount()), fee.getType(), fee.getTypeName());
-        });
+        feeOpt.ifPresent(fee -> transaction.income(Math.abs(fee.getAmount()), fee.getType(), fee.getTypeName()));
         TransactionStatus status = accountChannelService.submit(transaction);
 
         // 计算正确的充值金额和费用, 真实充值金额=原充值金额+冲正金额(负数), 真实充值费用=原充值费用+冲正费用(负数)
@@ -232,7 +225,7 @@ public class DepositPaymentServiceImpl implements IPaymentService {
             AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);
             IFundTransaction feeTransaction = merChannel.openTransaction(TradeType.CORRECT_TRADE.getCode(), now);
             feeTransaction.outgo(Math.abs(fee.getAmount()), fee.getType(), fee.getTypeName());
-            accountChannelService.submitOne(feeTransaction);
+            accountChannelService.submitExclusively(feeTransaction);
         });
 
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, paymentId, status);

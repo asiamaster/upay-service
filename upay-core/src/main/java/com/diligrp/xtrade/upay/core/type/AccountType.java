@@ -26,6 +26,10 @@ public enum AccountType implements IEnumType {
         this.code = code;
     }
 
+    public boolean equalTo(int code) {
+        return this.code == code;
+    }
+
     public static Optional<AccountType> getType(int code) {
         Stream<AccountType> TYPES = Arrays.stream(AccountType.values());
         return TYPES.filter(type -> type.getCode() == code).findFirst();

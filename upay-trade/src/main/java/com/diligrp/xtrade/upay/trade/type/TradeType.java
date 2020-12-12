@@ -34,6 +34,8 @@ public enum TradeType implements IEnumType {
 
     TRANSFER("账户转账", 23),
 
+    BANK_WITHDRAW("银行圈提", 30),
+
     CANCEL_TRADE("交易撤销", 40),
 
     REFUND_TRADE("交易退款", 41),

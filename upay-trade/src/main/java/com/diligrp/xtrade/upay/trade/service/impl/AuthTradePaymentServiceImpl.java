@@ -188,9 +188,8 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
         IFundTransaction fromTransaction = fromChannel.openTransaction(trade.getType(), now);
         fromTransaction.unfreeze(frozenOrder.getAmount());
         fromTransaction.outgo(confirm.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName());
-        fees.stream().filter(Fee::forBuyer).forEach(fee -> {
-            fromTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName());
-        });
+        fees.stream().filter(Fee::forBuyer)
+            .forEach(fee -> fromTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName()));
         TransactionStatus status = accountChannelService.submit(fromTransaction);
 
         // 处理卖家收款和卖家佣金
@@ -199,9 +198,8 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
         AccountChannel toChannel = AccountChannel.of(payment.getPaymentId(), toAccount.getAccountId(), toAccount.getParentId());
         IFundTransaction toTransaction = toChannel.openTransaction(trade.getType(), now);
         toTransaction.income(confirm.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName());
-        fees.stream().filter(Fee::forSeller).forEach(fee -> {
-            toTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName());
-        });
+        fees.stream().filter(Fee::forSeller)
+            .forEach(fee -> toTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName()));
         status.setRelation(accountChannelService.submit(toTransaction));
 
         // 修改冻结订单"已解冻"状态
@@ -254,10 +252,8 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
         if (!fees.isEmpty()) {
             AccountChannel merChannel = AccountChannel.of(payment.getPaymentId(), merchant.getProfitAccount(), 0L);
             IFundTransaction merTransaction = merChannel.openTransaction(trade.getType(), now);
-            fees.forEach(fee ->
-                merTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName())
-            );
-            accountChannelService.submitOne(merTransaction);
+            fees.forEach(fee -> merTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName()));
+            accountChannelService.submitExclusively(merTransaction);
         }
 
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, payment.getPaymentId(), status);

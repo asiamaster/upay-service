@@ -112,9 +112,7 @@ public class TradePaymentServiceImpl implements IPaymentService {
         AccountChannel fromChannel = AccountChannel.of(paymentId, fromAccount.getAccountId(), fromAccount.getParentId());
         IFundTransaction fromTransaction = fromChannel.openTransaction(trade.getType(), now);
         fromTransaction.outgo(trade.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName());
-        fees.stream().filter(Fee::forBuyer).forEach(fee -> {
-            fromTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName());
-        });
+        fees.stream().filter(Fee::forBuyer).forEach(fee -> fromTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName()));
         TransactionStatus status = accountChannelService.submit(fromTransaction);
 
         // 处理卖家收款和卖家佣金
@@ -123,9 +121,7 @@ public class TradePaymentServiceImpl implements IPaymentService {
         AccountChannel toChannel = AccountChannel.of(paymentId, toAccount.getAccountId(), toAccount.getParentId());
         IFundTransaction toTransaction = toChannel.openTransaction(trade.getType(), now);
         toTransaction.income(trade.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName());
-        fees.stream().filter(Fee::forSeller).forEach(fee -> {
-            toTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName());
-        });
+        fees.stream().filter(Fee::forSeller).forEach(fee -> toTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName()));
         status.setRelation(accountChannelService.submit(toTransaction));
 
         // 卖家佣金存储在TradeOrder订单模型中
@@ -173,10 +169,8 @@ public class TradePaymentServiceImpl implements IPaymentService {
             MerchantPermit merchant = payment.getObject(MerchantPermit.class.getName(), MerchantPermit.class);
             AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);
             IFundTransaction merTransaction = merChannel.openTransaction(trade.getType(), now);
-            fees.forEach(fee ->
-                merTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName())
-            );
-            accountChannelService.submitOne(merTransaction);
+            fees.forEach(fee -> merTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName()));
+            accountChannelService.submitExclusively(merTransaction);
         }
 
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, paymentId, status);
@@ -211,9 +205,8 @@ public class TradePaymentServiceImpl implements IPaymentService {
         AccountChannel fromChannel = AccountChannel.of(paymentId, fromAccount.getAccountId(), fromAccount.getParentId());
         IFundTransaction fromTransaction = fromChannel.openTransaction(TradeType.CANCEL_TRADE.getCode(), now);
         fromTransaction.outgo(trade.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName());
-        fees.stream().filter(PaymentFee::forSeller).forEach(fee -> {
-            fromTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName());
-        });
+        fees.stream().filter(PaymentFee::forSeller)
+            .forEach(fee -> fromTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName()));
         TransactionStatus status = accountChannelService.submit(fromTransaction);
 
         // 处理买家收款和退佣金
@@ -221,9 +214,8 @@ public class TradePaymentServiceImpl implements IPaymentService {
         accountChannelService.checkAccountTradeState(toAccount); // 寿光专用业务逻辑
         AccountChannel toChannel = AccountChannel.of(paymentId, toAccount.getAccountId(), toAccount.getParentId());
         IFundTransaction toTransaction = toChannel.openTransaction(TradeType.CANCEL_TRADE.getCode(), now);
-        fees.stream().filter(PaymentFee::forBuyer).forEach(fee -> {
-            toTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName());
-        });
+        fees.stream().filter(PaymentFee::forBuyer)
+            .forEach(fee -> toTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName()));
         toTransaction.income(trade.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName());
         status.setRelation(accountChannelService.submit(toTransaction));
 
@@ -266,10 +258,8 @@ public class TradePaymentServiceImpl implements IPaymentService {
         if (!fees.isEmpty()) {
             AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);
             IFundTransaction merTransaction = merChannel.openTransaction(TradeType.CANCEL_TRADE.getCode(), now);
-            fees.forEach(fee ->
-                merTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName())
-            );
-            accountChannelService.submitOne(merTransaction);
+            fees.forEach(fee -> merTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName()));
+            accountChannelService.submitExclusively(merTransaction);
         }
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, paymentId, status);
     }

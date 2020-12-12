@@ -158,7 +158,7 @@ public class FeePaymentServiceImpl implements IPaymentService {
         AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);
         IFundTransaction feeTransaction = merChannel.openTransaction(trade.getType(), now);
         fees.forEach(fee -> feeTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName()));
-        accountChannelService.submitOne(feeTransaction);
+        accountChannelService.submitExclusively(feeTransaction);
 
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, paymentId, status);
     }
@@ -234,7 +234,7 @@ public class FeePaymentServiceImpl implements IPaymentService {
         AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);
         IFundTransaction feeTransaction = merChannel.openTransaction(TradeType.CANCEL_TRADE.getCode(), now);
         fees.forEach(fee -> feeTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName()));
-        accountChannelService.submitOne(feeTransaction);
+        accountChannelService.submitExclusively(feeTransaction);
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, paymentId, status);
     }
 

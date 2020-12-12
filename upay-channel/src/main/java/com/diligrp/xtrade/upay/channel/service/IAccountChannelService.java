@@ -23,14 +23,19 @@ public interface IAccountChannelService {
     void unregisterFundAccount(Long mchId, Long accountId);
 
     /**
-     * 提交资金事务
+     * 提交资金事务, 数据库乐观锁且发生数据并发修改时进行重试
      */
     TransactionStatus submit(IFundTransaction transaction);
 
     /**
+     * 提交资金事务, 数据库乐观锁且发生数据并发修改时"不会"进行重试
+     */
+    TransactionStatus submitOnce(IFundTransaction transaction);
+
+    /**
      * 提交资金事务，建议提交商户账户操作时才使用此方法
      */
-    TransactionStatus submitOne(IFundTransaction transaction);
+    TransactionStatus submitExclusively(IFundTransaction transaction);
 
     /**
      * 冻结平台账号

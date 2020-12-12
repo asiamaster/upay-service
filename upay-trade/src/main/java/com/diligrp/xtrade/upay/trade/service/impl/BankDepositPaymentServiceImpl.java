@@ -96,9 +96,7 @@ public class BankDepositPaymentServiceImpl implements IPaymentService {
         IFundTransaction transaction = channel.openTransaction(trade.getType(), now);
         transaction.income(trade.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName());
         // 网银充值退手续费
-        fees.forEach(fee -> {
-            transaction.income(fee.getAmount(), fee.getType(), fee.getTypeName());
-        });
+        fees.forEach(fee -> transaction.income(fee.getAmount(), fee.getType(), fee.getTypeName()));
         TransactionStatus status = accountChannelService.submit(transaction);
 
         TradeStateDto tradeState = TradeStateDto.of(trade.getTradeId(), TradeState.SUCCESS.getCode(), trade.getVersion(), now);
@@ -133,10 +131,8 @@ public class BankDepositPaymentServiceImpl implements IPaymentService {
             MerchantPermit merchant = payment.getObject(MerchantPermit.class.getName(), MerchantPermit.class);
             AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);
             IFundTransaction feeTransaction = merChannel.openTransaction(trade.getType(), now);
-            fees.forEach(fee ->
-                feeTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName())
-            );
-            accountChannelService.submitOne(feeTransaction);
+            fees.forEach(fee -> feeTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName()));
+            accountChannelService.submitExclusively(feeTransaction);
         }
 
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, paymentId, status);

@@ -62,7 +62,7 @@ public class PaymentPlatformServiceImpl implements IPaymentPlatformService, Bean
         tradeType.orElseThrow(() -> new TradePaymentException(ErrorCode.TRADE_NOT_SUPPORTED, "不支持的交易类型"));
         UserAccount account = fundAccountService.findUserAccountById(trade.getAccountId());
         accountChannelService.checkAccountTradeState(account);
-        // 杭州市场无账户，虚拟一个mchId=0的账户保证处理逻辑一致
+        // 现金缴费只入园区账户，无法跟踪对端信息(无账户信息)，虚拟一个mchId=0的账户保证处理逻辑一致
         if (account.getMchId() != 0 && !ObjectUtils.equals(account.getMchId(), application.getMerchant().getMchId())) {
             throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "该商户下资金账号不存在");
         }
@@ -111,7 +111,7 @@ public class PaymentPlatformServiceImpl implements IPaymentPlatformService, Bean
         payment.put(MerchantPermit.class.getName(), application.getMerchant());
         request.fees().ifPresent(fees -> payment.put(Fee.class.getName(), fees));
         request.deductFees().ifPresent(fees -> payment.put(Fee.class.getName() + ".deduct", fees));
-
+        request.channelAccount().ifPresent(channelAccount -> payment.put(ChannelAccount.class.getName(), channelAccount));
         return service.commit(trade, payment);
     }
 

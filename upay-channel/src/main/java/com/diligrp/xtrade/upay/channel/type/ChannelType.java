@@ -114,6 +114,13 @@ public enum ChannelType implements IEnumType {
             code == WX_PAY.getCode() || code == ALI_PAY.getCode() || code == VIRTUAL.getCode();
     }
 
+    /**
+     * 判断渠道是否可用于网银充值业务-专为寿光处理网银充值退手续费的业务场景
+     */
+    public static boolean forBankWithdraw(int code) {
+        return code == SJ_BANK.getCode();
+    }
+
     @Override
     public String getName() {
         return name;

@@ -16,14 +16,14 @@ public class PaymentRequest {
     private Integer channelId;
     // 支付密码
     private String password;
-    // 银行卡号-用于银行渠道进行圈存圈提
-    private String cardNo;
     // 费用列表
     private List<Fee> fees;
     // 抵扣费用 - 综合收费专用
     private List<Fee> deductFees;
     // 免密协议号
     private Long protocolId;
+    // 渠道账户信息
+    private ChannelAccount channelAccount;
 
     public String getTradeId() {
         return tradeId;
@@ -57,14 +57,6 @@ public class PaymentRequest {
         this.password = password;
     }
 
-    public String getCardNo() {
-        return cardNo;
-    }
-
-    public void setCardNo(String cardNo) {
-        this.cardNo = cardNo;
-    }
-
     public List<Fee> getFees() {
         return fees == null ? Collections.EMPTY_LIST : fees;
     }
@@ -89,11 +81,23 @@ public class PaymentRequest {
         this.protocolId = protocolId;
     }
 
+    public ChannelAccount getChannelAccount() {
+        return channelAccount;
+    }
+
+    public void setChannelAccount(ChannelAccount channelAccount) {
+        this.channelAccount = channelAccount;
+    }
+
     public Optional<List<Fee>> fees() {
         return fees != null && fees.size() > 0 ? Optional.of(fees) : Optional.empty();
     }
 
     public Optional<List<Fee>> deductFees() {
         return deductFees != null && deductFees.size() > 0 ? Optional.of(deductFees) : Optional.empty();
+    }
+
+    public Optional<ChannelAccount> channelAccount() {
+        return Optional.ofNullable(channelAccount);
     }
 }
