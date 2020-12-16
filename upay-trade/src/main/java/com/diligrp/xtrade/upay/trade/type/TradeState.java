@@ -34,6 +34,10 @@ public enum TradeState implements IEnumType {
         this.code = code;
     }
 
+    public boolean equalTo(int code) {
+        return this.code == code;
+    }
+
     public static Optional<TradeState> getState(int code) {
         Stream<TradeState> STATES = Arrays.stream(TradeState.values());
         return STATES.filter(state -> state.getCode() == code).findFirst();

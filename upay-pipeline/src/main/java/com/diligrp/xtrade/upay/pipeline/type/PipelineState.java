@@ -1,4 +1,4 @@
-package com.diligrp.xtrade.upay.trade.type;
+package com.diligrp.xtrade.upay.pipeline.type;
 
 import com.diligrp.xtrade.shared.type.IEnumType;
 
@@ -8,24 +8,18 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
- * 支付状态列表
+ * 通道状态列表
  */
-public enum PaymentState implements IEnumType {
+public enum PipelineState implements IEnumType {
 
-    PENDING("待处理", 1),
+    NORMAL("启用", 1),
 
-    PROCESSING("处理中", 2),
-
-    SUCCESS("支付成功", 4),
-
-    CANCELED("支付撤销", 6),
-
-    FAILED("支付失败", 7);
+    VOID("禁用", 2);
 
     private String name;
     private int code;
 
-    PaymentState(String name, int code) {
+    PipelineState(String name, int code) {
         this.name = name;
         this.code = code;
     }
@@ -34,20 +28,20 @@ public enum PaymentState implements IEnumType {
         return this.code == code;
     }
 
-    public static Optional<PaymentState> getState(int code) {
-        Stream<PaymentState> STATES = Arrays.stream(PaymentState.values());
+    public static Optional<PipelineState> getState(int code) {
+        Stream<PipelineState> STATES = Arrays.stream(PipelineState.values());
         return STATES.filter(state -> state.getCode() == code).findFirst();
     }
 
     public static String getName(int code) {
-        Stream<PaymentState> STATES = Arrays.stream(PaymentState.values());
+        Stream<PipelineState> STATES = Arrays.stream(PipelineState.values());
         Optional<String> result = STATES.filter(state -> state.getCode() == code)
-                .map(PaymentState::getName).findFirst();
+            .map(PipelineState::getName).findFirst();
         return result.isPresent() ? result.get() : null;
     }
 
-    public static List<PaymentState> getStateList() {
-        return Arrays.asList(PaymentState.values());
+    public static List<PipelineState> getStateList() {
+        return Arrays.asList(PipelineState.values());
     }
 
     @Override

@@ -8,33 +8,33 @@ package com.diligrp.xtrade.upay.trade.domain;
  */
 public class ChannelAccount {
     // 账户号
-    private String accountNo;
+    private String toAccount;
     // 账户名称
-    private String accountName;
+    private String toName;
     // 账户类型
-    private Integer type;
+    private Integer toType;
 
-    public String getAccountNo() {
-        return accountNo;
+    public String getToAccount() {
+        return toAccount;
     }
 
-    public void setAccountNo(String accountNo) {
-        this.accountNo = accountNo;
+    public void setToAccount(String toAccount) {
+        this.toAccount = toAccount;
     }
 
-    public String getAccountName() {
-        return accountName;
+    public String getToName() {
+        return toName;
     }
 
-    public void setAccountName(String accountName) {
-        this.accountName = accountName;
+    public void setToName(String toName) {
+        this.toName = toName;
     }
 
-    public Integer getType() {
-        return type;
+    public Integer getToType() {
+        return toType;
     }
 
-    public void setType(Integer type) {
-        this.type = type;
+    public void setToType(Integer toType) {
+        this.toType = toType;
     }
 }

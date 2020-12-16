@@ -15,5 +15,32 @@ CREATE TABLE `upay_payment_pipeline` (
   UNIQUE KEY  `uk_payment_pipeline_code` (`code`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+-- --------------------------------------------------------------------
+-- 新增通道支付申请数据模型
+-- --------------------------------------------------------------------
+DROP TABLE IF EXISTS `upay_pipeline_payment`;
+CREATE TABLE `upay_pipeline_payment` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `payment_id` VARCHAR(40) NOT NULL COMMENT '支付ID',
+  `trade_id` VARCHAR(40) NOT NULL COMMENT '交易ID',
+  `code` VARCHAR(20) NOT NULL COMMENT '通道编码',
+  `to_account` VARCHAR(20) NOT NULL COMMENT '通道转入账户',
+  `to_name` VARCHAR(40) COMMENT '通道转入账户名',
+  `to_type` TINYINT UNSIGNED COMMENT '账户类型',
+  `serial_no` VARCHAR(40) COMMENT '通道流水号',
+  `amount` BIGINT NOT NULL COMMENT '申请金额-分',
+  `fee` BIGINT NOT NULL COMMENT '费用金额-分',
+  `state` TINYINT UNSIGNED NOT NULL COMMENT '申请状态',
+  `description` VARCHAR(128) COMMENT '备注',
+  `try_times` INTEGER UNSIGNED NOT NULL COMMENT '重试次数',
+  `version` INTEGER UNSIGNED NOT NULL COMMENT '数据版本号',
+  `created_time` DATETIME COMMENT '创建时间',
+  `modified_time` DATETIME COMMENT '修改时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_pipeline_payment_paymentId` (`payment_id`) USING BTREE,
+  KEY `idx_pipeline_payment_tradeId` (`trade_id`) USING BTREE,
+  KEY `idx_pipeline_payment_serialNo` (`serial_no`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 INSERT INTO upay_payment_pipeline(`code`, `name`, `uri`, `param`, `state`, `created_time`)
-VALUES ('SJB', '盛京银行', 'https://proxy.upay.diligrp.com/', null, '1', now());
+VALUES ('SJB', '盛京银行', 'nio://proxy.upay.diligrp.com/', null, '1', now());
