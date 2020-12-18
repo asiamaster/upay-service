@@ -19,4 +19,12 @@ public interface IChannelRouteService {
      * @return 支付通道
      */
     IPipeline selectPaymentPipeline(int tradeType, int channelId, long amount);
+
+    /**
+     * 根据支付通道编码查询支付通道
+     *
+     * @param code - 通道编码
+     * @return 支付通道
+     */
+    IPipeline findPaymentPipeline(String code);
 }

@@ -43,6 +43,7 @@ public class PipelinePaymentDto {
       PipelinePaymentDto pipelinePayment = new PipelinePaymentDto();
       pipelinePayment.paymentId = paymentId;
       pipelinePayment.state = state;
+      pipelinePayment.description = description;
       pipelinePayment.version = version;
       pipelinePayment.modifiedTime = modifiedTime;
       return pipelinePayment;

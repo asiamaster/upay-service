@@ -31,6 +31,11 @@ public interface IPipeline {
     PipelineResponse sendTradeRequest(PipelineRequest request, Callback callback);
 
     /**
+     * 支付通道发起交易查询申请
+     */
+    PipelineResponse sendQueryRequest(PipelineRequest request, Callback callback);
+
+    /**
      * 支付通道回调接口, 支付通道在不同的阶段回调不同的接口
      */
     interface Callback {

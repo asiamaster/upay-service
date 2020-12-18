@@ -41,6 +41,12 @@ import com.diligrp.xtrade.upay.trade.service.IPipelinePaymentProcessor;
 import com.diligrp.xtrade.upay.trade.type.FundType;
 import com.diligrp.xtrade.upay.trade.type.PaymentState;
 import com.diligrp.xtrade.upay.trade.type.TradeState;
+import com.diligrp.xtrade.upay.trade.util.Constants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessageProperties;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,6 +62,8 @@ import java.time.LocalDateTime;
  */
 @Service("pipelinePaymentProcessor")
 public class PipelinePaymentProcessor implements IPipelinePaymentProcessor {
+
+    private Logger LOG = LoggerFactory.getLogger(this.getClass());
 
     @Resource
     private ITradePaymentDao tradePaymentDao;
@@ -83,6 +91,9 @@ public class PipelinePaymentProcessor implements IPipelinePaymentProcessor {
 
     @Resource
     private KeyGeneratorManager keyGeneratorManager;
+
+    @Resource
+    private RabbitTemplate rabbitTemplate;
 
     /**
      * {@inheritDoc}
@@ -153,6 +164,7 @@ public class PipelinePaymentProcessor implements IPipelinePaymentProcessor {
         TransactionStatus status = request.getObject(TransactionStatus.class);
         String paymentId = payment.getPaymentId();
         LocalDateTime now = LocalDateTime.now().withNano(0);
+        LOG.info("{} pipeline payment process result:{}", request.getPipeline().getCode(), response.getState().name());
         // 通道处理成功则解冻并扣减资金
         if (response.getState() == ProcessState.SUCCESS) {
             AccountChannel channel = AccountChannel.of(paymentId, account.getAccountId(), account.getParentId());
@@ -240,7 +252,8 @@ public class PipelinePaymentProcessor implements IPipelinePaymentProcessor {
                 throw new TradePaymentException(ErrorCode.DATA_CONCURRENT_UPDATED, "系统忙，请稍后再试");
             }
         } else if (response.getState() == ProcessState.PROCESSING) {
-            // TODO: 发起异常处理流程
+            // 通道接口返回"处理中"则发起第一次异常处理流程
+            pipelineFailed(request);
         }
         response.setStatus(status);
     }
@@ -249,11 +262,31 @@ public class PipelinePaymentProcessor implements IPipelinePaymentProcessor {
      * {@inheritDoc}
      *
      * 调用远程通道服务失败时(接口超时, 网络异常)回调;
-     * 直接执行异常处理流程, 分别间隔1min 5min 10min 20min 60min向远程通道发起查询交易状态申请并返回结果进行处理
+     * 直接执行异常处理流程, 分别间隔1min 5min 10min 15min 120min向远程通道发起查询交易状态申请并返回结果进行处理
      */
     @Override
-    @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public void pipelineFailed(PipelineRequest request) {
-        //TODO: 异常处理策略
+        PipelinePayment pipelinePayment = request.getObject(PipelinePayment.class);
+        int retryCount = pipelinePayment.getRetryCount();
+        if (retryCount < Constants.MAX_EXCEPTION_RETRY_TIMES) {
+            try {
+                MessageProperties properties = new MessageProperties();
+                properties.setContentEncoding(Constants.CHARSET_UTF8);
+                properties.setContentType(MessageProperties.CONTENT_TYPE_BYTES);
+                // 除第一次和最后一次, 延迟处理时间为5*N分钟, N为当前重试次数
+                long expiredTime = Constants.MIN_MESSAGE_DELAY_TIME;
+                if (retryCount > 0) {
+                    expiredTime = retryCount + 1 >= Constants.MAX_EXCEPTION_RETRY_TIMES ?
+                        Constants.MAX_MESSAGE_DELAY_TIME : retryCount * Constants.FIVE_MINUTES_IN_MILLIS;
+                }
+                properties.setExpiration(String.valueOf(expiredTime));
+                LOG.info("Making pipeline exception retry request for {}:{}", request.getPaymentId(), retryCount + 1);
+                Message message = new Message(request.getPaymentId().getBytes(Constants.CHARSET_UTF8), properties);
+                rabbitTemplate.send(Constants.PIPELINE_RECOVER_EXCHANGE, Constants.PIPELINE_RECOVER_KEY, message);
+            } catch (Exception ex) {
+                LOG.error(String.format("Failed to make pipeline exception retry request for %s:%s",
+                    request.getPaymentId(), retryCount + 1), ex);
+            }
+        }
     }
 }

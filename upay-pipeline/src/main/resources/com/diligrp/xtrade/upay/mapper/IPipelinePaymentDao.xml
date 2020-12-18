@@ -9,7 +9,6 @@
         <result column="code" property="code"/>
         <result column="name" property="name"/>
         <result column="uri" property="uri"/>
-        <result column="child_id" property="childId"/>
         <result column="param" property="param"/>
         <result column="state" property="state"/>
         <result column="created_time" property="createdTime"/>
@@ -66,7 +65,7 @@
         <if test="description != null">
             , description = #{description}
         </if>
-        <if test="retry_count != null">
+        <if test="retryCount != null">
             , retry_count = #{retryCount}
         </if>
         <if test="modifiedTime != null">
@@ -74,5 +73,9 @@
         </if>
         WHERE
             payment_id = #{paymentId} AND version = #{version}
+    </update>
+
+    <update id="incPipelineTryCount" parameterType="string">
+        UPDATE upay_pipeline_payment SET retry_count = retry_count + 1 WHERE payment_id = #{paymentId}
     </update>
 </mapper>

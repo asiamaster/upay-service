@@ -51,4 +51,14 @@ public class ChannelRouteServiceImpl implements IChannelRouteService {
             () -> new PaymentChannelException(ErrorCode.OBJECT_NOT_FOUND, "找不到该渠道的支付路由"));
         return paymentPipelineManager.loadPipeline(route.getPipeline());
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public IPipeline findPaymentPipeline(String code) {
+        PipelineType pipelineType = PipelineType.getType(code).orElseThrow(
+            () -> new PaymentChannelException(ErrorCode.PIPELINE_NOT_SUPPORTED, "不支持选择的支付通道"));
+        return paymentPipelineManager.loadPipeline(pipelineType);
+    }
 }

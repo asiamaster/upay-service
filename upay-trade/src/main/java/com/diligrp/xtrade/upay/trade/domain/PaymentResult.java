@@ -8,8 +8,12 @@ import java.util.HashMap;
  * 支付结果模型
  */
 public class PaymentResult extends HashMap<String, Object> {
+    // 交易处理中
+    public static final int CODE_PROCESSING = 0;
     // 交易成功
     public static final int CODE_SUCCESS = 200;
+    // 交易失败
+    public static final int CODE_FAILED = 550000;
 
     // 交易状态
     private int code;
@@ -17,6 +21,8 @@ public class PaymentResult extends HashMap<String, Object> {
     private String paymentId;
     // 账户资金
     private TransactionStatus status;
+    // 支付信息描述
+    private String message = "success";
 
     public String getPaymentId() {
         return paymentId;
@@ -42,12 +48,12 @@ public class PaymentResult extends HashMap<String, Object> {
         this.status = status;
     }
 
-    public boolean isSuccess() {
-        return code == CODE_SUCCESS;
+    public String getMessage() {
+        return message;
     }
 
-    public static PaymentResult of(int code, String paymentId) {
-        return PaymentResult.of(code, paymentId, null);
+    public void setMessage(String message) {
+        this.message = message;
     }
 
     public static PaymentResult of(int code, String paymentId, TransactionStatus status) {
@@ -55,6 +61,15 @@ public class PaymentResult extends HashMap<String, Object> {
         paymentState.setPaymentId(paymentId);
         paymentState.setCode(code);
         paymentState.setStatus(status);
+        return paymentState;
+    }
+
+    public static PaymentResult of(int code, String paymentId, TransactionStatus status, String message) {
+        PaymentResult paymentState = new PaymentResult();
+        paymentState.setPaymentId(paymentId);
+        paymentState.setCode(code);
+        paymentState.setStatus(status);
+        paymentState.setMessage(message);
         return paymentState;
     }
 }

@@ -182,7 +182,7 @@ public class PipelinePayment extends BaseDo {
             return this;
         }
 
-        public Builder amount(Long balance) {
+        public Builder amount(Long amount) {
             PipelinePayment.this.amount = amount;
             return this;
         }

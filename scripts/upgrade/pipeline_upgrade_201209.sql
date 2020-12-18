@@ -32,7 +32,7 @@ CREATE TABLE `upay_pipeline_payment` (
   `fee` BIGINT NOT NULL COMMENT '费用金额-分',
   `state` TINYINT UNSIGNED NOT NULL COMMENT '申请状态',
   `description` VARCHAR(128) COMMENT '备注',
-  `try_times` INTEGER UNSIGNED NOT NULL COMMENT '重试次数',
+  `retry_count` INTEGER UNSIGNED NOT NULL COMMENT '重试次数',
   `version` INTEGER UNSIGNED NOT NULL COMMENT '数据版本号',
   `created_time` DATETIME COMMENT '创建时间',
   `modified_time` DATETIME COMMENT '修改时间',

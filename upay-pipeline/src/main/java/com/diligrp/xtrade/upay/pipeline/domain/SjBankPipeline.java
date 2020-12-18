@@ -16,7 +16,7 @@ public class SjBankPipeline extends AbstractPipeline {
     /**
      * {@inheritDoc}
      *
-     * 线下业务场景为银行圈提操作
+     * 远程通道发起支付申请
      */
     @Override
     public PipelineResponse sendTradeRequest(PipelineRequest request, Callback callback) {
@@ -26,6 +26,22 @@ public class SjBankPipeline extends AbstractPipeline {
         response.setState(ProcessState.PROCESSING);
         response.setSerialNo("123456");
         response.setFee(100L);
+        callback.pipelineSuccess(request, response);
+        return response;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * 远程通道第一次失败时异常重试处理流程, 查询交易状态更新本地事务
+     */
+    @Override
+    public PipelineResponse sendQueryRequest(PipelineRequest request, Callback callback) {
+        PipelineResponse response = new PipelineResponse();
+        callback.connectSuccess(request);
+        // 调用第三方支付通道, 假设返回成功
+        response.setState(ProcessState.SUCCESS);
+        response.setSerialNo("123456");
         callback.pipelineSuccess(request, response);
         return response;
     }

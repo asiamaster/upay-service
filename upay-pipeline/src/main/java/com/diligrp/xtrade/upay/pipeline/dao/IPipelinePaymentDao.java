@@ -41,4 +41,9 @@ public interface IPipelinePaymentDao extends MybatisMapperSupport {
      * 更新通道支付状态
      */
     int compareAndSetState(PipelinePaymentDto payment);
+
+    /**
+     * 更新异常重试次数
+     */
+    int incPipelineTryCount(String paymentId);
 }
