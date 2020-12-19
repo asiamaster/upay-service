@@ -65,13 +65,13 @@ public enum TradeState implements IEnumType {
     }
 
     /**
-     * 交易订单是否允许退款
+     * 交易订单是否允许退款; 允许多次交易退款
      *
      * @param state - 交易订单状态
      * @return 是否允许交易退款
      */
     public static boolean forRefund(int state) {
-        return state == TradeState.SUCCESS.getCode();
+        return state == TradeState.SUCCESS.getCode() || state == TradeState.REFUND.getCode();
     }
 
     /**

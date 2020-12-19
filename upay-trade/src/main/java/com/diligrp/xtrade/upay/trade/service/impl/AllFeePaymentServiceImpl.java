@@ -177,10 +177,6 @@ public class AllFeePaymentServiceImpl implements IPaymentService {
      */
     @Override
     public PaymentResult refund(TradeOrder trade, Refund refund) {
-        if (trade.getState() != TradeState.SUCCESS.getCode()) {
-            throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "无效的交易状态，不能进行退款操作");
-        }
-
         Optional<List<Fee>> feesOpt = refund.getObjects(Fee.class.getName());
         List<Fee> fees = feesOpt.orElseThrow(() -> new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "无退费信息"));
         long totalFee = fees.stream().mapToLong(Fee::getAmount).sum();
@@ -237,7 +233,7 @@ public class AllFeePaymentServiceImpl implements IPaymentService {
 
         // 更新原交易订单
         TradeStateDto tradeState = TradeStateDto.of(trade.getTradeId(), trade.getAmount() - totalFee, null,
-            trade.getFee() - totalDeductAmount, null, trade.getVersion(), now);
+            trade.getFee() - totalDeductAmount, TradeState.REFUND.getCode(), trade.getVersion(), now);
         if (tradeOrderDao.compareAndSetState(tradeState) == 0) {
             throw new TradePaymentException(ErrorCode.DATA_CONCURRENT_UPDATED, "系统忙，请稍后再试");
         }

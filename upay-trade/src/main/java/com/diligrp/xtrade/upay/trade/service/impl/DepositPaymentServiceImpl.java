@@ -100,9 +100,11 @@ public class DepositPaymentServiceImpl implements IPaymentService {
         Optional<List<Fee>> feesOpt = payment.getObjects(Fee.class.getName());
         List<Fee> fees = feesOpt.orElseGet(Collections::emptyList);
 
-        // 处理个人充值
+        // 处理个人充值 - 提供密码则校验，否则不校验密码(处理商户差异化需求)
         LocalDateTime now = LocalDateTime.now().withNano(0);
-        UserAccount account = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
+        UserAccount account = ObjectUtils.isEmpty(payment.getPassword()) ?
+            accountChannelService.checkTradePermission(payment.getAccountId()) :
+            accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
         accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
         String paymentId = String.valueOf(keyGenerator.nextId());

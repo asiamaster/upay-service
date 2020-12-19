@@ -24,8 +24,8 @@ CREATE TABLE `upay_pipeline_payment` (
   `payment_id` VARCHAR(40) NOT NULL COMMENT '支付ID',
   `trade_id` VARCHAR(40) NOT NULL COMMENT '交易ID',
   `code` VARCHAR(20) NOT NULL COMMENT '通道编码',
-  `to_account` VARCHAR(20) NOT NULL COMMENT '通道转入账户',
-  `to_name` VARCHAR(40) COMMENT '通道转入账户名',
+  `to_account` VARCHAR(20) NOT NULL COMMENT '通道账户',
+  `to_name` VARCHAR(40) COMMENT '通道账户名',
   `to_type` TINYINT UNSIGNED COMMENT '账户类型',
   `serial_no` VARCHAR(40) COMMENT '通道流水号',
   `amount` BIGINT NOT NULL COMMENT '申请金额-分',
@@ -43,4 +43,4 @@ CREATE TABLE `upay_pipeline_payment` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 INSERT INTO upay_payment_pipeline(`code`, `name`, `uri`, `param`, `state`, `created_time`)
-VALUES ('SJB', '盛京银行', 'nio://proxy.upay.diligrp.com/', null, '1', now());
+VALUES ('SJB', '盛京银行', '127.0.0.1:9527', '{"fromAccount": "123456", "fromName": "沈阳对公户"}', '1', now());

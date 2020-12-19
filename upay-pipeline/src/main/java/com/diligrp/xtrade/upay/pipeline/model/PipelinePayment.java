@@ -17,9 +17,9 @@ public class PipelinePayment extends BaseDo {
     private String tradeId;
     // 通道编码
     private String code;
-    // 转入账户
+    // 通道账户
     private String toAccount;
-    // 转入账户名
+    // 账户名
     private String toName;
     // 账户类型
     private Integer toType;

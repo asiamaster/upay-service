@@ -1,5 +1,12 @@
 package com.diligrp.xtrade.upay.pipeline.domain;
 
+import com.diligrp.xtrade.shared.util.JsonUtils;
+import com.diligrp.xtrade.shared.util.NumberUtils;
+import com.diligrp.xtrade.shared.util.ObjectUtils;
+import com.diligrp.xtrade.upay.core.ErrorCode;
+import com.diligrp.xtrade.upay.core.util.Constants;
+import com.diligrp.xtrade.upay.pipeline.exception.PaymentPipelineException;
+import com.diligrp.xtrade.upay.pipeline.model.PaymentPipeline;
 import com.diligrp.xtrade.upay.pipeline.type.Pipeline;
 import com.diligrp.xtrade.upay.pipeline.type.PipelineType;
 import com.diligrp.xtrade.upay.pipeline.type.ProcessState;
@@ -12,6 +19,31 @@ import com.diligrp.xtrade.upay.pipeline.type.ProcessState;
  */
 @Pipeline(type = PipelineType.SJ_BANK)
 public class SjBankPipeline extends AbstractPipeline {
+    // 通道IP
+    private String host;
+    // 通道端口
+    private Integer port;
+    // 参数配置
+    private Configuration configuration;
+
+    @Override
+    public void configPipeline(String code, String name, String uri, String param) {
+        super.configPipeline(code, name, uri, param);
+        String[] hosts = uri.split(Constants.CHAR_COLON, 2);
+        if (hosts.length != 2 || !NumberUtils.isNumeric(hosts[1])) {
+            throw new PaymentPipelineException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "无效的支付通道配置: " + uri);
+        }
+        this.host = hosts[0];
+        this.port = NumberUtils.str2Int(hosts[1], 0);
+
+        if (ObjectUtils.isEmpty(param)) {
+            throw new PaymentPipelineException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "支付通道未进行参数配置");
+        }
+        configuration = JsonUtils.fromJsonString(param, Configuration.class);
+        if (ObjectUtils.isEmpty(configuration.fromAccount) || ObjectUtils.isEmpty(configuration.fromName)) {
+            throw new PaymentPipelineException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "无效支付通道参数配置");
+        }
+    }
 
     /**
      * {@inheritDoc}
@@ -44,5 +76,28 @@ public class SjBankPipeline extends AbstractPipeline {
         response.setSerialNo("123456");
         callback.pipelineSuccess(request, response);
         return response;
+    }
+
+    private static class Configuration {
+        // 转出账号
+        private String fromAccount;
+        // 转出账号名
+        private String fromName;
+
+        public String getFromAccount() {
+            return fromAccount;
+        }
+
+        public void setFromAccount(String fromAccount) {
+            this.fromAccount = fromAccount;
+        }
+
+        public String getFromName() {
+            return fromName;
+        }
+
+        public void setFromName(String fromName) {
+            this.fromName = fromName;
+        }
     }
 }

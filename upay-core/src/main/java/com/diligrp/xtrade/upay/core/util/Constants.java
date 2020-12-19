@@ -5,6 +5,9 @@ package com.diligrp.xtrade.upay.core.util;
  */
 public final class Constants {
     public static final String CHAR_UNDERSCORE = "_";
+
+    public static final String CHAR_COLON = ":";
+
     // 买家费用
     public static final int FOR_BUYER = 1;
     // 卖家费用
