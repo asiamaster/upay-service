@@ -36,6 +36,8 @@ public class UserStatementComponent {
     public UserStatementResult list(ServiceRequest<ListUserStatement> request) {
         ListUserStatement data = request.getData();
         AssertUtils.notNull(data.getAccountId(), "accountId missed");
+        AssertUtils.notNull(data.getPageNo(), "pageNo missed");
+        AssertUtils.notNull(data.getPageSize(), "pageSize missed");
         AssertUtils.isTrue(data.getPageNo() > 0, "invalid pageNo");
         AssertUtils.isTrue(data.getPageSize() > 0, "invalid pageSize");
         LocalDate endDate = data.getEndDate() != null ? data.getEndDate().plusDays(1) : data.getEndDate();

@@ -1,11 +1,14 @@
 package com.diligrp.xtrade.upay.pipeline.dao;
 
 import com.diligrp.xtrade.shared.mybatis.MybatisMapperSupport;
+import com.diligrp.xtrade.upay.pipeline.domain.PipelineStatementQuery;
+import com.diligrp.xtrade.upay.pipeline.domain.UserPipelineStatement;
 import com.diligrp.xtrade.upay.pipeline.model.PaymentPipeline;
 import com.diligrp.xtrade.upay.pipeline.model.PipelinePayment;
-import com.diligrp.xtrade.upay.pipeline.model.PipelinePaymentDto;
+import com.diligrp.xtrade.upay.pipeline.domain.PipelinePaymentDto;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -46,4 +49,14 @@ public interface IPipelinePaymentDao extends MybatisMapperSupport {
      * 更新异常重试次数
      */
     int incPipelineTryCount(String paymentId);
+
+    /**
+     * 查询通道支付流水记录
+     */
+    List<UserPipelineStatement> listPipelineStatements(PipelineStatementQuery query);
+
+    /**
+     * 查询通道支付流水记录数
+     */
+    long countPipelineStatements(PipelineStatementQuery query);
 }

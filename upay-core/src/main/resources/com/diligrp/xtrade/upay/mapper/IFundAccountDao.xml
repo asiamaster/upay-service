@@ -57,4 +57,30 @@
         </if>
         WHERE account_id = #{accountId} AND version = #{version}
     </update>
+
+    <select id="sumCustomerFund" parameterType="long" resultType="com.diligrp.xtrade.upay.core.model.FundAccount">
+        SELECT
+            SUM(ufa.balance) AS balance, SUM(ufa.frozen_amount) AS frozenAmount
+        FROM
+            upay_fund_account ufa
+        INNER JOIN
+            upay_user_account uua ON ufa.account_id = uua.account_id
+        WHERE
+            uua.state != 3 AND uua.customer_id = #{customerId}
+        GROUP BY
+            uua.customer_id
+    </select>
+
+    <select id="listFundAccounts" parameterType="long" resultType="com.diligrp.xtrade.upay.core.model.FundAccount">
+        SELECT
+            ufa.account_id AS accountId, ufa.balance, ufa.frozen_amount AS frozenAmount
+        FROM
+            upay_fund_account ufa
+        INNER JOIN
+            upay_user_account uua ON ufa.account_id = uua.account_id
+        WHERE
+            uua.state != 3 AND uua.customer_id = #{customerId}
+        ORDER BY
+            ufa.id
+    </select>
 </mapper>

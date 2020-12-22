@@ -1,4 +1,4 @@
-package com.diligrp.xtrade.upay.pipeline.model;
+package com.diligrp.xtrade.upay.pipeline.domain;
 
 import java.time.LocalDateTime;
 

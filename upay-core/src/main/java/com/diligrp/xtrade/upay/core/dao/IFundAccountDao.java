@@ -4,6 +4,7 @@ import com.diligrp.xtrade.shared.mybatis.MybatisMapperSupport;
 import com.diligrp.xtrade.upay.core.model.FundAccount;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -20,4 +21,8 @@ public interface IFundAccountDao extends MybatisMapperSupport {
     int updateFundAccountById(FundAccount fundAccount);
 
     int compareAndSetVersion(FundAccount fundAccount);
+
+    Optional<FundAccount> sumCustomerFund(Long customerId);
+
+    List<FundAccount> listFundAccounts(Long customerId);
 }

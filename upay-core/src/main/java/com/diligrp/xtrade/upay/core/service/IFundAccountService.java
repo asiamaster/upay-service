@@ -4,6 +4,8 @@ import com.diligrp.xtrade.upay.core.domain.RegisterAccount;
 import com.diligrp.xtrade.upay.core.model.FundAccount;
 import com.diligrp.xtrade.upay.core.model.UserAccount;
 
+import java.util.List;
+
 /**
  * 资金账户服务接口
  */
@@ -47,4 +49,14 @@ public interface IFundAccountService {
      * 重置账户交易密码
      */
     void resetTradePassword(long accountId, String password);
+
+    /**
+     * 查询客户账户资金汇总信息
+     */
+    FundAccount sumCustomerFund(Long customerId);
+
+    /**
+     * 查询客户资金账户列表
+     */
+    List<FundAccount> listFundAccounts(Long customerId);
 }

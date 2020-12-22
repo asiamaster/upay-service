@@ -1,5 +1,6 @@
 package com.diligrp.xtrade.upay.trade.service.impl;
 
+import com.diligrp.xtrade.shared.domain.PageMessage;
 import com.diligrp.xtrade.shared.sequence.IKeyGenerator;
 import com.diligrp.xtrade.shared.sequence.KeyGeneratorManager;
 import com.diligrp.xtrade.upay.channel.dao.IFrozenOrderDao;
@@ -22,10 +23,12 @@ import com.diligrp.xtrade.upay.core.type.AccountType;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
 import com.diligrp.xtrade.upay.core.util.AsyncTaskExecutor;
 import com.diligrp.xtrade.upay.pipeline.dao.IPipelinePaymentDao;
+import com.diligrp.xtrade.upay.pipeline.domain.PipelinePaymentDto;
 import com.diligrp.xtrade.upay.pipeline.domain.PipelineRequest;
 import com.diligrp.xtrade.upay.pipeline.domain.PipelineResponse;
+import com.diligrp.xtrade.upay.pipeline.domain.PipelineStatementQuery;
+import com.diligrp.xtrade.upay.pipeline.domain.UserPipelineStatement;
 import com.diligrp.xtrade.upay.pipeline.model.PipelinePayment;
-import com.diligrp.xtrade.upay.pipeline.model.PipelinePaymentDto;
 import com.diligrp.xtrade.upay.pipeline.type.ProcessState;
 import com.diligrp.xtrade.upay.trade.dao.IPaymentFeeDao;
 import com.diligrp.xtrade.upay.trade.dao.ITradeOrderDao;
@@ -53,6 +56,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * 通道支付回调处理服务
@@ -288,5 +293,19 @@ public class PipelinePaymentProcessor implements IPipelinePaymentProcessor {
                     request.getPaymentId(), retryCount + 1), ex);
             }
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public PageMessage<UserPipelineStatement> listPipelineStatements(PipelineStatementQuery query) {
+        long total = pipelinePaymentDao.countPipelineStatements(query);
+        List<UserPipelineStatement> statements = Collections.emptyList();
+        if (total > 0) {
+            statements = pipelinePaymentDao.listPipelineStatements(query);
+        }
+
+        return PageMessage.success(total, statements);
     }
 }

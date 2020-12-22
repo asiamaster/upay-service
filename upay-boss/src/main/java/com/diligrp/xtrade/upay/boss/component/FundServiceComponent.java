@@ -5,6 +5,8 @@ import com.diligrp.xtrade.shared.domain.ServiceRequest;
 import com.diligrp.xtrade.shared.sapi.CallableComponent;
 import com.diligrp.xtrade.shared.util.AssertUtils;
 import com.diligrp.xtrade.upay.boss.domain.AccountId;
+import com.diligrp.xtrade.upay.boss.domain.CustomerBalance;
+import com.diligrp.xtrade.upay.boss.domain.CustomerId;
 import com.diligrp.xtrade.upay.boss.domain.FrozenId;
 import com.diligrp.xtrade.upay.boss.domain.FrozenOrderDto;
 import com.diligrp.xtrade.upay.boss.domain.FundBalance;
@@ -115,5 +117,18 @@ public class FundServiceComponent {
             frozenOrder.getModifiedTime(), frozenOrder.getDescription())
         ).collect(Collectors.toList());
         return PageMessage.success(result.getTotal(), frozenOrders);
+    }
+
+    /**
+     * 查询客户资金情况
+     */
+    public CustomerBalance customer(ServiceRequest<CustomerId> request) {
+        CustomerId customer = request.getData();
+        AssertUtils.notNull(customer.getCustomerId(), "customerId missed");
+        FundAccount fund = fundAccountService.sumCustomerFund(customer.getCustomerId());
+        List<FundBalance> accountFunds = fundAccountService.listFundAccounts(customer.getCustomerId()).stream()
+            .map(fundAccount -> FundBalance.of(fundAccount.getAccountId(), fundAccount.getBalance(), fundAccount.getFrozenAmount()))
+            .collect(Collectors.toList());
+        return CustomerBalance.of(customer.getCustomerId(), fund.getBalance(), fund.getFrozenAmount(), accountFunds);
     }
 }
