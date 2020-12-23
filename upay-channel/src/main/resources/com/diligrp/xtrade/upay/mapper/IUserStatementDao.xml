@@ -75,7 +75,7 @@
         INNER JOIN
             upay_trade_order uto ON uus.trade_id = uto.trade_id
         WHERE
-            uus.trade_id = #{tradeId} AND uus.account_id = #{accountId} AND uus.type != 70
+            uus.trade_id = #{tradeId} AND uus.account_id = #{accountId} AND uus.type NOT IN (70, 80)
     </select>
 
     <select id="listRefundStatements" parameterType="com.diligrp.xtrade.upay.channel.domain.UserStatementFilter" resultType="com.diligrp.xtrade.upay.channel.domain.UserStatementDto">
