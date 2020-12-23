@@ -239,11 +239,13 @@ public class AllFeePaymentServiceImpl implements IPaymentService {
         }
 
         // 只有通过账户余额进行缴费退款时才生成账户业务账单
+        String typeName = ObjectUtils.isNull(trade.getDescription()) ? StatementType.PAY_FEE.getName() + "-"
+            + StatementType.REFUND.getName() : trade.getDescription() + "-" + StatementType.REFUND.getName();
         if (ChannelType.ACCOUNT.equalTo(payment.getChannelId()) && totalFee - totalDeductAmount > 0) {
             UserStatement statement = UserStatement.builder().tradeId(trade.getTradeId()).paymentId(paymentId)
                 .channelId(ChannelType.ACCOUNT.getCode()).accountId(account.getAccountId(), account.getParentId())
-                .type(StatementType.PAY_FEE.getCode()).typeName(StatementType.PAY_FEE.getName())
-                .amount(totalFee - totalDeductAmount).fee(totalDeductAmount).balance(status.getBalance() + status.getAmount())
+                .type(StatementType.REFUND.getCode()).typeName(typeName).amount(totalFee - totalDeductAmount)
+                .fee(totalDeductAmount).balance(status.getBalance() + status.getAmount())
                 .frozenAmount(status.getFrozenBalance() + status.getFrozenAmount()).serialNo(trade.getSerialNo())
                 .state(4).createdTime(now).build();
             userStatementDao.insertUserStatement(statement);
