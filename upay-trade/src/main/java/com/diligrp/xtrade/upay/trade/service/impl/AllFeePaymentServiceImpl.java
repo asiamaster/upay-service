@@ -176,6 +176,7 @@ public class AllFeePaymentServiceImpl implements IPaymentService {
      * 交易退款-允许部分退款
      */
     @Override
+    @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public PaymentResult refund(TradeOrder trade, Refund refund) {
         Optional<List<Fee>> feesOpt = refund.getObjects(Fee.class.getName());
         List<Fee> fees = feesOpt.orElseThrow(() -> new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "无退费信息"));
