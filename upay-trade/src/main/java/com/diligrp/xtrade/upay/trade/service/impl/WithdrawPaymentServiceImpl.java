@@ -168,7 +168,7 @@ public class WithdrawPaymentServiceImpl implements IPaymentService {
         Optional<Fee> feeOpt = correct.getObject(Fee.class.getName());
         feeOpt.ifPresent(fee -> {
             AssertUtils.isTrue(fee.getAmount() < 0, "提现冲正费用非法");
-            AssertUtils.isTrue(payment.getAmount() + fee.getAmount() >= 0, "冲正费用不能大于原提现费用");
+            AssertUtils.isTrue(fee.getAmount() + payment.getFee() >= 0, "冲正费用不能大于原提现费用");
         });
 
         // 处理原账户的冲正, 账户入账金额 = 冲正金额-冲正费用(负数)

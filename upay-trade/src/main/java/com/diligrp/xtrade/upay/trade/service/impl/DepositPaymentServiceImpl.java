@@ -168,7 +168,7 @@ public class DepositPaymentServiceImpl implements IPaymentService {
         Optional<Fee> feeOpt = correct.getObject(Fee.class.getName());
         feeOpt.ifPresent(fee -> {
             AssertUtils.isTrue(fee.getAmount() < 0, "充值冲正费用非法");
-            AssertUtils.isTrue(fee.getAmount() + payment.getAmount() >= 0, "冲正费用不能大于原充值费用");
+            AssertUtils.isTrue(fee.getAmount() + payment.getFee() >= 0, "冲正费用不能大于原充值费用");
         });
 
         // 处理原账户的冲正, 账户出账金额 = ABS(冲正金额(负数)-冲正费用(负数))
