@@ -30,6 +30,8 @@ import com.diligrp.xtrade.upay.trade.type.PaymentState;
 import com.diligrp.xtrade.upay.trade.type.TradeState;
 import com.diligrp.xtrade.upay.trade.type.TradeType;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
@@ -67,6 +69,7 @@ public class TransferPaymentServiceImpl implements IPaymentService {
      * 转账只支持账户/余额渠道，且不支持费用收取
      */
     @Override
+    @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public PaymentResult commit(TradeOrder trade, Payment payment) {
         if (!ChannelType.forTrade(payment.getChannelId())) {
             throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "不支持该渠道进行转账业务");

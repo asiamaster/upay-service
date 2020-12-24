@@ -182,6 +182,7 @@ public class TradePaymentServiceImpl implements IPaymentService {
      * 撤销交易-退交易资金和佣金，交易撤销需要修改交易订单状态
      */
     @Override
+    @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public PaymentResult cancel(TradeOrder trade, Refund cancel) {
         if (trade.getState() != TradeState.SUCCESS.getCode()) {
             throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "无效的交易状态，不能进行撤销操作");

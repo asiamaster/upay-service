@@ -169,6 +169,7 @@ public class FeePaymentServiceImpl implements IPaymentService {
      * 撤销交易-资金做逆向操作，商户退缴费金额
      */
     @Override
+    @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public PaymentResult cancel(TradeOrder trade, Refund cancel) {
         if (trade.getState() != TradeState.SUCCESS.getCode()) {
             throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "无效的交易状态，不能进行撤销操作");
