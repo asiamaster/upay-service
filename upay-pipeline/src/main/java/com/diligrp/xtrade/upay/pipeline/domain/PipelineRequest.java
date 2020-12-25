@@ -1,5 +1,6 @@
 package com.diligrp.xtrade.upay.pipeline.domain;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
@@ -23,9 +24,11 @@ public class PipelineRequest extends HashMap {
     private Integer toType;
     // 交易金额
     private Long amount;
+    // 交易时间
+    private LocalDateTime when;
 
     public static PipelineRequest of(IPipeline pipeline, String paymentId, String toAccount, String toName,
-                                     Integer toType, Long amount) {
+                                     Integer toType, Long amount, LocalDateTime when) {
         PipelineRequest request = new PipelineRequest();
         request.pipeline = pipeline;
         request.paymentId = paymentId;
@@ -33,7 +36,7 @@ public class PipelineRequest extends HashMap {
         request.toName = toName;
         request.toType = toType;
         request.amount = amount;
-
+        request.when = when;
         return request;
     }
 
@@ -59,6 +62,10 @@ public class PipelineRequest extends HashMap {
 
     public Long getAmount() {
         return amount;
+    }
+
+    public LocalDateTime getWhen() {
+        return when;
     }
 
     public PipelineRequest attach(Object object) {

@@ -37,6 +37,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -94,9 +95,10 @@ public class BankWithdrawPaymentServiceImpl implements IPaymentService {
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
         String paymentId = String.valueOf(keyGenerator.nextId());
         // 向通道发起支付请求
+        LocalDateTime when = LocalDateTime.now().withNano(0);
         LOG.info("Sending {} pipeline payment request for {}", pipeline.getCode(), paymentId);
         PipelineRequest request = PipelineRequest.of(pipeline, paymentId, channelAccount.getToAccount(),
-            channelAccount.getToName(), channelAccount.getToType(), payment.getAmount())
+            channelAccount.getToName(), channelAccount.getToType(), payment.getAmount(), when)
             .attach(trade).attach(payment).attach(account);
         PipelineResponse response = pipeline.sendTradeRequest(request, pipelinePaymentProcessor);
 
@@ -136,7 +138,8 @@ public class BankWithdrawPaymentServiceImpl implements IPaymentService {
                     LOG.info("Sending {} pipeline query request for {}:{}", pipeline.getCode(), paymentId,
                         pipelinePayment.getRetryCount());
                     PipelineRequest request = PipelineRequest.of(pipeline, paymentId, pipelinePayment.getToAccount(),
-                        pipelinePayment.getToName(), pipelinePayment.getToType(), pipelinePayment.getAmount());
+                        pipelinePayment.getToName(), pipelinePayment.getToType(), pipelinePayment.getAmount(),
+                        pipelinePayment.getCreatedTime());
                     pipeline.sendQueryRequest(request.attach(pipelinePayment), pipelineExceptionProcessor);
                 } else {
                     LOG.warn("Ignore pipeline query request for {} because of state", paymentId);

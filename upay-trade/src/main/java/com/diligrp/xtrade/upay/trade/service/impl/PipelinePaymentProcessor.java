@@ -112,7 +112,7 @@ public class PipelinePaymentProcessor implements IPipelinePaymentProcessor {
         TradeOrder trade = request.getObject(TradeOrder.class);
         Payment payment = request.getObject(Payment.class);
         UserAccount account = request.getObject(UserAccount.class);
-        LocalDateTime now = LocalDateTime.now().withNano(0);
+        LocalDateTime now = request.getWhen();
 
         // 发送通道请求前冻结资金
         AccountChannel channel = AccountChannel.of(request.getPaymentId(), account.getAccountId(), account.getParentId());
