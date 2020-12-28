@@ -142,6 +142,7 @@ public class PipelinePaymentProcessor implements IPipelinePaymentProcessor {
         if (result == 0) {
             throw new TradePaymentException(ErrorCode.DATA_CONCURRENT_UPDATED, "系统正忙，请稍后重试");
         }
+        trade.setVersion(trade.getVersion() + 1);
         // 生成"处理中"的通道申请
         PipelinePayment pipelinePayment = PipelinePayment.builder().paymentId(request.getPaymentId()).tradeId(trade.getTradeId())
             .code(request.getPipeline().getCode()).toAccount(request.getToAccount()).toName(request.getToName())

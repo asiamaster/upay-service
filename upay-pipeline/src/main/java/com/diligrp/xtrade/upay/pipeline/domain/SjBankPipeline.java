@@ -99,10 +99,12 @@ public class SjBankPipeline extends AbstractPipeline {
             throw pse;
         } catch (Exception ex) {
             LOG.error("SJBank pipeline init failed", ex);
+            // 接口默认抛出"支付通道不可用"异常
             callback.connectFailed(request);
         }
 
-        PipelineResponse response = new PipelineResponse();
+        // client已经连接成功, 否则callback.connectFailed已经抛出异常
+        PipelineResponse response = PipelineResponse.of(ProcessState.PROCESSING, request.getPaymentId(), 0L, null);
         try {
             String xmlResponse = client.sendPipelineRequest(xmlRequest);
             SAXReader reader = new SAXReader();
@@ -121,7 +123,9 @@ public class SjBankPipeline extends AbstractPipeline {
             response.setState(checkProcessState(flag, code));
             callback.pipelineSuccess(request, response);
         } catch (Exception ex) {
-            LOG.error("pipeline process failed", ex);
+            LOG.error("SJBank pipeline process failed", ex);
+            response.setState(ProcessState.PROCESSING);
+            // 任何异常发起异常处理流程
             callback.pipelineFailed(request);
         }
 
@@ -152,7 +156,7 @@ public class SjBankPipeline extends AbstractPipeline {
             client = new SjBankNioClient(host, port, NioNetworkProvider.getInstance());
             callback.connectSuccess(request);
         } catch (Exception ex) {
-            LOG.error("SJBank pipeline init failed, maybe try later", ex);
+            LOG.error("SJBank query pipeline init failed", ex);
             callback.pipelineFailed(request);
         }
 
@@ -178,14 +182,14 @@ public class SjBankPipeline extends AbstractPipeline {
             response.setState(checkQueryState(flag, code, state));
             callback.pipelineSuccess(request, response);
         } catch (Exception ex) {
-            LOG.error("pipeline query process failed, maybe try later", ex);
+            LOG.error("SJBank query pipeline process failed", ex);
             callback.pipelineFailed(request);
         }
         return response;
     }
 
     private String xmlTemplate(String key) throws Exception {
-        InputStream is = ClassUtils.getDefaultClassLoader().getResourceAsStream(key);
+        InputStream is = ClassUtils.getDefaultClassLoader().getResourceAsStream(TEMPLATE_PATH);
         Properties properties = new Properties();
         properties.load(is);
         String xmlTemplate = properties.getProperty(key);
@@ -198,7 +202,7 @@ public class SjBankPipeline extends AbstractPipeline {
     private ProcessState checkProcessState(String flag, String code) {
         if ("0".equals(flag) && "0000".equals(code)) {
             return ProcessState.SUCCESS;
-        } else if ((!"0".equals(flag) || !"1".equals(flag) || !"8".equals(flag)) && !"0000".equals(code)) {
+        } else if ((!"0".equals(flag) && !"1".equals(flag) && !"8".equals(flag)) && !"0000".equals(code)) {
             return ProcessState.FAILED;
         } else {
             return ProcessState.PROCESSING;

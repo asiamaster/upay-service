@@ -36,19 +36,17 @@ public class SjBankNioClient extends AbstractNioClient {
 
     private Logger LOG = LoggerFactory.getLogger(this.getClass());
 
-    private INioSession session = null;
-
-    private SessionDataContext context = null;
+    private INioSession session;
+    private SessionDataContext context;
 
     public SjBankNioClient(String host, int port, NioNetworkProvider provider) throws IOException {
         super.setHost(host);
         super.setPort(port);
         super.setNetworkProvider(provider);
-        context = new SessionDataContext();
-        session = getSession(context);
+        session = getSession(context = new SessionDataContext());
     }
 
-    public String sendPipelineRequest(String requestXml) {
+    public String sendPipelineRequest(String requestXml) throws IOException {
         try {
             String body = CHAR_FLAG.concat(requestXml);
             int bodySize = body.getBytes(CHARSET_GBK).length;
@@ -57,10 +55,11 @@ public class SjBankNioClient extends AbstractNioClient {
             byte[] packet = sendAndReceived(request.getBytes(CHARSET_GBK), READ_TIMEOUT_IN_MILLIS);
             // 忽略加密标识2个字节
             return new String(packet, PROTOCOL_FLAG_SIZE, packet.length - PROTOCOL_FLAG_SIZE);
+        } catch (IOException iex) {
+            throw iex;
         } catch (Exception ex) {
-            LOG.error("Invalid request data protocol", ex);
+            throw new NioSessionException("Invalid data protocol");
         }
-        return null;
     }
 
     public byte[] sendAndReceived(byte[] packet, long receivedTimeOutInMillis) throws IOException {

@@ -18,9 +18,9 @@ public enum PaymentState implements IEnumType {
 
     SUCCESS("支付成功", 4),
 
-    CANCELED("支付撤销", 6),
+    FAILED("支付失败", 5),
 
-    FAILED("支付失败", 7);
+    CANCELED("支付撤销", 6);
 
     private String name;
     private int code;

@@ -12,11 +12,11 @@ import java.util.stream.Stream;
  */
 public enum ProcessState implements IEnumType {
     // 通道处理中
-    PROCESSING("处理中", 1),
+    PROCESSING("处理中", 2),
     // 通道返回支付成功
-    SUCCESS("支付成功", 2),
+    SUCCESS("支付成功", 4),
     // 通道返回支付失败
-    FAILED("支付失败", 3);
+    FAILED("支付失败", 5);
 
     private String name;
     private int code;
