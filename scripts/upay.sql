@@ -62,6 +62,7 @@ CREATE TABLE `upay_merchant` (
   `mch_id` BIGINT NOT NULL COMMENT '商户ID',
   `code` VARCHAR(20) NOT NULL COMMENT '商户编码',
   `name` VARCHAR(80) NOT NULL COMMENT '商户名称',
+  `parent_id` BIGINT NOT NULL COMMENT '父商户ID',
   `profit_account` BIGINT NOT NULL COMMENT '收益账户',
   `vouch_account` BIGINT NOT NULL COMMENT '担保账户',
   `pledge_account` BIGINT NOT NULL COMMENT '押金账户',

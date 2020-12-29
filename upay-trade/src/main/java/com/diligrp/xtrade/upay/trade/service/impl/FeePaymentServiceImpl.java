@@ -188,8 +188,6 @@ public class FeePaymentServiceImpl implements IPaymentService {
         LocalDateTime now = LocalDateTime.now().withNano(0);
         UserAccount account = accountChannelService.checkTradePermission(trade.getAccountId());
         accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
-        // 获取交易订单中的商户收益账号信息
-        MerchantPermit merchant = accessPermitService.loadMerchantPermit(trade.getMchId());
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
         String paymentId = String.valueOf(keyGenerator.nextId());
 
@@ -232,6 +230,7 @@ public class FeePaymentServiceImpl implements IPaymentService {
         }
 
         // 处理商户退款 - 最后处理园区收益，保证尽快释放共享数据的行锁以提高系统并发
+        MerchantPermit merchant = accessPermitService.loadMerchantPermit(trade.getMchId());
         AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);
         IFundTransaction feeTransaction = merChannel.openTransaction(TradeType.CANCEL_TRADE.getCode(), now);
         fees.forEach(fee -> feeTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName()));

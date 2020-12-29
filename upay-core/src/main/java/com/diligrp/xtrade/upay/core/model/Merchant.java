@@ -14,6 +14,8 @@ public class Merchant extends BaseDo {
     private String code;
     // 商户名称
     private String name;
+    // 父商户ID
+    private Long parentId;
     // 收益账户
     private Long profitAccount;
     // 担保账户
@@ -51,6 +53,14 @@ public class Merchant extends BaseDo {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public Long getParentId() {
+        return parentId;
+    }
+
+    public void setParentId(Long parentId) {
+        this.parentId = parentId;
     }
 
     public Long getProfitAccount() {
@@ -126,6 +136,11 @@ public class Merchant extends BaseDo {
 
         public Builder name(String name) {
             Merchant.this.name = name;
+            return this;
+        }
+
+        public Builder parentId(Long parentId) {
+            Merchant.this.parentId = parentId;
             return this;
         }
 

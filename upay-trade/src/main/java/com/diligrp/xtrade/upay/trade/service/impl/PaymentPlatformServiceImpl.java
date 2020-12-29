@@ -2,6 +2,7 @@ package com.diligrp.xtrade.upay.trade.service.impl;
 
 import com.diligrp.xtrade.shared.sequence.IKeyGenerator;
 import com.diligrp.xtrade.shared.sequence.SnowflakeKeyManager;
+import com.diligrp.xtrade.shared.util.ObjectUtils;
 import com.diligrp.xtrade.upay.channel.service.IAccountChannelService;
 import com.diligrp.xtrade.upay.channel.type.ChannelType;
 import com.diligrp.xtrade.upay.core.ErrorCode;
@@ -18,7 +19,6 @@ import com.diligrp.xtrade.upay.trade.service.IPaymentPlatformService;
 import com.diligrp.xtrade.upay.trade.service.IPaymentService;
 import com.diligrp.xtrade.upay.trade.type.TradeState;
 import com.diligrp.xtrade.upay.trade.type.TradeType;
-import org.apache.commons.lang.ObjectUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.stereotype.Service;
@@ -62,9 +62,11 @@ public class PaymentPlatformServiceImpl implements IPaymentPlatformService, Bean
         tradeType.orElseThrow(() -> new TradePaymentException(ErrorCode.TRADE_NOT_SUPPORTED, "不支持的交易类型"));
         UserAccount account = fundAccountService.findUserAccountById(trade.getAccountId());
         accountChannelService.checkAccountTradeState(account);
-        // 现金缴费只入园区账户，无法跟踪对端信息(无账户信息)，虚拟一个mchId=0的账户保证处理逻辑一致
-        if (account.getMchId() != 0 && !ObjectUtils.equals(account.getMchId(), application.getMerchant().getMchId())) {
-            throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "该商户下资金账号不存在");
+        // 收益商户只能是账户所属商户，或账户所属商户的子商户(排除accountId=0的特殊账号)
+        MerchantPermit merchant = application.getMerchant();
+        if (account.getMchId() != 0 && !ObjectUtils.equals(account.getMchId(), merchant.getMchId()) &&
+            !ObjectUtils.equals(account.getMchId(), merchant.getParentId())) {
+            throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "不合法的收益商户");
         }
 
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.TRADE_ID);

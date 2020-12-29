@@ -8,6 +8,8 @@ public class MerchantPermit {
     private Long mchId;
     // 商户编码
     private String code;
+    // 父商户ID
+    private Long parentId;
     // 收益账户
     private Long profitAccount;
     // 担保账户
@@ -29,6 +31,14 @@ public class MerchantPermit {
 
     public void setCode(String code) {
         this.code = code;
+    }
+
+    public Long getParentId() {
+        return parentId;
+    }
+
+    public void setParentId(Long parentId) {
+        this.parentId = parentId;
     }
 
     public Long getProfitAccount() {
@@ -55,10 +65,12 @@ public class MerchantPermit {
         this.pledgeAccount = pledgeAccount;
     }
 
-    public static MerchantPermit of(Long mchId, String code, Long profitAccount, Long vouchAccount, Long pledgeAccount) {
+    public static MerchantPermit of(Long mchId, String code, Long parentId, Long profitAccount,
+                                    Long vouchAccount, Long pledgeAccount) {
         MerchantPermit permit = new MerchantPermit();
         permit.setMchId(mchId);
         permit.setCode(code);
+        permit.setParentId(parentId);
         permit.setProfitAccount(profitAccount);
         permit.setVouchAccount(vouchAccount);
         permit.setPledgeAccount(pledgeAccount);

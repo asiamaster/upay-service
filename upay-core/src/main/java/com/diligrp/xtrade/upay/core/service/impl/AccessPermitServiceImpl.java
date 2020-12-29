@@ -56,8 +56,8 @@ public class AccessPermitServiceImpl implements IAccessPermitService {
             synchronized (merchants) {
                 if ((permit = merchants.get(mchId)) == null) {
                     permit = merchantDao.findMerchantById(mchId)
-                        .map(mer -> MerchantPermit.of(mer.getMchId(), mer.getCode(), mer.getProfitAccount(),
-                            mer.getVouchAccount(), mer.getPledgeAccount()))
+                        .map(mer -> MerchantPermit.of(mer.getMchId(), mer.getCode(), mer.getParentId(),
+                            mer.getProfitAccount(), mer.getVouchAccount(), mer.getPledgeAccount()))
                         .orElseThrow(() -> new ServiceAccessException(ErrorCode.OBJECT_NOT_FOUND, "商户信息未注册"));
                     merchants.put(mchId, permit);
                 }
@@ -96,7 +96,11 @@ public class AccessPermitServiceImpl implements IAccessPermitService {
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public MerchantPermit registerMerchant(RegisterMerchant request) {
         Optional<Merchant> merchantOpt = merchantDao.findMerchantById(request.getMchId());
-        merchantOpt.ifPresent(merchant -> { throw new PaymentServiceException(ErrorCode.OBJECT_ALREADY_EXISTS, "接入商户已存在"); });
+        merchantOpt.ifPresent(merchant -> { throw new PaymentServiceException(ErrorCode.OBJECT_ALREADY_EXISTS, "接入商户已存在");});
+        request.ifParentId(parentId -> {
+            Optional<Merchant> parentOpt = merchantDao.findMerchantById(parentId);
+            parentOpt.orElseThrow(() -> new PaymentServiceException(ErrorCode.OBJECT_NOT_FOUND, "父商户不存在"));
+        });
 
         LocalDateTime now = LocalDateTime.now();
         // 生成收益账号
@@ -116,10 +120,11 @@ public class AccessPermitServiceImpl implements IAccessPermitService {
         long pledgeId = fundAccountService.createUserAccount(request.getMchId(), pledgeAccount);
 
         Merchant merchant = Merchant.builder().mchId(request.getMchId()).code(request.getCode()).name(request.getName())
-            .profitAccount(profileId).vouchAccount(vouchId).pledgeAccount(pledgeId).address(request.getAddress())
+            .parentId(0L).profitAccount(profileId).vouchAccount(vouchId).pledgeAccount(pledgeId).address(request.getAddress())
             .contact(request.getContact()).mobile(request.getMobile()).state(1).createdTime(now).build();
+        request.ifParentId(parentId -> merchant.setParentId(parentId));
         merchantDao.insertMerchant(merchant);
-        return MerchantPermit.of(request.getMchId(), request.getCode(), profileId, vouchId, pledgeId);
+        return MerchantPermit.of(request.getMchId(), request.getCode(), merchant.getParentId(), profileId, vouchId, pledgeId);
     }
 
     /**

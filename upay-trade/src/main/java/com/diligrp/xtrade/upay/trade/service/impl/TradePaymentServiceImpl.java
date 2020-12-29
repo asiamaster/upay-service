@@ -103,10 +103,12 @@ public class TradePaymentServiceImpl implements IPaymentService {
         // 处理买家付款和买家佣金
         LocalDateTime now = LocalDateTime.now().withNano(0);
         UserAccount fromAccount = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
-        accountChannelService.checkAccountTradeState(fromAccount); // 寿光专用业务逻辑
-        if (!ObjectUtils.equals(fromAccount.getMchId(), trade.getMchId())) {
+        UserAccount toAccount = fundAccountService.findUserAccountById(trade.getAccountId());
+        if (!ObjectUtils.equals(fromAccount.getMchId(), toAccount.getMchId())) {
             throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "不能进行跨商户交易");
         }
+        accountChannelService.checkAccountTradeState(fromAccount); // 寿光专用业务逻辑
+
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
         String paymentId = String.valueOf(keyGenerator.nextId());
         AccountChannel fromChannel = AccountChannel.of(paymentId, fromAccount.getAccountId(), fromAccount.getParentId());
@@ -116,7 +118,6 @@ public class TradePaymentServiceImpl implements IPaymentService {
         TransactionStatus status = accountChannelService.submit(fromTransaction);
 
         // 处理卖家收款和卖家佣金
-        UserAccount toAccount = fundAccountService.findUserAccountById(trade.getAccountId());
         accountChannelService.checkAccountTradeState(toAccount); // 寿光专用业务逻辑
         AccountChannel toChannel = AccountChannel.of(paymentId, toAccount.getAccountId(), toAccount.getParentId());
         IFundTransaction toTransaction = toChannel.openTransaction(trade.getType(), now);
@@ -196,7 +197,6 @@ public class TradePaymentServiceImpl implements IPaymentService {
         LocalDateTime now = LocalDateTime.now().withNano(0);
         UserAccount fromAccount = accountChannelService.checkTradePermission(trade.getAccountId());
         accountChannelService.checkAccountTradeState(fromAccount); // 寿光专用业务逻辑
-        MerchantPermit merchant = accessPermitService.loadMerchantPermit(trade.getMchId());
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
         String paymentId = String.valueOf(keyGenerator.nextId());
 
@@ -257,6 +257,7 @@ public class TradePaymentServiceImpl implements IPaymentService {
 
         // 处理商户退佣金 - 最后处理园区收益，保证尽快释放共享数据的行锁以提高系统并发
         if (!fees.isEmpty()) {
+            MerchantPermit merchant = accessPermitService.loadMerchantPermit(trade.getMchId());
             AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);
             IFundTransaction merTransaction = merChannel.openTransaction(TradeType.CANCEL_TRADE.getCode(), now);
             fees.forEach(fee -> merTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName()));

@@ -17,5 +17,6 @@ CREATE TABLE `upay_deduct_fee` (
   KEY `idx_deduct_fee_paymentId` (`payment_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+DELETE FROM `upay_user_account` WHERE `account_id` = 0;
 INSERT INTO `upay_user_account`(`customer_id`, `account_id`, `parent_id`, `type`, `use_for`, `permission`, `name`, `mobile`, `address`, `password`, `secret_key`, `state`, `mch_id`, `version`, `created_time`)
 VALUES (0, 0, 0, 1, 1, 268435455, '虚拟客户', '13688582561', '中国地利集团', '62feeafcaee1e992b9b03bd7494719b11bd0c284', 'XPOmYmU5kjDo9raAO6Zv/Q==', 1, 0, 0, now());
