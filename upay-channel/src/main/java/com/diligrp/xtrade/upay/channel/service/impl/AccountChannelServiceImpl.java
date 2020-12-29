@@ -13,8 +13,10 @@ import com.diligrp.xtrade.upay.channel.service.IAccountChannelService;
 import com.diligrp.xtrade.upay.channel.service.IFrozenOrderService;
 import com.diligrp.xtrade.upay.core.ErrorCode;
 import com.diligrp.xtrade.upay.core.domain.FundTransaction;
+import com.diligrp.xtrade.upay.core.domain.MerchantPermit;
 import com.diligrp.xtrade.upay.core.domain.RegisterAccount;
 import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
+import com.diligrp.xtrade.upay.core.exception.FundAccountException;
 import com.diligrp.xtrade.upay.core.model.UserAccount;
 import com.diligrp.xtrade.upay.core.service.IFundAccountService;
 import com.diligrp.xtrade.upay.core.service.IFundStreamEngine;
@@ -58,16 +60,19 @@ public class AccountChannelServiceImpl implements IAccountChannelService {
      * 注册平台账户需指定商户
      */
     @Override
-    public long registerFundAccount(Long mchId, RegisterAccount account) {
-        return fundAccountService.createUserAccount(mchId, account);
+    public long registerFundAccount(MerchantPermit merchant, RegisterAccount account) {
+        if (merchant.getParentId() != 0) {
+            throw new FundAccountException(ErrorCode.OPERATION_NOT_ALLOWED, "不能在子商户下注册账号");
+        }
+        return fundAccountService.createUserAccount(merchant.getMchId(), account);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void unregisterFundAccount(Long mchId, Long accountId) {
-        fundAccountService.unregisterUserAccount(mchId, accountId);
+    public void unregisterFundAccount(MerchantPermit merchant, Long accountId) {
+        fundAccountService.unregisterUserAccount(merchant.getMchId(), accountId);
     }
 
     /**

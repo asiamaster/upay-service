@@ -35,7 +35,7 @@ public class AccountServiceComponent {
         AssertUtils.isTrue(account.getType() != AccountType.MERCHANT.getCode(), "不能注册商户账号");
 
         ApplicationPermit permit = request.getContext().getObject(ApplicationPermit.class.getName(), ApplicationPermit.class);
-        long accountId = accountChannelService.registerFundAccount(permit.getMerchant().getMchId(), account);
+        long accountId = accountChannelService.registerFundAccount(permit.getMerchant(), account);
         return AccountId.of(accountId);
     }
 
@@ -64,6 +64,6 @@ public class AccountServiceComponent {
         AccountId accountId = request.getData();
         AssertUtils.notNull(accountId.getAccountId(), "accountId missed");
         ApplicationPermit permit = request.getContext().getObject(ApplicationPermit.class.getName(), ApplicationPermit.class);
-        accountChannelService.unregisterFundAccount(permit.getMerchant().getMchId(), accountId.getAccountId());
+        accountChannelService.unregisterFundAccount(permit.getMerchant(), accountId.getAccountId());
     }
 }
