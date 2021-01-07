@@ -435,15 +435,16 @@ CREATE TABLE `upay_snapshot_guard` (
 DROP TABLE IF EXISTS `upay_pipeline`;
 CREATE TABLE `upay_pipeline` (
   `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `mch_id` BIGINT NOT NULL COMMENT '商户ID',
   `code` VARCHAR(20) NOT NULL COMMENT '通道编码',
-  `name` VARCHAR(40) NOT NULL COMMENT '费用名称',
+  `name` VARCHAR(40) NOT NULL COMMENT '通道名称',
   `uri` VARCHAR(60) NOT NULL COMMENT '通道访问URI',
   `param` VARCHAR(250) NULL COMMENT '通道参数',
   `state` TINYINT UNSIGNED NOT NULL COMMENT '通道状态',
   `created_time` DATETIME COMMENT '创建时间',
   `modified_time` DATETIME COMMENT '修改时间',
   PRIMARY KEY (`id`),
-  UNIQUE KEY  `uk_pipeline_code` (`code`) USING BTREE
+  UNIQUE KEY  `uk_payment_pipeline_code` (`code`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------------------
@@ -472,4 +473,19 @@ CREATE TABLE `upay_pipeline_payment` (
   KEY `idx_pipeline_payment_tradeId` (`trade_id`) USING BTREE,
   KEY `idx_pipeline_payment_serialNo` (`serial_no`) USING BTREE,
   KEY `idx_pipeline_payment_createdTime` (`created_time`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------------------
+-- 商户支付渠道数据模型
+-- --------------------------------------------------------------------
+DROP TABLE IF EXISTS `upay_merchant_channel`;
+CREATE TABLE `upay_merchant_channel` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `mch_id` BIGINT NOT NULL COMMENT '商户ID',
+  `channel_id` INT NOT NULL COMMENT '支付渠道ID',
+  `channel_name` VARCHAR(40) COMMENT '支付渠道名称',
+  `description` VARCHAR(128) COMMENT '备注',
+  `created_time` DATETIME COMMENT '创建时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_merchant_channel_channelId` (`channel_id`, `mch_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

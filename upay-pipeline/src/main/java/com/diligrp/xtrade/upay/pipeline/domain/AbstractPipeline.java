@@ -1,5 +1,7 @@
 package com.diligrp.xtrade.upay.pipeline.domain;
 
+import com.diligrp.xtrade.upay.pipeline.type.PipelineType;
+
 /**
  * 支付通道抽象模型
  *
@@ -7,43 +9,53 @@ package com.diligrp.xtrade.upay.pipeline.domain;
  * @date: 2020/12/10
  */
 public abstract class AbstractPipeline implements IPipeline {
-    // 通道编码
-    protected String code;
+    // 通道类型
+    protected PipelineType type;
     // 通道名称
     protected String name;
     // 通道访问URI
     protected String uri;
     // 通道参数
     protected String param;
+    // 所属商户
+    protected long mchId;
 
     /**
-     * 配置支付通道
-     *
-     * @param code - 通道编码
-     * @param name - 通道名称
-     * @param uri - 通道访问地址
-     * @param param - 通道参数
+     * {@inheritDoc}
      */
-    public void configPipeline(String code, String name, String uri, String param) {
-        this.code = code;
+    @Override
+    public void configPipeline(PipelineType type, String name, String uri, String param, long mchId) {
+        this.type = type;
         this.name = name;
         this.uri = uri;
         this.param = param;
+        this.mchId = mchId;
     }
 
-    public String getCode() {
-        return code;
+    @Override
+    public long mchId() {
+        return mchId;
     }
 
-    public String getName() {
+    @Override
+    public String code() {
+        return type.code();
+    }
+
+    public String name() {
         return name;
     }
 
-    public String getUri() {
+    @Override
+    public int channelId() {
+        return type.getChannelId();
+    }
+
+    public String uri() {
         return uri;
     }
 
-    public String getParam() {
+    public String param() {
         return param;
     }
 }

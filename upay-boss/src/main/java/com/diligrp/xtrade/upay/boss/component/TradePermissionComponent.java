@@ -40,5 +40,4 @@ public class TradePermissionComponent {
 
         accountChannelService.resetTradePassword(permission.getAccountId(), permission.getPassword());
     }
-
 }

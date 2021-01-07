@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.diligrp.xtrade.upay.channel.dao.IPaymentChannelDao">
+
+    <select id="findBankChannelByCardNo" parameterType="string" resultType="com.diligrp.xtrade.upay.channel.domain.BankChannel">
+        SELECT
+            bank_code AS code, bank_no AS bankNo, bank_name AS bankName
+        FROM
+            upay_bank_card
+        WHERE
+            bin_no = SUBSTRING(#{bankCardNo}, 1, bin_length) AND length(#{bankCardNo}) = length
+    </select>
+
+    <select id="listBankChannelByName" parameterType="string" resultType="com.diligrp.xtrade.upay.channel.domain.BankChannel">
+        SELECT
+            bank_no AS bankNo, bank_name AS bankName
+        FROM
+            upay_bank_info
+        WHERE
+            bank_name LIKE "%"#{bankName}"%"
+        ORDER BY bank_name LIMIT 20
+    </select>
+</mapper>

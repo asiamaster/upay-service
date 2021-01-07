@@ -157,7 +157,7 @@ public class TradeServiceComponent {
         AssertUtils.notEmpty(correct.getTradeId(), "tradeId missed");
         AssertUtils.notNull(correct.getAccountId(), "accountId missed");
         // 冲正金额有效性检查放在各服务内判断，充值和提现冲正金额有效性校验不同
-        AssertUtils.notNull(correct.getAmount(), "amount missed");
+        AssertUtils.notNull(correct.getAmount(), "amoamountunt missed");
         correct.fee().ifPresent(fee -> {
             AssertUtils.notNull(fee.getType(), "fee type missed");
             AssertUtils.notNull(fee.getTypeName(), "fee name missed");

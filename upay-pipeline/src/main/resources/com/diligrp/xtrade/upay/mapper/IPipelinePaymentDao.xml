@@ -6,6 +6,7 @@
 
     <resultMap id="PaymentPipelineMap" type="com.diligrp.xtrade.upay.pipeline.model.PaymentPipeline">
         <id column="id" property="id"/>
+        <result column="mch_id" property="mchId"/>
         <result column="code" property="code"/>
         <result column="name" property="name"/>
         <result column="uri" property="uri"/>
@@ -23,6 +24,8 @@
         <result column="to_account" property="toAccount"/>
         <result column="to_name" property="toName"/>
         <result column="to_type" property="toType"/>
+        <result column="bank_no" property="bankNo"/>
+        <result column="bank_name" property="bankName"/>
         <result column="serial_no" property="serialNo"/>
         <result column="amount" property="amount"/>
         <result column="fee" property="fee"/>
@@ -34,17 +37,17 @@
         <result column="modified_time" property="modifiedTime"/>
     </resultMap>
 
-    <select id="findPipelineByCode" parameterType="string" resultType="com.diligrp.xtrade.upay.pipeline.model.PaymentPipeline">
+    <select id="findPipelineByCode" parameterType="string" resultMap="PaymentPipelineMap">
         SELECT * FROM upay_pipeline WHERE code = #{code}
     </select>
 
     <insert id="insertPipelinePayment" parameterType="com.diligrp.xtrade.upay.pipeline.model.PipelinePayment">
         INSERT INTO
-            upay_pipeline_payment(payment_id, trade_id, code, to_account, to_name, to_type, serial_no, amount, fee, state,
-                description, version, retry_count, created_time)
+            upay_pipeline_payment(payment_id, trade_id, code, to_account, to_name, to_type, bank_no, bank_name, serial_no,
+                amount, fee, state, description, version, retry_count, created_time)
         VALUES
-            (#{paymentId}, #{tradeId}, #{code}, #{toAccount}, #{toName}, #{toType}, #{serialNo}, #{amount}, #{fee}, #{state},
-             #{description}, #{version}, #{retryCount}, #{createdTime})
+            (#{paymentId}, #{tradeId}, #{code}, #{toAccount}, #{toName}, #{toType}, #{bankNo}, #{bankName}, #{serialNo},
+             #{amount}, #{fee}, #{state}, #{description}, #{version}, #{retryCount}, #{createdTime})
     </insert>
 
     <select id="findPipelinePayment" parameterType="string" resultMap="PipelinePaymentMap">

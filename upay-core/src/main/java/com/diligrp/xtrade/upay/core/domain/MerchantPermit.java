@@ -65,6 +65,10 @@ public class MerchantPermit {
         this.pledgeAccount = pledgeAccount;
     }
 
+    public Long parentMchId() {
+        return getParentId() == 0 ? getMchId() : getParentId();
+    }
+
     public static MerchantPermit of(Long mchId, String code, Long parentId, Long profitAccount,
                                     Long vouchAccount, Long pledgeAccount) {
         MerchantPermit permit = new MerchantPermit();

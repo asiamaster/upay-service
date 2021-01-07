@@ -16,6 +16,8 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,7 +41,12 @@ public class DefaultPaymentPipelineManager implements IPaymentPipelineManager, B
     @Override
     public void registerPipeline(PipelineType type, IPipeline pipeline) {
         pipelines.put(type, pipeline);
-        LOG.info("{} payment pipeline registered", type.getCode());
+        LOG.info("{} payment pipeline registered", type.code());
+    }
+
+    @Override
+    public List<IPipeline> supportedPipelines() {
+        return new ArrayList<>(pipelines.values());
     }
 
     @Override
@@ -48,6 +55,7 @@ public class DefaultPaymentPipelineManager implements IPaymentPipelineManager, B
             () -> new PaymentPipelineException(ErrorCode.PIPELINE_NOT_SUPPORTED, "不支持选择的支付通道"));
     }
 
+    @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
         if (AopUtils.isAopProxy(bean)) {
             return bean;
@@ -56,14 +64,14 @@ public class DefaultPaymentPipelineManager implements IPaymentPipelineManager, B
             if (annotation != null && bean instanceof IPipeline) {
                 Optional.ofNullable(annotation.type()).ifPresentOrElse(type -> {
                     IPipeline pipeline = (IPipeline) bean;
-                    paymentPipelineDao.findPipelineByCode(type.getCode()).ifPresentOrElse(p -> {
+                    paymentPipelineDao.findPipelineByCode(type.code()).ifPresentOrElse(p -> {
                         if (p.getState() == PipelineState.NORMAL.getCode()) {
-                            pipeline.configPipeline(p.getCode(), p.getName(), p.getUri(), p.getParam());
+                            pipeline.configPipeline(type, p.getName(), p.getUri(), p.getParam(), p.getMchId());
                             registerPipeline(type, (IPipeline) bean);
                         } else {
                             LOG.warn("{} payment pipeline ignored because of abnormal state", bean.getClass().getSimpleName());
                         }
-                    }, () -> LOG.warn("{} payment pipeline ignored because of no pipeline configuration", type.getCode()));
+                    }, () -> LOG.warn("{} payment pipeline ignored because of no pipeline configuration", type.code()));
                 }, () -> {
                     LOG.warn("Payment pipeline ignored because of no pipeline type: {}", bean.getClass().getSimpleName());
                 });

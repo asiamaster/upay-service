@@ -218,7 +218,7 @@ public class AccountChannelServiceImpl implements IAccountChannelService {
         AccountStateMachine.accountStateCheck(account);
         if (account.getParentId() != 0) {
             UserAccount parent = fundAccountService.findUserAccountById(account.getParentId());
-            AccountStateMachine.accountStateCheck(parent);
+            AccountStateMachine.parentAccountStateCheck(parent);
         }
     }
 

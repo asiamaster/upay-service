@@ -145,9 +145,10 @@ public class PipelinePaymentProcessor implements IPipelinePaymentProcessor {
         trade.setVersion(trade.getVersion() + 1);
         // 生成"处理中"的通道申请
         PipelinePayment pipelinePayment = PipelinePayment.builder().paymentId(request.getPaymentId()).tradeId(trade.getTradeId())
-            .code(request.getPipeline().getCode()).toAccount(request.getToAccount()).toName(request.getToName())
-            .toType(request.getToType()).serialNo(null).amount(request.getAmount()).fee(0L)
-            .state(ProcessState.PROCESSING.getCode()).version(0).retryCount(0).createdTime(now).build();
+            .code(request.getPipeline().code()).toAccount(request.getToAccount()).toName(request.getToName())
+            .toType(request.getToType()).bankNo(request.getBankNo()).bankName(request.getBankName()).serialNo(null)
+            .amount(request.getAmount()).fee(0L).state(ProcessState.PROCESSING.getCode())
+            .version(0).retryCount(0).createdTime(now).build();
         pipelinePaymentDao.insertPipelinePayment(pipelinePayment);
         request.attach(paymentDo).attach(frozenOrder).attach(pipelinePayment).attach(status);
     }
@@ -170,7 +171,7 @@ public class PipelinePaymentProcessor implements IPipelinePaymentProcessor {
         TransactionStatus status = request.getObject(TransactionStatus.class);
         String paymentId = payment.getPaymentId();
         LocalDateTime now = LocalDateTime.now().withNano(0);
-        LOG.info("{} pipeline payment process result:{}", request.getPipeline().getCode(), response.getState().name());
+        LOG.info("{} pipeline payment process result:{}", request.getPipeline().code(), response.getState().name());
         // 通道处理成功则解冻并扣减资金
         if (response.getState() == ProcessState.SUCCESS) {
             AccountChannel channel = AccountChannel.of(paymentId, account.getAccountId(), account.getParentId());

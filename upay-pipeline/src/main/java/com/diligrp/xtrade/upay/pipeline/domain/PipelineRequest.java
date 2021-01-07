@@ -11,7 +11,7 @@ import java.util.Optional;
  * @author: brenthuang
  * @date: 2020/12/09
  */
-public class PipelineRequest extends HashMap {
+public class PipelineRequest extends HashMap<String, Object> {
     // 支付通道
     private IPipeline pipeline;
     // 支付流水号
@@ -24,11 +24,15 @@ public class PipelineRequest extends HashMap {
     private Integer toType;
     // 交易金额
     private Long amount;
+    // 收款银行-联行行号
+    private String bankNo;
+    // 收款银行-名称
+    private String bankName;
     // 交易时间
     private LocalDateTime when;
 
     public static PipelineRequest of(IPipeline pipeline, String paymentId, String toAccount, String toName,
-                                     Integer toType, Long amount, LocalDateTime when) {
+                                     Integer toType, Long amount, String bankNo, String bankName, LocalDateTime when) {
         PipelineRequest request = new PipelineRequest();
         request.pipeline = pipeline;
         request.paymentId = paymentId;
@@ -36,6 +40,8 @@ public class PipelineRequest extends HashMap {
         request.toName = toName;
         request.toType = toType;
         request.amount = amount;
+        request.bankNo = bankNo;
+        request.bankName = bankName;
         request.when = when;
         return request;
     }
@@ -62,6 +68,14 @@ public class PipelineRequest extends HashMap {
 
     public Long getAmount() {
         return amount;
+    }
+
+    public String getBankNo() {
+        return bankNo;
+    }
+
+    public String getBankName() {
+        return bankName;
     }
 
     public LocalDateTime getWhen() {

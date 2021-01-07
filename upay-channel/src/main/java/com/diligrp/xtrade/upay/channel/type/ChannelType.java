@@ -20,11 +20,11 @@ public enum ChannelType implements IEnumType {
 
     E_BANK("网银渠道", 4),
 
-    WX_PAY("微信渠道", 10),
+    WXPAY("微信渠道", 10),
 
-    ALI_PAY("支付宝渠道", 11),
+    ALIPAY("支付宝渠道", 11),
 
-    SJ_BANK("盛京银行", 28),
+    SJBANK("盛京银行", 28),
 
     // 用于补单时不关心支付渠道时使用
     VIRTUAL("虚拟渠道", 50);
@@ -48,9 +48,13 @@ public enum ChannelType implements IEnumType {
 
     public static String getName(int code) {
         Stream<ChannelType> TYPES = Arrays.stream(ChannelType.values());
-        Optional<String> result = TYPES.filter(type -> type.getCode() == code)
-                .map(ChannelType::getName).findFirst();
+        Optional<String> result = TYPES.filter(type -> type.getCode() == code).map(ChannelType::getName).findFirst();
         return result.isPresent() ? result.get() : null;
+    }
+
+    public static Optional<ChannelType> getBankChannel(String bankCode) {
+        Stream<ChannelType> TYPES = Arrays.stream(ChannelType.values());
+        return TYPES.filter(type -> type.name().equalsIgnoreCase(bankCode)).findFirst();
     }
 
     public static List<ChannelType> getTypeList() {
@@ -111,14 +115,14 @@ public enum ChannelType implements IEnumType {
      */
     public static boolean forAllFee(int code) {
         return code == ACCOUNT.getCode() || code == CASH.getCode() || code == POS.getCode() || code == E_BANK.getCode() ||
-            code == WX_PAY.getCode() || code == ALI_PAY.getCode() || code == VIRTUAL.getCode();
+            code == WXPAY.getCode() || code == ALIPAY.getCode() || code == VIRTUAL.getCode();
     }
 
     /**
      * 判断渠道是否可用于网银充值业务-专为寿光处理网银充值退手续费的业务场景
      */
     public static boolean forBankWithdraw(int code) {
-        return code == SJ_BANK.getCode();
+        return code == SJBANK.getCode();
     }
 
     @Override

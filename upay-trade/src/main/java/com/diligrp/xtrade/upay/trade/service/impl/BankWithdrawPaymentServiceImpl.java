@@ -6,9 +6,12 @@ import com.diligrp.xtrade.shared.util.AssertUtils;
 import com.diligrp.xtrade.shared.util.ObjectUtils;
 import com.diligrp.xtrade.upay.channel.service.IAccountChannelService;
 import com.diligrp.xtrade.upay.channel.service.IChannelRouteService;
+import com.diligrp.xtrade.upay.channel.service.IPaymentChannelService;
 import com.diligrp.xtrade.upay.channel.type.ChannelType;
 import com.diligrp.xtrade.upay.core.ErrorCode;
+import com.diligrp.xtrade.upay.core.domain.MerchantPermit;
 import com.diligrp.xtrade.upay.core.model.UserAccount;
+import com.diligrp.xtrade.upay.core.service.IAccessPermitService;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
 import com.diligrp.xtrade.upay.pipeline.domain.IPipeline;
 import com.diligrp.xtrade.upay.pipeline.domain.PipelineRequest;
@@ -59,10 +62,16 @@ public class BankWithdrawPaymentServiceImpl implements IPaymentService {
     private IChannelRouteService channelRouteService;
 
     @Resource
+    private IPaymentChannelService paymentChannelService;
+
+    @Resource
     private IPipelinePaymentProcessor pipelinePaymentProcessor;
 
     @Resource
     private IPipelineExceptionProcessor pipelineExceptionProcessor;
+
+    @Resource
+    private IAccessPermitService accessPermitService;
 
     @Resource
     private SnowflakeKeyManager snowflakeKeyManager;
@@ -76,9 +85,9 @@ public class BankWithdrawPaymentServiceImpl implements IPaymentService {
     @Override
     @Transactional(propagation = Propagation.NEVER, rollbackFor = Exception.class)
     public PaymentResult commit(TradeOrder trade, Payment payment) {
-        if (!ChannelType.forBankWithdraw(payment.getChannelId())) {
-            throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "不支持该渠道进行银行圈提业务");
-        }
+        paymentChannelService.supportedChannels(trade.getMchId()).stream()
+            .filter(channelType -> channelType.equalTo(payment.getChannelId())).findAny()
+            .orElseThrow(() -> new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "此商户不支持该渠道进行银行圈提"));
         if (!ObjectUtils.equals(trade.getAccountId(), payment.getAccountId())) {
             throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "圈提资金账号不一致");
         }
@@ -89,17 +98,20 @@ public class BankWithdrawPaymentServiceImpl implements IPaymentService {
         // 检查交易权限, 并选择支付通道
         UserAccount account = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
         accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
-        IPipeline pipeline = channelRouteService.selectPaymentPipeline(supportType().getCode(),
-            payment.getChannelId(), trade.getAmount());
+
+        MerchantPermit merchant = accessPermitService.loadMerchantPermit(trade.getMchId());
+        long mchId = merchant.getParentId() == 0 ? merchant.getMchId() : merchant.getParentId();
+        IPipeline pipeline = channelRouteService.selectPaymentPipeline(mchId, payment.getChannelId(), trade.getAmount());
         // 生成"处理中"的支付记录
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
         String paymentId = String.valueOf(keyGenerator.nextId());
         // 向通道发起支付请求
         LocalDateTime when = LocalDateTime.now().withNano(0);
-        LOG.info("Sending {} pipeline payment request for {}", pipeline.getCode(), paymentId);
+        LOG.info("Sending {} pipeline payment request for {}", pipeline.code(), paymentId);
         PipelineRequest request = PipelineRequest.of(pipeline, paymentId, channelAccount.getToAccount(),
-            channelAccount.getToName(), channelAccount.getToType(), payment.getAmount(), when)
-            .attach(trade).attach(payment).attach(account);
+            channelAccount.getToName(), channelAccount.getToType(), payment.getAmount(), channelAccount.getBankNo(),
+            channelAccount.getBankName(), when).attach(trade).attach(payment).attach(account);
+        request.put("channelId", payment.getChannelId());
         PipelineResponse response = pipeline.sendTradeRequest(request, pipelinePaymentProcessor);
 
         if (response.getState() == ProcessState.SUCCESS) {
@@ -135,11 +147,11 @@ public class BankWithdrawPaymentServiceImpl implements IPaymentService {
                 // 支付申请已经存在处理结果则直接返回
                 if (ProcessState.PROCESSING.equalTo(pipelinePayment.getState())) {
                     IPipeline pipeline = channelRouteService.findPaymentPipeline(pipelinePayment.getCode());
-                    LOG.info("Sending {} pipeline query request for {}:{}", pipeline.getCode(), paymentId,
+                    LOG.info("Sending {} pipeline query request for {}:{}", pipeline.code(), paymentId,
                         pipelinePayment.getRetryCount());
                     PipelineRequest request = PipelineRequest.of(pipeline, paymentId, pipelinePayment.getToAccount(),
                         pipelinePayment.getToName(), pipelinePayment.getToType(), pipelinePayment.getAmount(),
-                        pipelinePayment.getCreatedTime());
+                        pipelinePayment.getBankNo(), pipelinePayment.getBankName(), pipelinePayment.getCreatedTime());
                     pipeline.sendQueryRequest(request.attach(pipelinePayment), pipelineExceptionProcessor);
                 } else {
                     LOG.warn("Ignore pipeline query request for {} because of state", paymentId);

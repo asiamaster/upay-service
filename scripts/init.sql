@@ -21,6 +21,8 @@ VALUES (2010, 0, '移动应用', 'abcd2010', 'MIIBUwIBADANBgkqhkiG9w0BAQEFAASCAT
 
 INSERT INTO `upay_merchant`(`mch_id`, `code`, `name`, `profit_account`, `vouch_account`, `pledge_account`, `address`, `contact`, `mobile`, `state`, `created_time`)
 VALUES (8, 'SG', '寿光地利农产品集团有限公司', 10001, 10002, 10003, '山东寿光', '赵丽英', '13688582561', 1, now());
+INSERT INTO `upay_merchant`(`mch_id`, `code`, `name`, `profit_account`, `vouch_account`, `pledge_account`, `address`, `contact`, `mobile`, `state`, `created_time`)
+VALUES (9, 'SY', '沈阳地利农副产品股份有限公司', 20001, 20002, 20003, '沈阳市大东区', '罗宏伟', '13688582561', 1, now());
 
 INSERT INTO `upay_user_account`(`customer_id`, `account_id`, `parent_id`, `type`, `use_for`, `permission`, `name`, `mobile`, `address`, `password`, `secret_key`, `state`, `mch_id`, `version`, `created_time`)
 VALUES (0, 10001, 0, 3, 10, 268435455, '寿光地利农产品集团有限公司', '13688582561', '山东寿光', '723c34e4fb337210268ea731f9afea5f7a05c896', 'QkI39VWUCa6CAHI0kFGQ0A==', 1, 8, 0, now());
@@ -28,6 +30,12 @@ INSERT INTO `upay_user_account`(`customer_id`, `account_id`, `parent_id`, `type`
 VALUES (0, 10002, 0, 3, 11, 268435455, '寿光地利农产品集团有限公司', '13688582561', '山东寿光', '6a77ea3cb343c262d2a874629e5bc5f6c707d668', 'znULxxf0SRIfHICEBfefng==', 1, 8, 0, now());
 INSERT INTO `upay_user_account`(`customer_id`, `account_id`, `parent_id`, `type`, `use_for`, `permission`, `name`, `mobile`, `address`, `password`, `secret_key`, `state`, `mch_id`, `version`, `created_time`)
 VALUES (0, 10003, 0, 3, 12, 268435455, '寿光地利农产品集团有限公司', '13688582561', '山东寿光', '62feeafcaee1e992b9b03bd7494719b11bd0c284', 'XPOmYmU5kjDo9raAO6Zv/Q==', 1, 8, 0, now());
+INSERT INTO `upay_user_account`(`customer_id`, `account_id`, `parent_id`, `type`, `use_for`, `permission`, `name`, `mobile`, `address`, `password`, `secret_key`, `state`, `mch_id`, `version`, `created_time`)
+VALUES (0, 20001, 0, 3, 10, 268435455, '沈阳地利农副产品股份有限公司', '13688582561', '沈阳市大东区', '723c34e4fb337210268ea731f9afea5f7a05c896', 'QkI39VWUCa6CAHI0kFGQ0A==', 1, 9, 0, now());
+INSERT INTO `upay_user_account`(`customer_id`, `account_id`, `parent_id`, `type`, `use_for`, `permission`, `name`, `mobile`, `address`, `password`, `secret_key`, `state`, `mch_id`, `version`, `created_time`)
+VALUES (0, 20002, 0, 3, 11, 268435455, '沈阳地利农副产品股份有限公司', '13688582561', '沈阳市大东区', '6a77ea3cb343c262d2a874629e5bc5f6c707d668', 'znULxxf0SRIfHICEBfefng==', 1, 9, 0, now());
+INSERT INTO `upay_user_account`(`customer_id`, `account_id`, `parent_id`, `type`, `use_for`, `permission`, `name`, `mobile`, `address`, `password`, `secret_key`, `state`, `mch_id`, `version`, `created_time`)
+VALUES (0, 20003, 0, 3, 12, 268435455, '沈阳地利农副产品股份有限公司', '13688582561', '沈阳市大东区', '62feeafcaee1e992b9b03bd7494719b11bd0c284', 'XPOmYmU5kjDo9raAO6Zv/Q==', 1, 9, 0, now());
 
 INSERT INTO `upay_fund_account`(`account_id`, `balance`, `frozen_amount`, `vouch_amount`, `version`, `created_time`)
 VALUES (10001, 0, 0, 0, 0, now());
@@ -35,14 +43,23 @@ INSERT INTO `upay_fund_account`(`account_id`, `balance`, `frozen_amount`, `vouch
 VALUES (10002, 0, 0, 0, 0, now());
 INSERT INTO `upay_fund_account`(`account_id`, `balance`, `frozen_amount`, `vouch_amount`, `version`, `created_time`)
 VALUES (10003, 0, 0, 0, 0, now());
+INSERT INTO `upay_fund_account`(`account_id`, `balance`, `frozen_amount`, `vouch_amount`, `version`, `created_time`)
+VALUES (20001, 0, 0, 0, 0, now());
+INSERT INTO `upay_fund_account`(`account_id`, `balance`, `frozen_amount`, `vouch_amount`, `version`, `created_time`)
+VALUES (20002, 0, 0, 0, 0, now());
+INSERT INTO `upay_fund_account`(`account_id`, `balance`, `frozen_amount`, `vouch_amount`, `version`, `created_time`)
+VALUES (20003, 0, 0, 0, 0, now());
 
 -- 初始化虚拟账户, 便于处理无账户交易(杭州的各类缴费)
 INSERT INTO `upay_user_account`(`customer_id`, `account_id`, `parent_id`, `type`, `use_for`, `permission`, `name`, `mobile`, `address`, `password`, `secret_key`, `state`, `mch_id`, `version`, `created_time`)
 VALUES (0, 0, 0, 1, 1, 268435455, '虚拟客户', '13688582561', '中国地利集团', '62feeafcaee1e992b9b03bd7494719b11bd0c284', 'XPOmYmU5kjDo9raAO6Zv/Q==', 1, 0, 0, now());
 
---  初始化支付通道
-INSERT INTO upay_pipeline(`code`, `name`, `uri`, `param`, `state`, `created_time`)
-VALUES ('SJB', '盛京银行', '127.0.0.1:9527', '{"fromAccount": "123456", "fromName": "沈阳对公户"}', '1', now());
+-- 初始化支付通道
+INSERT INTO `upay_pipeline`(`mch_id`, `code`, `name`, `uri`, `param`, `state`, `created_time`)
+VALUES (9, 'SJB_DIRECT', '盛京银行银企直连通道', '127.0.0.1:9527', '{"fromAccount": "123456", "fromName": "沈阳对公户"}', '1', now());
+-- 初始化商户允许的支付渠道
+INSERT INTO `upay_merchant_channel`(`mch_id`, `channel_id`, `channel_name`, `description`, `created_time`)
+VALUES (9, 28, '盛京银行', null, now());
 
 -- 寿光市场数据字典配置
 INSERT INTO upay_data_dictionary(type, group_code, code, name, value, description, created_time)

@@ -13,12 +13,12 @@ public interface IChannelRouteService {
     /**
      * 根据策略选择最优支付通道
      *
-     * @param tradeType - 交易类型
+     * @param mchId - 所属商户
      * @param channelId - 渠道ID
      * @param amount - 交易金额
      * @return 支付通道
      */
-    IPipeline selectPaymentPipeline(int tradeType, int channelId, long amount);
+    IPipeline selectPaymentPipeline(long mchId, int channelId, long amount);
 
     /**
      * 根据支付通道编码查询支付通道

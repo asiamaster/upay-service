@@ -13,6 +13,10 @@ public class ChannelAccount {
     private String toName;
     // 账户类型
     private Integer toType;
+    // 银行联行行号
+    private String bankNo;
+    // 银行名称
+    private String bankName;
 
     public String getToAccount() {
         return toAccount;
@@ -36,5 +40,21 @@ public class ChannelAccount {
 
     public void setToType(Integer toType) {
         this.toType = toType;
+    }
+
+    public String getBankNo() {
+        return bankNo;
+    }
+
+    public void setBankNo(String bankNo) {
+        this.bankNo = bankNo;
+    }
+
+    public String getBankName() {
+        return bankName;
+    }
+
+    public void setBankName(String bankName) {
+        this.bankName = bankName;
     }
 }

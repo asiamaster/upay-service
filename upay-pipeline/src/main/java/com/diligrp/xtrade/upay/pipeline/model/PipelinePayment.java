@@ -19,10 +19,14 @@ public class PipelinePayment extends BaseDo {
     private String code;
     // 通道账户
     private String toAccount;
-    // 账户名
+    // 通道账户名
     private String toName;
     // 账户类型
     private Integer toType;
+    // 银行联行行号
+    private String bankNo;
+    // 银行行名
+    private String bankName;
     // 通道流水号
     private String serialNo;
     // 申请金额-分
@@ -84,6 +88,22 @@ public class PipelinePayment extends BaseDo {
 
     public void setToType(Integer toType) {
         this.toType = toType;
+    }
+
+    public String getBankNo() {
+        return bankNo;
+    }
+
+    public void setBankNo(String bankNo) {
+        this.bankNo = bankNo;
+    }
+
+    public String getBankName() {
+        return bankName;
+    }
+
+    public void setBankName(String bankName) {
+        this.bankName = bankName;
     }
 
     public String getSerialNo() {
@@ -174,6 +194,16 @@ public class PipelinePayment extends BaseDo {
 
         public Builder toType(Integer toType) {
             PipelinePayment.this.toType = toType;
+            return this;
+        }
+
+        public Builder bankNo(String bankNo) {
+            PipelinePayment.this.bankNo = bankNo;
+            return this;
+        }
+
+        public Builder bankName(String bankName) {
+            PipelinePayment.this.bankName = bankName;
             return this;
         }
 

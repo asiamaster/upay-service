@@ -99,7 +99,10 @@ public class AccessPermitServiceImpl implements IAccessPermitService {
         merchantOpt.ifPresent(merchant -> { throw new PaymentServiceException(ErrorCode.OBJECT_ALREADY_EXISTS, "接入商户已存在");});
         request.ifParentId(parentId -> {
             Optional<Merchant> parentOpt = merchantDao.findMerchantById(parentId);
-            parentOpt.orElseThrow(() -> new PaymentServiceException(ErrorCode.OBJECT_NOT_FOUND, "父商户不存在"));
+            Merchant parent = parentOpt.orElseThrow(() -> new PaymentServiceException(ErrorCode.OBJECT_NOT_FOUND, "父商户不存在"));
+            if (parent.getParentId() != 0) {
+                throw new PaymentServiceException(ErrorCode.OPERATION_NOT_ALLOWED, "不能在子商户下创建商户");
+            }
         });
 
         LocalDateTime now = LocalDateTime.now();

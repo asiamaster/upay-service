@@ -2,6 +2,7 @@ package com.diligrp.xtrade.upay.pipeline.domain;
 
 import com.diligrp.xtrade.upay.core.ErrorCode;
 import com.diligrp.xtrade.upay.pipeline.exception.PaymentPipelineException;
+import com.diligrp.xtrade.upay.pipeline.type.PipelineType;
 
 /**
  * 支付通道领域模型接口
@@ -13,17 +14,28 @@ public interface IPipeline {
     /**
      * 通道编码
      */
-    String getCode();
+    String code();
+
+    /**
+     * 通道所属商户
+     */
+    long mchId();
+
+    /**
+     * 通道所属渠道
+     */
+    int channelId();
 
     /**
      * 配置支付通道
      *
-     * @param code - 通道编码
+     * @param type - 通道类型
      * @param name - 通道名称
      * @param uri - 通道访问地址
      * @param param - 通道参数
+     * @param mchId - 商户ID
      */
-    void configPipeline(String code, String name, String uri, String param);
+    void configPipeline(PipelineType type, String name, String uri, String param, long mchId);
 
     /**
      * 支付通道发起交易转账申请

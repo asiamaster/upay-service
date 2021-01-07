@@ -74,4 +74,13 @@
         INSERT INTO upay_application(app_id, mch_id, name, access_token, app_private_key, app_public_key, private_key, public_key, created_time)
         VALUES (#{appId}, #{mchId}, #{name}, #{accessToken}, #{appPrivateKey}, #{appPublicKey}, #{privateKey}, #{publicKey}, #{createdTime})
     </insert>
+
+    <select id="supportedChannels" parameterType="long" resultType="int">
+        SELECT
+            channel_id
+        FROM
+            upay_merchant_channel
+        WHERE
+            mch_id = #{mchId}
+    </select>
 </mapper>

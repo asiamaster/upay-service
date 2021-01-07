@@ -22,6 +22,7 @@ import org.dom4j.io.SAXReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.time.LocalDateTime;
@@ -35,7 +36,7 @@ import java.util.Properties;
  * @author: brenthuang
  * @date: 2020/12/09
  */
-@Pipeline(type = PipelineType.SJ_BANK)
+@Pipeline(type = PipelineType.SJB_DIRECT)
 public class SjBankPipeline extends AbstractPipeline {
     // 消息模板路径
     private static final String TEMPLATE_PATH = "com/diligrp/xtrade/upay/pipeline/template/SJBank.properties";
@@ -54,8 +55,8 @@ public class SjBankPipeline extends AbstractPipeline {
     private Configuration configuration;
 
     @Override
-    public void configPipeline(String code, String name, String uri, String param) {
-        super.configPipeline(code, name, uri, param);
+    public void configPipeline(PipelineType type, String name, String uri, String param, long mchId) {
+        super.configPipeline(type, name, uri, param, mchId);
         String[] hosts = uri.split(Constants.CHAR_COLON, 2);
         if (hosts.length != 2 || !NumberUtils.isNumeric(hosts[1])) {
             throw new PaymentPipelineException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "无效的支付通道配置: " + uri);
@@ -81,45 +82,73 @@ public class SjBankPipeline extends AbstractPipeline {
     public PipelineResponse sendTradeRequest(PipelineRequest request, Callback callback) {
         SjBankNioClient client = null;
         String xmlRequest = null;
+        Integer channelId = request.getInteger("channelId");
 
         try {
             String xmlTemplate = xmlTemplate(KEY_TRADE_REQUEST);
             Map<String, String> params = new HashMap<>();
+            // 业务系统流水号
             params.put("paymentId", request.getPaymentId());
+            // 交易日期
             params.put("date", DateUtils.formatDateTime(request.getWhen(), "yyyyMMdd"));
+            // 交易时间
             params.put("time", DateUtils.formatDateTime(request.getWhen(), "HHmmss"));
+            // 付款账户
             params.put("fromAccount", configuration.fromAccount);
+            // 付款账户名称
+            params.put("fromName", ObjectUtils.trimToEmpty(configuration.fromName));
+            // 收款账户
             params.put("toAccount", request.getToAccount());
+            // 收款账户名称
+            params.put("toName", ObjectUtils.trimToEmpty(request.getToName()));
+            // 交易金额-元
             params.put("amount", CurrencyUtils.cent2TenNoSymbol(request.getAmount()));
+            // 收款行联行行号
+            params.put("bankNo", ObjectUtils.trimToEmpty(request.getBankNo()));
+            // 收款行名称
+            params.put("bankName", ObjectUtils.trimToEmpty(request.getBankName()));
+            // 是否跨行
+            if (ObjectUtils.equals(channelId, this.channelId())) {
+                params.put("bankFlag", "0");
+            } else {
+                params.put("bankFlag", "1");
+            }
+
             StrSubstitutor engine = new StrSubstitutor(params);
             xmlRequest = engine.replace(xmlTemplate);
             client = new SjBankNioClient(host, port, NioNetworkProvider.getInstance());
             callback.connectSuccess(request);
-        } catch (PaymentServiceException pse) {
-            throw pse;
-        } catch (Exception ex) {
-            LOG.error("SJBank pipeline init failed", ex);
+        } catch (IOException iex) {
+            LOG.error("SJBank pipeline init failed", iex);
             // 接口默认抛出"支付通道不可用"异常
             callback.connectFailed(request);
+        } catch (Exception ex) {
+            throw new PaymentServiceException("支付系统未知异常，请联系系统管理员", ex);
         }
 
         // client已经连接成功, 否则callback.connectFailed已经抛出异常
         PipelineResponse response = PipelineResponse.of(ProcessState.PROCESSING, request.getPaymentId(), 0L, null);
         try {
+            LOG.info("Sending SJBank pipeline trade request: " + xmlRequest);
             String xmlResponse = client.sendPipelineRequest(xmlRequest);
+            LOG.info("Received SJBank pipeline trade response: " + xmlResponse);
             SAXReader reader = new SAXReader();
             Document root = reader.read(new StringReader(xmlResponse));
+            // 银行方流水号
             Node node = root.selectSingleNode("/ap/head/serial_no");
             String serialNo = node.getStringValue();
+            // 成功标识
             node = root.selectSingleNode("/ap/head/succ_flag");
             String flag = node.getStringValue();
+            // 返回码
             node = root.selectSingleNode("/ap/head/ret_code");
             String code = node.getStringValue();
+            // 返回信息
             node = root.selectSingleNode("/ap/head/ret_info");
             String message = node.getStringValue();
             response.setSerialNo(serialNo);
             response.setFee(0L);
-            response.setDescription(message);
+            response.setDescription(String.format("succ_flag: %s, ret_code: %s, ret_info: %s", flag, code, message));
             response.setState(checkProcessState(flag, code));
             callback.pipelineSuccess(request, response);
         } catch (Exception ex) {
@@ -162,7 +191,9 @@ public class SjBankPipeline extends AbstractPipeline {
 
         PipelineResponse response = new PipelineResponse();
         try {
+            LOG.info("Sending SJBank pipeline query request: " + xmlRequest);
             String xmlResponse = client.sendPipelineRequest(xmlRequest);
+            LOG.info("Received SJBank pipeline query response: " + xmlResponse);
             SAXReader reader = new SAXReader();
             Document root = reader.read(new StringReader(xmlResponse));
             Node node = root.selectSingleNode("/ap/head/succ_flag");
