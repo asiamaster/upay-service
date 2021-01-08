@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.concurrent.TimeUnit;
@@ -54,7 +55,7 @@ public class SjBankNioClient extends AbstractNioClient {
             String request = header.concat(body);
             byte[] packet = sendAndReceived(request.getBytes(CHARSET_GBK), READ_TIMEOUT_IN_MILLIS);
             // 忽略加密标识2个字节
-            return new String(packet, PROTOCOL_FLAG_SIZE, packet.length - PROTOCOL_FLAG_SIZE);
+            return new String(packet, PROTOCOL_FLAG_SIZE, packet.length - PROTOCOL_FLAG_SIZE, CHARSET_GBK);
         } catch (IOException iex) {
             throw iex;
         } catch (Exception ex) {
@@ -87,7 +88,6 @@ public class SjBankNioClient extends AbstractNioClient {
         @Override
         public void onDataReceived(INioSession session, byte[] packet) {
             ReentrantLock lock = this.lock;
-
             try {
                 lock.lockInterruptibly();
 
@@ -108,8 +108,8 @@ public class SjBankNioClient extends AbstractNioClient {
                            bodyBuffer.put(packet[i]);
                        }
                     }
-
-                    if (!bodyBuffer.hasRemaining()) {
+                    // 如果第一个数据包刚刚将HeadBuffer填充完，则此时bodyBuffer可能会为NULL
+                    if (bodyBuffer != null && !bodyBuffer.hasRemaining()) {
                         bodyBuffer.flip();
                         // 一次性使用无须重置headerBuffer和bodyBuffer
                         this.condition.signalAll();
