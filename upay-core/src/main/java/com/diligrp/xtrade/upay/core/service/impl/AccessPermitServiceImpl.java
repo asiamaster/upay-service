@@ -56,7 +56,7 @@ public class AccessPermitServiceImpl implements IAccessPermitService {
             synchronized (merchants) {
                 if ((permit = merchants.get(mchId)) == null) {
                     permit = merchantDao.findMerchantById(mchId)
-                        .map(mer -> MerchantPermit.of(mer.getMchId(), mer.getCode(), mer.getParentId(),
+                        .map(mer -> MerchantPermit.of(mer.getMchId(), mer.getCode(), mer.getName(), mer.getParentId(),
                             mer.getProfitAccount(), mer.getVouchAccount(), mer.getPledgeAccount()))
                         .orElseThrow(() -> new ServiceAccessException(ErrorCode.OBJECT_NOT_FOUND, "商户信息未注册"));
                     merchants.put(mchId, permit);
@@ -127,7 +127,8 @@ public class AccessPermitServiceImpl implements IAccessPermitService {
             .contact(request.getContact()).mobile(request.getMobile()).state(1).createdTime(now).build();
         request.ifParentId(parentId -> merchant.setParentId(parentId));
         merchantDao.insertMerchant(merchant);
-        return MerchantPermit.of(request.getMchId(), request.getCode(), merchant.getParentId(), profileId, vouchId, pledgeId);
+        return MerchantPermit.of(request.getMchId(), request.getCode(), request.getName(), merchant.getParentId(),
+            profileId, vouchId, pledgeId);
     }
 
     /**

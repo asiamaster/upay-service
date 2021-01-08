@@ -4,9 +4,12 @@ import com.diligrp.xtrade.shared.domain.ServiceRequest;
 import com.diligrp.xtrade.shared.sapi.CallableComponent;
 import com.diligrp.xtrade.shared.util.AssertUtils;
 import com.diligrp.xtrade.upay.boss.domain.AccountId;
+import com.diligrp.xtrade.upay.boss.domain.MerchantId;
 import com.diligrp.xtrade.upay.channel.service.IAccountChannelService;
 import com.diligrp.xtrade.upay.core.domain.ApplicationPermit;
+import com.diligrp.xtrade.upay.core.domain.MerchantPermit;
 import com.diligrp.xtrade.upay.core.domain.RegisterAccount;
+import com.diligrp.xtrade.upay.core.service.IAccessPermitService;
 import com.diligrp.xtrade.upay.core.type.AccountType;
 
 import javax.annotation.Resource;
@@ -19,6 +22,9 @@ public class AccountServiceComponent {
 
     @Resource
     private IAccountChannelService accountChannelService;
+
+    @Resource
+    private IAccessPermitService accessPermitService;
 
     /**
      * 注册资金账号
@@ -65,5 +71,14 @@ public class AccountServiceComponent {
         AssertUtils.notNull(accountId.getAccountId(), "accountId missed");
         ApplicationPermit permit = request.getContext().getObject(ApplicationPermit.class.getName(), ApplicationPermit.class);
         accountChannelService.unregisterFundAccount(permit.getMerchant(), accountId.getAccountId());
+    }
+
+    /**
+     * 查询商户账户信息
+     */
+    public MerchantPermit merchant(ServiceRequest<MerchantId> request) {
+        MerchantId merchant = request.getData();
+        AssertUtils.notNull(merchant.getMchId(), "mchId missed");
+        return accessPermitService.loadMerchantPermit(merchant.getMchId());
     }
 }
