@@ -78,8 +78,13 @@
             payment_id = #{paymentId} AND version = #{version}
     </update>
 
-    <update id="incPipelineTryCount" parameterType="string">
-        UPDATE upay_pipeline_payment SET retry_count = retry_count + 1 WHERE payment_id = #{paymentId}
+    <update id="incPipelineTryCount" parameterType="map">
+        UPDATE
+            upay_pipeline_payment
+        SET
+            retry_count = retry_count + 1, modified_time = #{when}, version = version + 1
+        WHERE
+            payment_id = #{paymentId}
     </update>
 
     <select id="listPipelineStatements" parameterType="com.diligrp.xtrade.upay.pipeline.domain.PipelineStatementQuery" resultType="com.diligrp.xtrade.upay.pipeline.domain.UserPipelineStatement">

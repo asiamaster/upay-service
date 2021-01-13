@@ -27,21 +27,11 @@ public class PipelinePaymentDto {
    private LocalDateTime modifiedTime;
 
    public static PipelinePaymentDto of(String paymentId, String serialNo, Long fee, Integer state,
-                                       Integer version, LocalDateTime modifiedTime) {
+                                       String description, Integer version, LocalDateTime modifiedTime) {
       PipelinePaymentDto pipelinePayment = new PipelinePaymentDto();
       pipelinePayment.paymentId = paymentId;
       pipelinePayment.serialNo = serialNo;
       pipelinePayment.fee = fee;
-      pipelinePayment.state = state;
-      pipelinePayment.version = version;
-      pipelinePayment.modifiedTime = modifiedTime;
-      return pipelinePayment;
-   }
-
-   public static PipelinePaymentDto of(String paymentId, Integer state, String description,
-                                       Integer version, LocalDateTime modifiedTime) {
-      PipelinePaymentDto pipelinePayment = new PipelinePaymentDto();
-      pipelinePayment.paymentId = paymentId;
       pipelinePayment.state = state;
       pipelinePayment.description = description;
       pipelinePayment.version = version;

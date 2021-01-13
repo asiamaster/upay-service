@@ -3,6 +3,7 @@ package com.diligrp.xtrade.upay.trade.service;
 import com.diligrp.xtrade.upay.pipeline.domain.IPipeline;
 import com.diligrp.xtrade.upay.pipeline.model.PipelinePayment;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 /**
@@ -15,7 +16,7 @@ public interface IPipelineExceptionProcessor extends IPipeline.Callback {
     /**
      * 更新异常重试次数
      */
-    boolean incPipelineTryCount(String paymentId);
+    boolean incPipelineTryCount(String paymentId, LocalDateTime when);
 
     /**
      * 根据支付ID查询通道支付申请

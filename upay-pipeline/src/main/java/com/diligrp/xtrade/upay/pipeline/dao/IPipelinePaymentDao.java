@@ -9,6 +9,7 @@ import com.diligrp.xtrade.upay.pipeline.domain.PipelinePaymentDto;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -48,7 +49,7 @@ public interface IPipelinePaymentDao extends MybatisMapperSupport {
     /**
      * 更新异常重试次数
      */
-    int incPipelineTryCount(String paymentId);
+    int incPipelineTryCount(Map<String, Object> params);
 
     /**
      * 查询通道支付流水记录

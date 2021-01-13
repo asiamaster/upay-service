@@ -216,7 +216,7 @@ public class PipelinePaymentProcessor implements IPipelinePaymentProcessor {
 
             // 修改通道申请为"处理成功"
             PipelinePaymentDto pipelinePaymentDto = PipelinePaymentDto.of(paymentId, response.getSerialNo(),
-                response.getFee(), ProcessState.SUCCESS.getCode(), pipelinePayment.getVersion(), now);
+                response.getFee(), ProcessState.SUCCESS.getCode(), response.getDescription(), pipelinePayment.getVersion(), now);
             if (pipelinePaymentDao.compareAndSetState(pipelinePaymentDto) == 0) {
                 throw new TradePaymentException(ErrorCode.DATA_CONCURRENT_UPDATED, "系统忙，请稍后再试");
             }
@@ -252,9 +252,10 @@ public class PipelinePaymentProcessor implements IPipelinePaymentProcessor {
             if (tradePaymentDao.compareAndSetState(paymentState) == 0) {
                 throw new TradePaymentException(ErrorCode.DATA_CONCURRENT_UPDATED, "系统忙，请稍后再试");
             }
+
             // 修改通道申请为"处理失败"
-            PipelinePaymentDto pipelinePaymentDto = PipelinePaymentDto.of(paymentId,
-                ProcessState.FAILED.getCode(), response.getDescription(), pipelinePayment.getVersion(), now);
+            PipelinePaymentDto pipelinePaymentDto = PipelinePaymentDto.of(paymentId, response.getSerialNo(),
+                response.getFee(), ProcessState.FAILED.getCode(), response.getDescription(), pipelinePayment.getVersion(), now);
             if (pipelinePaymentDao.compareAndSetState(pipelinePaymentDto) == 0) {
                 throw new TradePaymentException(ErrorCode.DATA_CONCURRENT_UPDATED, "系统忙，请稍后再试");
             }

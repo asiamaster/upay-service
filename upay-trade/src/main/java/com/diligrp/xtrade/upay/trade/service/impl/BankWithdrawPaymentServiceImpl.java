@@ -136,7 +136,7 @@ public class BankWithdrawPaymentServiceImpl implements IPaymentService {
                 properties.getContentEncoding() : Constants.CHARSET_UTF8;
             String paymentId = new String(packet, charSet);
             LOG.info("Receiving pipeline exception retry request for {}", paymentId);
-            boolean success = pipelineExceptionProcessor.incPipelineTryCount(paymentId);
+            boolean success = pipelineExceptionProcessor.incPipelineTryCount(paymentId, LocalDateTime.now());
             if (!success) {
                 LOG.warn("no pipeline payment request found for {}", paymentId);
                 return;

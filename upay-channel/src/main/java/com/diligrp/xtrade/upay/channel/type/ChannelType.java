@@ -24,6 +24,18 @@ public enum ChannelType implements IEnumType {
 
     ALIPAY("支付宝渠道", 11),
 
+    ICBC("工商银行", 20),
+
+    ABC("农业银行", 21),
+
+    BOC("中国银行", 22),
+
+    CCB("建设银行", 23),
+
+    BCM("交通银行", 24),
+
+    CMB("招商银行", 27),
+
     SJBANK("盛京银行", 28),
 
     // 用于补单时不关心支付渠道时使用

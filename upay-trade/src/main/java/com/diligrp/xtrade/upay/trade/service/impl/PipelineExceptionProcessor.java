@@ -22,6 +22,9 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -88,8 +91,11 @@ public class PipelineExceptionProcessor extends PipelinePaymentProcessor impleme
      */
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
-    public boolean incPipelineTryCount(String paymentId) {
-        return pipelinePaymentDao.incPipelineTryCount(paymentId) > 0;
+    public boolean incPipelineTryCount(String paymentId, LocalDateTime when) {
+        Map<String, Object> params = new HashMap<>(2);
+        params.put("paymentId", paymentId);
+        params.put("when", when);
+        return pipelinePaymentDao.incPipelineTryCount(params) > 0;
     }
 
     /**

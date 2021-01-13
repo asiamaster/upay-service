@@ -10,6 +10,7 @@ import com.diligrp.xtrade.upay.core.exception.PaymentServiceException;
 import com.diligrp.xtrade.upay.core.util.Constants;
 import com.diligrp.xtrade.upay.pipeline.client.SjBankNioClient;
 import com.diligrp.xtrade.upay.pipeline.exception.PaymentPipelineException;
+import com.diligrp.xtrade.upay.pipeline.model.PipelinePayment;
 import com.diligrp.xtrade.upay.pipeline.type.Pipeline;
 import com.diligrp.xtrade.upay.pipeline.type.PipelineType;
 import com.diligrp.xtrade.upay.pipeline.type.ProcessState;
@@ -170,6 +171,7 @@ public class SjBankPipeline extends AbstractPipeline {
     public PipelineResponse sendQueryRequest(PipelineRequest request, Callback callback) {
         SjBankNioClient client = null;
         String xmlRequest = null;
+        PipelinePayment payment = request.getObject(PipelinePayment.class);
 
         try {
             String xmlTemplate = xmlTemplate(KEY_QUERY_REQUEST);
@@ -179,17 +181,18 @@ public class SjBankPipeline extends AbstractPipeline {
             params.put("date", DateUtils.formatDateTime(now, "yyyyMMdd"));
             params.put("time", DateUtils.formatDateTime(now, "HHmmss"));
             params.put("tradeDate", DateUtils.formatDateTime(request.getWhen(), "yyyyMMdd"));
-            params.put("toAccount", request.getToAccount());
+            params.put("fromAccount", configuration.fromAccount);
             StrSubstitutor engine = new StrSubstitutor(params);
             xmlRequest = engine.replace(xmlTemplate);
             client = new SjBankNioClient(host, port, NioNetworkProvider.getInstance());
             callback.connectSuccess(request);
         } catch (Exception ex) {
             LOG.error("SJBank query pipeline init failed", ex);
+            // callback.pipelineFailed默认抛出异常，流程不会往下继续执行
             callback.pipelineFailed(request);
         }
 
-        PipelineResponse response = new PipelineResponse();
+        PipelineResponse response = PipelineResponse.of(ProcessState.PROCESSING, request.getPaymentId(), 0L, null);
         try {
             LOG.info("Sending SJBank pipeline query request: " + xmlRequest);
             String xmlResponse = client.sendPipelineRequest(xmlRequest);
@@ -200,20 +203,27 @@ public class SjBankPipeline extends AbstractPipeline {
             String flag = node.getStringValue();
             node = root.selectSingleNode("/ap/head/ret_code");
             String code = node.getStringValue();
-            node = root.selectSingleNode("/ap/body/serial_no");
-            String serialNo = node.getStringValue();
-            node = root.selectSingleNode("/ap/body/stat");
-            String state = node.getStringValue();
-            node = root.selectSingleNode("/ap/body/error_info");
+            node = root.selectSingleNode("/ap/head/ret_info");
             String message = node.getStringValue();
-
-            response.setSerialNo(serialNo);
-            response.setFee(0L);
-            response.setDescription(message);
-            response.setState(checkQueryState(flag, code, state));
-            callback.pipelineSuccess(request, response);
+            if ("0".equals(flag) && "0000".equals(code)) {
+                node = root.selectSingleNode("/ap/body/serial_no");
+                String serialNo = node.getStringValue();
+                node = root.selectSingleNode("/ap/body/stat");
+                String state = node.getStringValue();
+                response.setState(checkQueryState(flag, code, state));
+                message = String.format("%s, stat: %s", payment.getDescription(), state);
+                response.setSerialNo(serialNo);
+                response.setFee(0L);
+                response.setDescription(message);
+                callback.pipelineSuccess(request, response);
+            } else {
+                node = root.selectSingleNode("/ap/head/ret_info");
+                LOG.error("SJBank query pipeline process failed: succ_flag: {}, ret_code: {}, ret_info: {}",
+                    flag, code, node.getStringValue());
+                callback.pipelineFailed(request);
+            }
         } catch (Exception ex) {
-            LOG.error("SJBank query pipeline process failed", ex);
+            LOG.error("SJBank query pipeline process exception", ex);
             callback.pipelineFailed(request);
         }
         return response;
