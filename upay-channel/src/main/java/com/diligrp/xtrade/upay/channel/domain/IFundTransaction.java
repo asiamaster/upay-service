@@ -34,6 +34,16 @@ public interface IFundTransaction {
     void income(long amount, int type, String typeName);
 
     /**
+     * 资金收入
+     *
+     * @param amount - 操作金额
+     * @param type - 资金项类型
+     * @param typeName - 资金项说明
+     * @param description - 费用描述
+     */
+    void income(long amount, int type, String typeName, String description);
+
+    /**
      * 资金支出
      *
      * @param amount - 操作金额
@@ -41,6 +51,16 @@ public interface IFundTransaction {
      * @param typeName - 资金项说明
      */
     void outgo(long amount, int type, String typeName);
+
+    /**
+     * 资金支出
+     *
+     * @param amount - 操作金额
+     * @param type - 资金项类型
+     * @param typeName - 资金项说明
+     * @param description - 费用描述
+     */
+    void outgo(long amount, int type, String typeName, String description);
 
     /**
      * 资金冻结

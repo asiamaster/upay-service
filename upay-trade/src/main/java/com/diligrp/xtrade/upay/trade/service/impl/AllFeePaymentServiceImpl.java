@@ -119,8 +119,8 @@ public class AllFeePaymentServiceImpl implements IPaymentService {
             accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
             AccountChannel channel = AccountChannel.of(paymentId, account.getAccountId(), account.getParentId());
             IFundTransaction transaction = channel.openTransaction(trade.getType(), now);
-            fees.forEach(fee -> transaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName()));
-            deductFees.forEach(fee -> transaction.income(fee.getAmount(), fee.getType(), fee.getTypeName()));
+            fees.forEach(fee -> transaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName(), fee.getDescription()));
+            deductFees.forEach(fee -> transaction.income(fee.getAmount(), fee.getType(), fee.getTypeName(), fee.getDescription()));
             status = accountChannelService.submit(transaction);
         }
 

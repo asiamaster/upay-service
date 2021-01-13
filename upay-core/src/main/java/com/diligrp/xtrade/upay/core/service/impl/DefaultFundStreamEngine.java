@@ -110,12 +110,13 @@ public class DefaultFundStreamEngine implements IFundStreamEngine {
                 .map(activity -> FundStatement.builder().paymentId(transaction.getPaymentId())
                     .accountId(masterAccountId).childId(childAccountId).tradeType(transaction.getType())
                     .action(ActionType.getByAmount(activity.getAmount()).getCode())
-                    .balance(balance.getAndAdd(activity.getAmount())).amount(activity.getAmount()).type(activity.getType())
-                    .typeName(activity.getTypeName()).description(null).createdTime(transaction.getWhen()).build())
+                    .balance(balance.getAndAdd(activity.getAmount())).amount(activity.getAmount())
+                    .type(activity.getType()).typeName(activity.getTypeName()).description(activity.getDescription())
+                    .createdTime(transaction.getWhen()).build())
                 .collect(Collectors.toList());
             // 返回资金收支明细
             status.ofStreams(statements.stream().map(stmt -> TransactionStatus.FundStream.of(stmt.getBalance(), stmt.getAmount(),
-                stmt.getType(), stmt.getTypeName())).collect(Collectors.toList()));
+                stmt.getType(), stmt.getTypeName(), stmt.getDescription())).collect(Collectors.toList()));
             fundStatementDao.insertFundStatements(statements);
         }
         return status;
@@ -184,12 +185,13 @@ public class DefaultFundStreamEngine implements IFundStreamEngine {
                 .map(activity -> FundStatement.builder().paymentId(transaction.getPaymentId())
                     .accountId(masterAccountId).childId(childAccountId).tradeType(transaction.getType())
                     .action(ActionType.getByAmount(activity.getAmount()).getCode())
-                    .balance(balance.getAndAdd(activity.getAmount())).amount(activity.getAmount()).type(activity.getType())
-                    .typeName(activity.getTypeName()).description(null).createdTime(transaction.getWhen()).build())
+                    .balance(balance.getAndAdd(activity.getAmount())).amount(activity.getAmount())
+                    .type(activity.getType()).typeName(activity.getTypeName()).description(activity.getDescription())
+                    .createdTime(transaction.getWhen()).build())
                 .collect(Collectors.toList());
             // 返回资金收支明细
             status.ofStreams(statements.stream().map(stmt -> TransactionStatus.FundStream.of(stmt.getBalance(), stmt.getAmount(),
-                stmt.getType(), stmt.getTypeName())).collect(Collectors.toList()));
+                stmt.getType(), stmt.getTypeName(), stmt.getDescription())).collect(Collectors.toList()));
             fundStatementDao.insertFundStatements(statements);
         }
         return status;
@@ -256,12 +258,13 @@ public class DefaultFundStreamEngine implements IFundStreamEngine {
                 .map(activity -> FundStatement.builder().paymentId(transaction.getPaymentId())
                     .accountId(masterAccountId).childId(childAccountId).tradeType(transaction.getType())
                     .action(ActionType.getByAmount(activity.getAmount()).getCode())
-                    .balance(balance.getAndAdd(activity.getAmount())).amount(activity.getAmount()).type(activity.getType())
-                    .typeName(activity.getTypeName()).description(null).createdTime(transaction.getWhen()).build())
+                    .balance(balance.getAndAdd(activity.getAmount())).amount(activity.getAmount())
+                    .type(activity.getType()).typeName(activity.getTypeName()).description(activity.getDescription())
+                    .createdTime(transaction.getWhen()).build())
                 .collect(Collectors.toList());
             // 返回资金收支明细
             status.ofStreams(statements.stream().map(stmt -> TransactionStatus.FundStream.of(stmt.getBalance(), stmt.getAmount(),
-                    stmt.getType(), stmt.getTypeName())).collect(Collectors.toList()));
+                    stmt.getType(), stmt.getTypeName(), stmt.getDescription())).collect(Collectors.toList()));
             fundStatementDao.insertFundStatements(statements);
         }
         return status;

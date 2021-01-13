@@ -68,9 +68,21 @@ public class AccountChannel {
         }
 
         @Override
+        public void income(long amount, int type, String typeName, String description) {
+            AssertUtils.isTrue(amount > 0, "Invalid amount");
+            funds.add(FundActivity.of(amount, type, typeName, description));
+        }
+
+        @Override
         public void outgo(long amount, int type, String typeName) {
             AssertUtils.isTrue(amount > 0, "Invalid amount");
             funds.add(FundActivity.of(-amount, type, typeName));
+        }
+
+        @Override
+        public void outgo(long amount, int type, String typeName, String description) {
+            AssertUtils.isTrue(amount > 0, "Invalid amount");
+            funds.add(FundActivity.of(-amount, type, typeName, description));
         }
 
         @Override

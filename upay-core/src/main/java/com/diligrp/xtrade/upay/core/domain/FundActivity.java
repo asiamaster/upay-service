@@ -8,8 +8,10 @@ public class FundActivity {
     private long amount;
     // 资金类型
     private int type;
-    // 资金描述
+    // 资金类型名称
     private String typeName;
+    // 资金描述
+    private String description;
 
     public long getAmount() {
         return amount;
@@ -35,6 +37,14 @@ public class FundActivity {
         this.typeName = typeName;
     }
 
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
     public static int compare(FundActivity a, FundActivity b) {
         int valueA = a.getAmount() > 0 ? 1 : 2;
         int valueB = b.getAmount() > 0 ? 1 : 2;
@@ -46,6 +56,15 @@ public class FundActivity {
         activity.setAmount(amount);
         activity.setType(type);
         activity.setTypeName(typeName);
+        return activity;
+    }
+
+    public static FundActivity of(long amount, int type, String typeName, String description) {
+        FundActivity activity = new FundActivity();
+        activity.setAmount(amount);
+        activity.setType(type);
+        activity.setTypeName(typeName);
+        activity.setDescription(description);
         return activity;
     }
 }

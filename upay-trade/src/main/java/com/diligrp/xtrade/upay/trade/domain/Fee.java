@@ -11,10 +11,12 @@ public class Fee {
     private Long amount;
     // 费用类型
     private Integer type;
-    // 费用描述
+    // 费用类型名称
     private String typeName;
     // 费用用途 - 买家/卖家
     private Integer useFor;
+    // 费用描述
+    private String description;
 
     public Long getAmount() {
         return amount;
@@ -46,6 +48,14 @@ public class Fee {
 
     public void setUseFor(Integer useFor) {
         this.useFor = useFor;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     /**
