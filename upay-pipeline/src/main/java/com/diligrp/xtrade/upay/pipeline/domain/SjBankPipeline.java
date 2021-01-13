@@ -217,9 +217,8 @@ public class SjBankPipeline extends AbstractPipeline {
                 response.setDescription(message);
                 callback.pipelineSuccess(request, response);
             } else {
-                node = root.selectSingleNode("/ap/head/ret_info");
                 LOG.error("SJBank query pipeline process failed: succ_flag: {}, ret_code: {}, ret_info: {}",
-                    flag, code, node.getStringValue());
+                    flag, code, message);
                 callback.pipelineFailed(request);
             }
         } catch (Exception ex) {
