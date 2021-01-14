@@ -48,7 +48,7 @@ public class TradeServiceComponent {
      * 预授权交易提交支付时只是冻结资金，后续需要进一步调用confirm/cancel进行资金操作
      * @see com.diligrp.xtrade.upay.trade.type.TradeType
      */
-    public Message<TransactionStatus> commit(ServiceRequest<PaymentRequest> request) {
+    public TransactionStatus commit(ServiceRequest<PaymentRequest> request) {
         PaymentRequest payment = request.getData();
         // 基本参数校验
         AssertUtils.notNull(payment.getTradeId(), "tradeId missed");
@@ -71,13 +71,8 @@ public class TradeServiceComponent {
 
         ApplicationPermit permit = request.getContext().getObject(ApplicationPermit.class.getName(), ApplicationPermit.class);
         PaymentResult result = paymentPlatformService.commit(permit, payment);
-
-        Message<TransactionStatus> message = new Message();
-        message.setCode(result.getCode());
-        message.setData(result.getStatus());
-        message.setMessage(result.getMessage());
         // 如有余额信息则返回余额信息
-        return message;
+        return result.getStatus();
     }
 
     /**

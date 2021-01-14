@@ -8,12 +8,8 @@ import java.util.HashMap;
  * 支付结果模型
  */
 public class PaymentResult extends HashMap<String, Object> {
-    // 交易处理中
-    public static final int CODE_PROCESSING = 0;
     // 交易成功
     public static final int CODE_SUCCESS = 200;
-    // 交易失败
-    public static final int CODE_FAILED = 550000;
 
     // 交易状态
     private int code;

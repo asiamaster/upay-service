@@ -7,6 +7,8 @@ import java.util.List;
  * 事务状态
  */
 public class TransactionStatus {
+    // 事务状态 - 专为支付通道处理状态设计
+    private Integer state;
     // 账户ID
     private Long accountId;
     // 期初余额-分
@@ -23,6 +25,14 @@ public class TransactionStatus {
     private List<FundStream> streams;
     // 关联的资金事务-即时交易时会涉及两个资金事务(买/卖方)
     private TransactionStatus relation;
+
+    public Integer getState() {
+        return state;
+    }
+
+    public void setState(Integer state) {
+        this.state = state;
+    }
 
     public Long getAccountId() {
         return accountId;

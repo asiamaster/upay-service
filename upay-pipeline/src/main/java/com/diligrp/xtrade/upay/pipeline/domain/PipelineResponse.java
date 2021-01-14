@@ -75,12 +75,12 @@ public class PipelineResponse {
         return fee != null ? Math.abs(fee) : 0;
     }
 
-    public static PipelineResponse of(ProcessState state, String paymentId, Long fee, String serialNo) {
+    public static PipelineResponse of(ProcessState state, String paymentId, Long fee, TransactionStatus status) {
         PipelineResponse response = new PipelineResponse();
         response.setState(state);
         response.setPaymentId(paymentId);
         response.setFee(fee);
-        response.setSerialNo(serialNo);
+        response.setStatus(status);
         return response;
     }
 }

@@ -10,6 +10,7 @@ import com.diligrp.xtrade.upay.channel.service.IPaymentChannelService;
 import com.diligrp.xtrade.upay.channel.type.ChannelType;
 import com.diligrp.xtrade.upay.core.ErrorCode;
 import com.diligrp.xtrade.upay.core.domain.MerchantPermit;
+import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
 import com.diligrp.xtrade.upay.core.model.UserAccount;
 import com.diligrp.xtrade.upay.core.service.IAccessPermitService;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
@@ -114,16 +115,9 @@ public class BankWithdrawPaymentServiceImpl implements IPaymentService {
         request.put("channelId", payment.getChannelId());
         PipelineResponse response = pipeline.sendTradeRequest(request, pipelinePaymentProcessor);
 
-        if (response.getState() == ProcessState.SUCCESS) {
-            return PaymentResult.of(PaymentResult.CODE_SUCCESS, response.getPaymentId(),
-                response.getStatus(), "支付通道处理返回成功");
-        } else if (response.getState() == ProcessState.FAILED) {
-            return PaymentResult.of(PaymentResult.CODE_FAILED, response.getPaymentId(),
-                response.getStatus(), "支付通道处理返回失败");
-        } else {
-            return PaymentResult.of(PaymentResult.CODE_PROCESSING, response.getPaymentId(),
-                response.getStatus(), "支付通道处理中");
-        }
+        // 设置通道处理状态
+        response.getStatus().setState(response.getState().getCode());
+        return PaymentResult.of(PaymentResult.CODE_SUCCESS, response.getPaymentId(), response.getStatus());
     }
 
     @RabbitHandler

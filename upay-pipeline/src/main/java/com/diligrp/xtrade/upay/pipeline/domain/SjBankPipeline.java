@@ -6,6 +6,7 @@ import com.diligrp.xtrade.shared.util.JsonUtils;
 import com.diligrp.xtrade.shared.util.NumberUtils;
 import com.diligrp.xtrade.shared.util.ObjectUtils;
 import com.diligrp.xtrade.upay.core.ErrorCode;
+import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
 import com.diligrp.xtrade.upay.core.exception.PaymentServiceException;
 import com.diligrp.xtrade.upay.core.util.Constants;
 import com.diligrp.xtrade.upay.pipeline.client.SjBankNioClient;
@@ -128,7 +129,8 @@ public class SjBankPipeline extends AbstractPipeline {
         }
 
         // client已经连接成功, 否则callback.connectFailed已经抛出异常
-        PipelineResponse response = PipelineResponse.of(ProcessState.PROCESSING, request.getPaymentId(), 0L, null);
+        TransactionStatus status = request.getObject(TransactionStatus.class);
+        PipelineResponse response = PipelineResponse.of(ProcessState.PROCESSING, request.getPaymentId(), 0L, status);
         try {
             LOG.info("Sending SJBank pipeline trade request: " + xmlRequest);
             String xmlResponse = client.sendPipelineRequest(xmlRequest);
