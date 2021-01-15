@@ -160,8 +160,9 @@ public class SjBankPipeline extends AbstractPipeline {
             response.setState(checkProcessState(flag, code));
             callback.pipelineSuccess(request, response);
         } catch (Exception ex) {
-            LOG.error("SJBank pipeline process failed", ex);
+            LOG.error("SJBank pipeline process exception", ex);
             response.setState(ProcessState.PROCESSING);
+            response.setMessage("支付通道访问异常，交易转为处理中");
             // 任何异常发起异常处理流程
             callback.pipelineFailed(request);
         }
