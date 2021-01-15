@@ -9,8 +9,8 @@ DELETE FROM `upay_merchant` WHERE mch_id = 9;
 DELETE FROM `upay_user_account` WHERE `account_id` IN (20001, 20002, 20003);
 DELETE FROM `upay_fund_account` WHERE `account_id` IN (20001, 20002, 20003);
 
-INSERT INTO `upay_merchant`(`mch_id`, `code`, `name`, `profit_account`, `vouch_account`, `pledge_account`, `address`, `contact`, `mobile`, `state`, `created_time`)
-VALUES (9, 'SY', '沈阳地利农副产品股份有限公司', 20001, 20002, 20003, '沈阳市大东区', '罗宏伟', '13688582561', 1, now());
+INSERT INTO `upay_merchant`(`mch_id`, `code`, `name`, `parent_id`, `profit_account`, `vouch_account`, `pledge_account`, `address`, `contact`, `mobile`, `state`, `created_time`)
+VALUES (9, 'SY', '沈阳地利农副产品股份有限公司', 0, 20001, 20002, 20003, '沈阳市大东区', '罗宏伟', '13688582561', 1, now());
 INSERT INTO `upay_user_account`(`customer_id`, `account_id`, `parent_id`, `type`, `use_for`, `permission`, `name`, `mobile`, `address`, `password`, `secret_key`, `state`, `mch_id`, `version`, `created_time`)
 VALUES (0, 20001, 0, 3, 10, 268435455, '沈阳地利农副产品股份有限公司', '13688582561', '沈阳市大东区', '723c34e4fb337210268ea731f9afea5f7a05c896', 'QkI39VWUCa6CAHI0kFGQ0A==', 1, 9, 0, now());
 INSERT INTO `upay_user_account`(`customer_id`, `account_id`, `parent_id`, `type`, `use_for`, `permission`, `name`, `mobile`, `address`, `password`, `secret_key`, `state`, `mch_id`, `version`, `created_time`)
