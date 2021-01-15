@@ -10,19 +10,20 @@
         <result column="amount" property="amount"/>
         <result column="type" property="type"/>
         <result column="type_name" property="typeName"/>
+        <result column="description" property="description"/>
         <result column="created_time" property="createdTime"/>
     </resultMap>
 
     <insert id="insertPaymentFee" parameterType="com.diligrp.xtrade.upay.trade.model.PaymentFee">
-        INSERT INTO upay_payment_fee(payment_id, use_for, amount, type, type_name, created_time)
-        VALUES (#{paymentId}, #{useFor}, #{amount}, #{type}, #{typeName}, #{createdTime})
+        INSERT INTO upay_payment_fee(payment_id, use_for, amount, type, type_name, description, created_time)
+        VALUES (#{paymentId}, #{useFor}, #{amount}, #{type}, #{typeName}, #{description}, #{createdTime})
     </insert>
 
     <insert id="insertPaymentFees" parameterType="java.util.List">
-        INSERT INTO upay_payment_fee(payment_id, use_for, amount, type, type_name, created_time)
+        INSERT INTO upay_payment_fee(payment_id, use_for, amount, type, type_name, description, created_time)
         VALUES
         <foreach collection="list" item="item" separator=",">
-            (#{item.paymentId}, #{item.useFor}, #{item.amount}, #{item.type}, #{item.typeName}, #{item.createdTime})
+            (#{item.paymentId}, #{item.useFor}, #{item.amount}, #{item.type}, #{item.typeName}, #{item.description}, #{item.createdTime})
         </foreach>
     </insert>
 
@@ -31,15 +32,15 @@
     </select>
 
     <insert id="insertDeductFee" parameterType="com.diligrp.xtrade.upay.trade.model.PaymentFee">
-        INSERT INTO upay_deduct_fee(payment_id, use_for, amount, type, type_name, created_time)
-        VALUES (#{paymentId}, #{useFor}, #{amount}, #{type}, #{typeName}, #{createdTime})
+        INSERT INTO upay_deduct_fee(payment_id, use_for, amount, type, type_name, description, created_time)
+        VALUES (#{paymentId}, #{useFor}, #{amount}, #{type}, #{typeName}, #{description}, #{createdTime})
     </insert>
 
     <insert id="insertDeductFees" parameterType="java.util.List">
-        INSERT INTO upay_deduct_fee(payment_id, use_for, amount, type, type_name, created_time)
+        INSERT INTO upay_deduct_fee(payment_id, use_for, amount, type, type_name, description, created_time)
         VALUES
         <foreach collection="list" item="item" separator=",">
-            (#{item.paymentId}, #{item.useFor}, #{item.amount}, #{item.type}, #{item.typeName}, #{item.createdTime})
+            (#{item.paymentId}, #{item.useFor}, #{item.amount}, #{item.type}, #{item.typeName}, #{item.description}, #{item.createdTime})
         </foreach>
     </insert>
 

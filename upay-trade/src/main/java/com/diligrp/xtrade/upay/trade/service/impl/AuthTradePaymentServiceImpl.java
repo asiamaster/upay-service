@@ -188,9 +188,9 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
         AccountChannel fromChannel = AccountChannel.of(payment.getPaymentId(), fromAccount.getAccountId(), fromAccount.getParentId());
         IFundTransaction fromTransaction = fromChannel.openTransaction(trade.getType(), now);
         fromTransaction.unfreeze(frozenOrder.getAmount());
-        fromTransaction.outgo(confirm.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName());
+        fromTransaction.outgo(confirm.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName(), null);
         fees.stream().filter(Fee::forBuyer)
-            .forEach(fee -> fromTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName()));
+            .forEach(fee -> fromTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName(), fee.getDescription()));
         TransactionStatus status = accountChannelService.submit(fromTransaction);
 
         // 处理卖家收款和卖家佣金
@@ -198,9 +198,9 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
         accountChannelService.checkAccountTradeState(toAccount); // 寿光专用业务逻辑
         AccountChannel toChannel = AccountChannel.of(payment.getPaymentId(), toAccount.getAccountId(), toAccount.getParentId());
         IFundTransaction toTransaction = toChannel.openTransaction(trade.getType(), now);
-        toTransaction.income(confirm.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName());
+        toTransaction.income(confirm.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName(), null);
         fees.stream().filter(Fee::forSeller)
-            .forEach(fee -> toTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName()));
+            .forEach(fee -> toTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName(), fee.getDescription()));
         status.setRelation(accountChannelService.submit(toTransaction));
 
         // 修改冻结订单"已解冻"状态
@@ -226,8 +226,8 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
             throw new TradePaymentException(ErrorCode.DATA_CONCURRENT_UPDATED, "系统正忙，请稍后重试");
         }
         if (!fees.isEmpty()) {
-            List<PaymentFee> paymentFeeDos = fees.stream().map(fee ->
-                PaymentFee.of(payment.getPaymentId(), fee.getUseFor(), fee.getAmount(), fee.getType(), fee.getTypeName(), now)
+            List<PaymentFee> paymentFeeDos = fees.stream().map(fee -> PaymentFee.of(payment.getPaymentId(),
+                fee.getUseFor(), fee.getAmount(), fee.getType(), fee.getTypeName(), fee.getDescription(), now)
             ).collect(Collectors.toList());
             paymentFeeDao.insertPaymentFees(paymentFeeDos);
         }
@@ -254,7 +254,7 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
             MerchantPermit merchant = accessPermitService.loadMerchantPermit(trade.getMchId());
             AccountChannel merChannel = AccountChannel.of(payment.getPaymentId(), merchant.getProfitAccount(), 0L);
             IFundTransaction merTransaction = merChannel.openTransaction(trade.getType(), now);
-            fees.forEach(fee -> merTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName()));
+            fees.forEach(fee -> merTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName(), null));
             accountChannelService.submitExclusively(merTransaction);
         }
 

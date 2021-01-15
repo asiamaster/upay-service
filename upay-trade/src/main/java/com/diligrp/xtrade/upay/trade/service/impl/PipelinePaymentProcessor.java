@@ -177,9 +177,9 @@ public class PipelinePaymentProcessor implements IPipelinePaymentProcessor {
             AccountChannel channel = AccountChannel.of(paymentId, account.getAccountId(), account.getParentId());
             IFundTransaction transaction = channel.openTransaction(trade.getType(), now);
             transaction.unfreeze(payment.getAmount());
-            transaction.outgo(payment.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName());
+            transaction.outgo(payment.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName(), null);
             if (response.fee() > 0) {
-                transaction.outgo(response.fee(), FundType.POUNDAGE.getCode(), FundType.POUNDAGE.getName());
+                transaction.outgo(response.fee(), FundType.POUNDAGE.getCode(), FundType.POUNDAGE.getName(), null);
             }
             status = accountChannelService.submit(transaction);
             // 修改冻结订单"已解冻"状态
@@ -191,7 +191,7 @@ public class PipelinePaymentProcessor implements IPipelinePaymentProcessor {
             // 更新支付订单状态
             if (response.fee() > 0) {
                 paymentFeeDao.insertPaymentFee(PaymentFee.of(paymentId, response.fee(),
-                    FundType.POUNDAGE.getCode(), FundType.POUNDAGE.getName(), now));
+                    FundType.POUNDAGE.getCode(), FundType.POUNDAGE.getName(), null, now));
             }
             PaymentStateDto paymentState = PaymentStateDto.of(paymentId, null, response.getFee(),
                 PaymentState.SUCCESS.getCode(), payment.getVersion(), now);
@@ -227,7 +227,7 @@ public class PipelinePaymentProcessor implements IPipelinePaymentProcessor {
                 MerchantPermit merchant = accessPermitService.loadMerchantPermit(trade.getMchId());
                 AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);
                 IFundTransaction feeTransaction = merChannel.openTransaction(trade.getType(), now);
-                feeTransaction.income(response.fee(), FundType.POUNDAGE.getCode(), FundType.POUNDAGE.getName());
+                feeTransaction.income(response.fee(), FundType.POUNDAGE.getCode(), FundType.POUNDAGE.getName(), null);
                 accountChannelService.submitExclusively(feeTransaction);
             }
         } else if (response.getState() == ProcessState.FAILED) {

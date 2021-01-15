@@ -83,7 +83,7 @@ public class PredepositPaymentServiceImpl implements IPaymentService {
         String paymentId = String.valueOf(keyGenerator.nextId());
         AccountChannel channel = AccountChannel.of(paymentId, account.getAccountId(), account.getParentId());
         IFundTransaction transaction = channel.openTransaction(trade.getType(), now);
-        transaction.income(trade.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName());
+        transaction.income(trade.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName(), null);
         TransactionStatus status = accountChannelService.submit(transaction);
 
         TradeStateDto tradeState = TradeStateDto.of(trade.getTradeId(), TradeState.SUCCESS.getCode(), trade.getVersion(), now);

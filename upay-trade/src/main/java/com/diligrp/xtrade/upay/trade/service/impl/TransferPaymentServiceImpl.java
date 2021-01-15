@@ -93,14 +93,14 @@ public class TransferPaymentServiceImpl implements IPaymentService {
         String paymentId = String.valueOf(keyGenerator.nextId());
         AccountChannel fromChannel = AccountChannel.of(paymentId, fromAccount.getAccountId(), fromAccount.getParentId());
         IFundTransaction fromTransaction = fromChannel.openTransaction(trade.getType(), now);
-        fromTransaction.outgo(trade.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName());
+        fromTransaction.outgo(trade.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName(), null);
         TransactionStatus status = accountChannelService.submit(fromTransaction);
 
         // 交易转入
         accountChannelService.checkAccountTradeState(toAccount); // 寿光专用业务逻辑
         AccountChannel toChannel = AccountChannel.of(paymentId, toAccount.getAccountId(), toAccount.getParentId());
         IFundTransaction toTransaction = toChannel.openTransaction(trade.getType(), now);
-        toTransaction.income(trade.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName());
+        toTransaction.income(trade.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName(), null);
         status.setRelation(accountChannelService.submit(toTransaction));
 
         TradeStateDto tradeState = TradeStateDto.of(trade.getTradeId(), TradeState.SUCCESS.getCode(),

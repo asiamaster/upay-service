@@ -94,9 +94,9 @@ public class BankDepositPaymentServiceImpl implements IPaymentService {
         String paymentId = String.valueOf(keyGenerator.nextId());
         AccountChannel channel = AccountChannel.of(paymentId, account.getAccountId(), account.getParentId());
         IFundTransaction transaction = channel.openTransaction(trade.getType(), now);
-        transaction.income(trade.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName());
+        transaction.income(trade.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName(), null);
         // 网银充值退手续费
-        fees.forEach(fee -> transaction.income(fee.getAmount(), fee.getType(), fee.getTypeName()));
+        fees.forEach(fee -> transaction.income(fee.getAmount(), fee.getType(), fee.getTypeName(), fee.getDescription()));
         TransactionStatus status = accountChannelService.submit(transaction);
 
         TradeStateDto tradeState = TradeStateDto.of(trade.getTradeId(), TradeState.SUCCESS.getCode(), trade.getVersion(), now);
@@ -112,7 +112,7 @@ public class BankDepositPaymentServiceImpl implements IPaymentService {
         tradePaymentDao.insertTradePayment(paymentDo);
         if (!fees.isEmpty()) {
             List<PaymentFee> paymentFeeDos = fees.stream().map(fee ->
-                PaymentFee.of(paymentId, fee.getAmount(), fee.getType(), fee.getTypeName(), now)
+                PaymentFee.of(paymentId, fee.getAmount(), fee.getType(), fee.getTypeName(), fee.getDescription(), now)
             ).collect(Collectors.toList());
             paymentFeeDao.insertPaymentFees(paymentFeeDos);
         }
@@ -131,7 +131,7 @@ public class BankDepositPaymentServiceImpl implements IPaymentService {
             MerchantPermit merchant = payment.getObject(MerchantPermit.class.getName(), MerchantPermit.class);
             AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);
             IFundTransaction feeTransaction = merChannel.openTransaction(trade.getType(), now);
-            fees.forEach(fee -> feeTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName()));
+            fees.forEach(fee -> feeTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName(), null));
             accountChannelService.submitExclusively(feeTransaction);
         }
 

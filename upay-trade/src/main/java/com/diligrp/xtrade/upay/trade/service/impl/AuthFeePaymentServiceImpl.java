@@ -179,7 +179,7 @@ public class AuthFeePaymentServiceImpl extends FeePaymentServiceImpl implements 
         AccountChannel channel = AccountChannel.of(payment.getPaymentId(), account.getAccountId(), account.getParentId());
         IFundTransaction transaction = channel.openTransaction(trade.getType(), now);
         transaction.unfreeze(frozenOrder.getAmount());
-        fees.forEach(fee -> transaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName()));
+        fees.forEach(fee -> transaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName(), fee.getDescription()));
         TransactionStatus status = accountChannelService.submit(transaction);
 
         // 修改冻结订单"已解冻"状态
@@ -201,7 +201,7 @@ public class AuthFeePaymentServiceImpl extends FeePaymentServiceImpl implements 
             throw new TradePaymentException(ErrorCode.DATA_CONCURRENT_UPDATED, "系统忙，请稍后再试");
         }
         List<PaymentFee> paymentFees = fees.stream().map(fee ->
-            PaymentFee.of(payment.getPaymentId(), fee.getAmount(), fee.getType(), fee.getTypeName(), now)
+            PaymentFee.of(payment.getPaymentId(), fee.getAmount(), fee.getType(), fee.getTypeName(), fee.getDescription(), now)
         ).collect(Collectors.toList());
         paymentFeeDao.insertPaymentFees(paymentFees);
 
@@ -219,7 +219,7 @@ public class AuthFeePaymentServiceImpl extends FeePaymentServiceImpl implements 
         MerchantPermit merchant = accessPermitService.loadMerchantPermit(trade.getMchId());
         AccountChannel merChannel = AccountChannel.of(payment.getPaymentId(), merchant.getProfitAccount(), 0L);
         IFundTransaction feeTransaction = merChannel.openTransaction(trade.getType(), now);
-        fees.forEach(fee -> feeTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName()));
+        fees.forEach(fee -> feeTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName(), null));
         accountChannelService.submitExclusively(feeTransaction);
 
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, payment.getPaymentId(), status);
