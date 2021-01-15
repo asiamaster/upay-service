@@ -287,7 +287,8 @@ CREATE TABLE `upay_payment_fee` (
   `use_for` TINYINT UNSIGNED COMMENT '费用用途',
   `amount` BIGINT NOT NULL COMMENT '金额-分',
   `type` INT NOT NULL COMMENT '费用类型',
-  `type_name` VARCHAR(80) COMMENT '费用描述',
+  `type_name` VARCHAR(60) COMMENT '类型说明',
+  `description` VARCHAR(80) COMMENT '费用描述',
   `created_time` DATETIME COMMENT '创建时间',
   PRIMARY KEY (`id`),
   KEY `idx_payment_fee_paymentId` (`payment_id`) USING BTREE
@@ -304,7 +305,8 @@ CREATE TABLE `upay_deduct_fee` (
   `use_for` TINYINT UNSIGNED COMMENT '费用用途',
   `amount` BIGINT NOT NULL COMMENT '金额-分',
   `type` INT NOT NULL COMMENT '费用类型',
-  `type_name` VARCHAR(80) COMMENT '费用描述',
+  `type_name` VARCHAR(60) COMMENT '类型说明',
+  `description` VARCHAR(80) COMMENT '费用描述',
   `created_time` DATETIME COMMENT '创建时间',
   PRIMARY KEY (`id`),
   KEY `idx_deduct_fee_paymentId` (`payment_id`) USING BTREE

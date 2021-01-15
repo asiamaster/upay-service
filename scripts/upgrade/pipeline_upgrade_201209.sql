@@ -61,6 +61,41 @@ CREATE TABLE `upay_merchant_channel` (
   UNIQUE KEY `uk_merchant_channel_channelId` (`channel_id`, `mch_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+-- --------------------------------------------------------------------
+-- 银行CardBin基础数据模型
+-- --------------------------------------------------------------------
+DROP TABLE IF EXISTS `upay_bank_card`;
+CREATE TABLE `upay_bank_card` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `bank_code` varchar(10) NOT NULL COMMENT '银行编码',
+  `bank_no` varchar(20) NOT NULL COMMENT '联行行号',
+  `bank_name` varchar(40) NOT NULL COMMENT '银行名称',
+  `full_name` varchar(60) NOT NULL COMMENT '银行全称',
+  `bin_no` varchar(20) NOT NULL COMMENT 'BIN编号',
+  `bin_name` varchar(40) DEFAULT NULL COMMENT 'BIN名称',
+  `bin_length` tinyint(3) unsigned NOT NULL COMMENT 'BIN编号长度',
+  `type` char(2) DEFAULT NULL COMMENT '卡类型',
+  `length` tinyint(3) unsigned NOT NULL COMMENT '卡号长度',
+  PRIMARY KEY (`id`),
+  KEY `idx_bank_card_binNo` (`bin_no`,`bin_length`,`length`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------------------
+-- 开户行基础数据模型
+-- --------------------------------------------------------------------
+DROP TABLE IF EXISTS `upay_bank_info`;
+CREATE TABLE `upay_bank_info` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `bank_no` varchar(20) NOT NULL COMMENT '联行行号',
+  `bank_name` varchar(60) NOT NULL COMMENT '联行全称',
+  `type_code` varchar(10) NOT NULL COMMENT '行别代码',
+  `ibank_no` varchar(20) DEFAULT NULL COMMENT '参与行联行号',
+  `node_code` varchar(10) DEFAULT NULL COMMENT '所属节点编码',
+  `urbn_code` varchar(10) DEFAULT NULL COMMENT '所在城镇编码',
+  PRIMARY KEY (`id`),
+  KEY `idx_bank_info_bankName` (`bank_name`,`bank_no`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 DELETE FROM `upay_pipeline` WHERE `mch_id` = '9';
 INSERT INTO `upay_pipeline`(`mch_id`, `code`, `name`, `uri`, `param`, `state`, `created_time`)
 VALUES (9, 'SJB_DIRECT', '盛京银行银企直连通道', '127.0.0.1:9527', '{"fromAccount": "123456", "fromName": "沈阳对公户"}', '1', now());

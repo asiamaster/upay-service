@@ -11,11 +11,17 @@ CREATE TABLE `upay_deduct_fee` (
   `use_for` TINYINT UNSIGNED COMMENT '费用用途',
   `amount` BIGINT NOT NULL COMMENT '金额-分',
   `type` INT NOT NULL COMMENT '费用类型',
-  `type_name` VARCHAR(80) COMMENT '费用描述',
+  `type_name` VARCHAR(60) COMMENT '类型说明',
+  `description` VARCHAR(80) COMMENT '费用描述',
   `created_time` DATETIME COMMENT '创建时间',
   PRIMARY KEY (`id`),
   KEY `idx_deduct_fee_paymentId` (`payment_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- 增加费用描述
+ALTER TABLE `upay_payment_fee`
+MODIFY COLUMN `type_name` varchar(60) COMMENT '类型说明' AFTER `type`,
+ADD COLUMN `description` varchar(80) COMMENT '费用描述' AFTER `type_name`;
 
 DELETE FROM `upay_user_account` WHERE `account_id` = 0;
 INSERT INTO `upay_user_account`(`customer_id`, `account_id`, `parent_id`, `type`, `use_for`, `permission`, `name`, `mobile`, `address`, `password`, `secret_key`, `state`, `mch_id`, `version`, `created_time`)
