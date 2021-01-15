@@ -17,6 +17,7 @@ import com.diligrp.xtrade.upay.core.type.SequenceKey;
 import com.diligrp.xtrade.upay.pipeline.domain.IPipeline;
 import com.diligrp.xtrade.upay.pipeline.domain.PipelineRequest;
 import com.diligrp.xtrade.upay.pipeline.domain.PipelineResponse;
+import com.diligrp.xtrade.upay.pipeline.domain.PipelineTransactionStatus;
 import com.diligrp.xtrade.upay.pipeline.model.PipelinePayment;
 import com.diligrp.xtrade.upay.pipeline.type.ProcessState;
 import com.diligrp.xtrade.upay.trade.domain.ChannelAccount;
@@ -115,9 +116,9 @@ public class BankWithdrawPaymentServiceImpl implements IPaymentService {
         request.put("channelId", payment.getChannelId());
         PipelineResponse response = pipeline.sendTradeRequest(request, pipelinePaymentProcessor);
 
-        // 设置通道处理状态
-        response.getStatus().setState(response.getState().getCode());
-        return PaymentResult.of(PaymentResult.CODE_SUCCESS, response.getPaymentId(), response.getStatus());
+        PipelineTransactionStatus status = new PipelineTransactionStatus(response.getState().getCode(),
+            response.getMessage(), response.getStatus());
+        return PaymentResult.of(PaymentResult.CODE_SUCCESS, response.getPaymentId(), status);
     }
 
     @RabbitHandler

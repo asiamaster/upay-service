@@ -110,21 +110,25 @@ public class SjBankPipeline extends AbstractPipeline {
             // 收款行名称
             params.put("bankName", ObjectUtils.trimToEmpty(request.getBankName()));
             // 是否跨行
-            if (ObjectUtils.equals(channelId, this.channelId())) {
-                params.put("bankFlag", "0");
-            } else {
-                params.put("bankFlag", "1");
-            }
+            params.put("bankFlag", ObjectUtils.equals(channelId, this.channelId()) ? "0": "1");
 
             StrSubstitutor engine = new StrSubstitutor(params);
             xmlRequest = engine.replace(xmlTemplate);
+            // 建立前置机TCP连接
             client = new SjBankNioClient(host, port, NioNetworkProvider.getInstance());
             callback.connectSuccess(request);
         } catch (IOException iex) {
             LOG.error("SJBank pipeline init failed", iex);
             // 接口默认抛出"支付通道不可用"异常
             callback.connectFailed(request);
+        } catch (PaymentServiceException pse) {
+            // 未发送请求，提前关闭TCP连接
+            SjBankNioClient.closeQuietly(client);
+            // 保证我方余额不足等异常信息，能够正常抛出
+            throw  pse;
         } catch (Exception ex) {
+            // 未发送请求，提前关闭TCP连接
+            SjBankNioClient.closeQuietly(client);
             throw new PaymentServiceException("支付系统未知异常，请联系系统管理员", ex);
         }
 
@@ -151,6 +155,7 @@ public class SjBankPipeline extends AbstractPipeline {
             String message = node.getStringValue();
             response.setSerialNo(serialNo);
             response.setFee(0L);
+            response.setMessage(message);
             response.setDescription(String.format("succ_flag: %s, ret_code: %s, ret_info: %s", flag, code, message));
             response.setState(checkProcessState(flag, code));
             callback.pipelineSuccess(request, response);
@@ -190,6 +195,8 @@ public class SjBankPipeline extends AbstractPipeline {
             callback.connectSuccess(request);
         } catch (Exception ex) {
             LOG.error("SJBank query pipeline init failed", ex);
+            // 未发送请求，提前关闭TCP连接
+            SjBankNioClient.closeQuietly(client);
             // callback.pipelineFailed默认抛出异常，流程不会往下继续执行
             callback.pipelineFailed(request);
         }

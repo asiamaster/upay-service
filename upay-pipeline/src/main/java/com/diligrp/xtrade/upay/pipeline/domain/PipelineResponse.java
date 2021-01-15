@@ -18,7 +18,9 @@ public class PipelineResponse {
     private String serialNo;
     // 通道费用
     private Long fee;
-    // 备注
+    // 通道返回信息 - 展现给用户使用
+    private String message;
+    // 备注 - 用户开发排错使用, 可能拼装多个通道返回值
     private String description;
     // 本地资金事务状态
     private TransactionStatus status;
@@ -53,6 +55,14 @@ public class PipelineResponse {
 
     public void setFee(Long fee) {
         this.fee = fee;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
     }
 
     public String getDescription() {

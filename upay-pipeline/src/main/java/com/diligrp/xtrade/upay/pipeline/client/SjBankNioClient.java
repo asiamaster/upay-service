@@ -78,6 +78,12 @@ public class SjBankNioClient extends AbstractNioClient {
         return data;
     }
 
+    public static void closeQuietly(SjBankNioClient client) {
+        if (client != null && client.session != null) {
+            client.session.destroy();
+        }
+    }
+
     private class SessionDataContext implements ISessionDataListener {
         private final ReentrantLock lock = new ReentrantLock();
         private final Condition condition = lock.newCondition();
