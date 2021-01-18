@@ -1,14 +1,18 @@
 package com.diligrp.xtrade.upay.trade.service.impl;
 
+import com.diligrp.xtrade.shared.util.JsonUtils;
 import com.diligrp.xtrade.upay.channel.dao.IFrozenOrderDao;
 import com.diligrp.xtrade.upay.channel.model.FrozenOrder;
 import com.diligrp.xtrade.upay.core.ErrorCode;
+import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
 import com.diligrp.xtrade.upay.core.model.UserAccount;
 import com.diligrp.xtrade.upay.core.service.IFundAccountService;
 import com.diligrp.xtrade.upay.pipeline.dao.IPipelinePaymentDao;
 import com.diligrp.xtrade.upay.pipeline.domain.PipelineRequest;
 import com.diligrp.xtrade.upay.pipeline.domain.PipelineResponse;
+import com.diligrp.xtrade.upay.pipeline.domain.PipelineTransactionStatus;
 import com.diligrp.xtrade.upay.pipeline.model.PipelinePayment;
+import com.diligrp.xtrade.upay.pipeline.type.ProcessState;
 import com.diligrp.xtrade.upay.trade.dao.ITradeOrderDao;
 import com.diligrp.xtrade.upay.trade.dao.ITradePaymentDao;
 import com.diligrp.xtrade.upay.trade.exception.TradePaymentException;
@@ -17,6 +21,9 @@ import com.diligrp.xtrade.upay.trade.model.TradePayment;
 import com.diligrp.xtrade.upay.trade.service.IPipelineExceptionProcessor;
 import com.diligrp.xtrade.upay.trade.type.PaymentState;
 import com.diligrp.xtrade.upay.trade.type.TradeState;
+import com.diligrp.xtrade.upay.trade.util.Constants;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessageProperties;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -83,7 +90,23 @@ public class PipelineExceptionProcessor extends PipelinePaymentProcessor impleme
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public void pipelineSuccess(PipelineRequest request, PipelineResponse response) {
         super.pipelineSuccess(request, response);
-        //TODO: 通知调用方处理结果
+        // 异步通知业务系统处理结果
+        if (response.getState() != ProcessState.PROCESSING) {
+            TradeOrder trade = request.getObject(TradeOrder.class);
+            PipelineTransactionStatus status = new PipelineTransactionStatus(response.getState().getCode(),
+                response.getMessage(), trade.getSerialNo(), response.getStatus());
+            String callbackJson = JsonUtils.toJsonString(status);
+            try {
+                MessageProperties properties = new MessageProperties();
+                properties.setContentEncoding(Constants.CHARSET_UTF8);
+                properties.setContentType(MessageProperties.CONTENT_TYPE_BYTES);
+                LOG.info("Making pipeline callback request for {}", request.getPaymentId());
+                Message message = new Message(callbackJson.getBytes(Constants.CHARSET_UTF8), properties);
+                rabbitTemplate.send(Constants.PIPELINE_CALLBACK_EXCHANGE, Constants.PIPELINE_CALLBACK_KEY, message);
+            } catch (Exception ex) {
+                LOG.error(String.format("Failed to make pipeline callback request for %s", request.getPaymentId()), ex);
+            }
+        }
     }
 
     /**

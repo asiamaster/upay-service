@@ -19,6 +19,12 @@ public class Constants {
     public static final String PIPELINE_EXCEPTION_EXCHANGE = "pipeline.exception.exchange";
     // 支付通道异常处理路由KEY
     public static final String PIPELINE_EXCEPTION_KEY = "pipeline.exception.key";
+    // 支付通道异步回调处理队列 - 通知业务系统处理结果
+    public static final String PIPELINE_CALLBACK_QUEUE = "pipelineCallbackQueue";
+    // 支付通道异步回调处理交换机 - 通知业务系统处理结果
+    public static final String PIPELINE_CALLBACK_EXCHANGE = "pipeline.callback.exchange";
+    // 支付通道异步回调处理路由KEY - 通知业务系统处理结果
+    public static final String PIPELINE_CALLBACK_KEY = "pipeline.callback.key";
     // 死信队列最小消息过期时间(毫秒) - 1分钟
     public static final long MIN_MESSAGE_DELAY_TIME = 1 * 60 * 1000;
     // 死信队列最大消息过期时间(毫秒) - 2小时

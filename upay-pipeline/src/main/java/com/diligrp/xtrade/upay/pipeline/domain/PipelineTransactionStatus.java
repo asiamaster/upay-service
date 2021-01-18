@@ -13,10 +13,17 @@ public class PipelineTransactionStatus extends TransactionStatus {
     private Integer state;
     // 支付通道返回信息
     private String message;
+    // 外部交易流水号 - 异步通知外围系统时使用
+    private String serialNo;
 
     public PipelineTransactionStatus(Integer state, String message, TransactionStatus status) {
+        this(state, message, null, status);
+    }
+
+    public PipelineTransactionStatus(Integer state, String message, String serialNo, TransactionStatus status) {
         this.state = state;
         this.message = message;
+        this.serialNo = serialNo;
         super.setAccountId(status.getAccountId());
         super.setBalance(status.getBalance());
         super.setAmount(status.getAmount());
@@ -41,5 +48,13 @@ public class PipelineTransactionStatus extends TransactionStatus {
 
     public void setMessage(String message) {
         this.message = message;
+    }
+
+    public String getSerialNo() {
+        return serialNo;
+    }
+
+    public void setSerialNo(String serialNo) {
+        this.serialNo = serialNo;
     }
 }

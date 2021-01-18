@@ -46,6 +46,15 @@ public class SjBankPipeline extends AbstractPipeline {
     private static final String KEY_TRADE_REQUEST = "sjb.trade.request";
     // 交易查询请求模板KEY
     private static final String KEY_QUERY_REQUEST = "sjb.trade.query.request";
+    // 交易接口返回信息常量列表
+    private static final String SUCC_FLAG_OK = "0";
+    private static final String SUCC_FLAG_UNKNOWN1 = "1"; // 结果未知
+    private static final String SUCC_FLAG_UNKNOWN8 = "8"; // 结果未知
+    private static final String RET_CODE_OK = "0000";
+    // 查询接口返回信息常量列表
+    private static final String RET_CODE_NO_TRADE = "2100"; // 交易不存在
+    private static final String STAT_SUCCESS = "9";
+    private static final String STAT_FAILED = "6";
 
     private Logger LOG = LoggerFactory.getLogger(this.getClass());
 
@@ -139,25 +148,7 @@ public class SjBankPipeline extends AbstractPipeline {
             LOG.info("Sending SJBank pipeline trade request: " + xmlRequest);
             String xmlResponse = client.sendPipelineRequest(xmlRequest);
             LOG.info("Received SJBank pipeline trade response: " + xmlResponse);
-            SAXReader reader = new SAXReader();
-            Document root = reader.read(new StringReader(xmlResponse));
-            // 银行方流水号
-            Node node = root.selectSingleNode("/ap/head/serial_no");
-            String serialNo = node.getStringValue();
-            // 成功标识
-            node = root.selectSingleNode("/ap/head/succ_flag");
-            String flag = node.getStringValue();
-            // 返回码
-            node = root.selectSingleNode("/ap/head/ret_code");
-            String code = node.getStringValue();
-            // 返回信息
-            node = root.selectSingleNode("/ap/head/ret_info");
-            String message = node.getStringValue();
-            response.setSerialNo(serialNo);
-            response.setFee(0L);
-            response.setMessage(message);
-            response.setDescription(String.format("succ_flag: %s, ret_code: %s, ret_info: %s", flag, code, message));
-            response.setState(checkProcessState(flag, code));
+            processTradeResponse(xmlResponse, response);
             callback.pipelineSuccess(request, response);
         } catch (Exception ex) {
             LOG.error("SJBank pipeline process exception", ex);
@@ -203,34 +194,13 @@ public class SjBankPipeline extends AbstractPipeline {
         }
 
         PipelineResponse response = PipelineResponse.of(ProcessState.PROCESSING, request.getPaymentId(), 0L, null);
+        response.setDescription(payment.getDescription());
         try {
             LOG.info("Sending SJBank pipeline query request: " + xmlRequest);
             String xmlResponse = client.sendPipelineRequest(xmlRequest);
             LOG.info("Received SJBank pipeline query response: " + xmlResponse);
-            SAXReader reader = new SAXReader();
-            Document root = reader.read(new StringReader(xmlResponse));
-            Node node = root.selectSingleNode("/ap/head/succ_flag");
-            String flag = node.getStringValue();
-            node = root.selectSingleNode("/ap/head/ret_code");
-            String code = node.getStringValue();
-            node = root.selectSingleNode("/ap/head/ret_info");
-            String message = node.getStringValue();
-            if ("0".equals(flag) && "0000".equals(code)) {
-                node = root.selectSingleNode("/ap/body/serial_no");
-                String serialNo = node.getStringValue();
-                node = root.selectSingleNode("/ap/body/stat");
-                String state = node.getStringValue();
-                response.setState(checkQueryState(flag, code, state));
-                message = String.format("%s, stat: %s", payment.getDescription(), state);
-                response.setSerialNo(serialNo);
-                response.setFee(0L);
-                response.setDescription(message);
-                callback.pipelineSuccess(request, response);
-            } else {
-                LOG.error("SJBank query pipeline process failed: succ_flag: {}, ret_code: {}, ret_info: {}",
-                    flag, code, message);
-                callback.pipelineFailed(request);
-            }
+            processQueryResponse(xmlResponse, response);
+            callback.pipelineSuccess(request, response);
         } catch (Exception ex) {
             LOG.error("SJBank query pipeline process exception", ex);
             callback.pipelineFailed(request);
@@ -249,23 +219,73 @@ public class SjBankPipeline extends AbstractPipeline {
         return xmlTemplate;
     }
 
-    private ProcessState checkProcessState(String flag, String code) {
-        if ("0".equals(flag) && "0000".equals(code)) {
-            return ProcessState.SUCCESS;
-        } else if ((!"0".equals(flag) && !"1".equals(flag) && !"8".equals(flag)) && !"0000".equals(code)) {
-            return ProcessState.FAILED;
+    private void processTradeResponse(String xmlResponse, PipelineResponse response) throws Exception {
+        SAXReader reader = new SAXReader();
+        Document root = reader.read(new StringReader(xmlResponse));
+        // 成功标识
+        Node node = root.selectSingleNode("/ap/head/succ_flag");
+        String flag = node.getStringValue();
+        // 返回码
+        node = root.selectSingleNode("/ap/head/ret_code");
+        String code = node.getStringValue();
+        // 返回信息
+        node = root.selectSingleNode("/ap/head/ret_info");
+        String retInfo = node.getStringValue();
+        if (SUCC_FLAG_OK.equals(flag) && RET_CODE_OK.equals(code)) {
+            response.setState(ProcessState.SUCCESS);
+            response.setMessage("银行通道交易处理成功");
+        } else if ((!SUCC_FLAG_OK.equals(flag) && !SUCC_FLAG_UNKNOWN1.equals(flag) && !SUCC_FLAG_UNKNOWN8.equals(flag))
+            && !RET_CODE_OK.equals(code)) {
+            response.setState(ProcessState.FAILED);
+            response.setMessage("银行通道交易处理失败: " + retInfo);
         } else {
-            return ProcessState.PROCESSING;
+            response.setState(ProcessState.PROCESSING);
+            response.setMessage("银行通道交易处理中");
         }
+        // 银行方流水号
+        node = root.selectSingleNode("/ap/head/serial_no");
+        String serialNo = node.getStringValue();
+        response.setSerialNo(serialNo);
+        response.setFee(0L);
+        response.setDescription(String.format("succ_flag: %s, ret_code: %s, ret_info: %s", flag, code, retInfo));
     }
 
-    private ProcessState checkQueryState(String flag, String code, String state) {
-        if ("9".equals(state)) {
-            return ProcessState.SUCCESS;
-        } else if ("6".equals(state)) {
-            return ProcessState.FAILED;
+    private void processQueryResponse(String xmlResponse, PipelineResponse response) throws Exception {
+        SAXReader reader = new SAXReader();
+        Document root = reader.read(new StringReader(xmlResponse));
+        Node node = root.selectSingleNode("/ap/head/succ_flag");
+        String flag = node.getStringValue();
+        node = root.selectSingleNode("/ap/head/ret_code");
+        String code = node.getStringValue();
+        node = root.selectSingleNode("/ap/head/ret_info");
+        String retInfo = node.getStringValue();
+        if (SUCC_FLAG_OK.equals(flag) && RET_CODE_OK.equals(code)) {
+            node = root.selectSingleNode("/ap/body/stat");
+            String state = node.getStringValue();
+            if (STAT_SUCCESS.equals(state)) {
+                response.setState(ProcessState.SUCCESS);
+                response.setMessage("银行通道查询交易结果: 处理成功");
+            } else if (STAT_FAILED.equals(state)) {
+                response.setState(ProcessState.FAILED);
+                response.setMessage("银行通道查询交易结果: 处理失败");
+            } else {
+                response.setState(ProcessState.PROCESSING);
+                response.setMessage("银行通道查询交易结果: 处理中");
+            }
+            retInfo = String.format("%s, stat: %s", response.getDescription(), state);
+            node = root.selectSingleNode("/ap/body/serial_no");
+            String serialNo = node.getStringValue();
+            response.setSerialNo(serialNo);
+            response.setFee(0L);
+            response.setDescription(retInfo);
+        } else if (!SUCC_FLAG_OK.equals(flag) && RET_CODE_NO_TRADE.equals(code)) {
+            response.setState(ProcessState.FAILED);
+            response.setMessage("银行通道查询交易结果: 交易不存在");
         } else {
-            return ProcessState.PROCESSING;
+            LOG.error("SJBank pipeline query trade state failed: succ_flag: {}, ret_code: {}, ret_info: {}",
+                flag, code, retInfo);
+            response.setState(ProcessState.PROCESSING);
+            response.setMessage("银行通道查询交易结果失败, 转为交易处理中");
         }
     }
 

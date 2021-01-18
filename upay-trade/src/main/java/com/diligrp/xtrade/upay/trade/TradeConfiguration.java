@@ -74,4 +74,29 @@ public class TradeConfiguration {
     public Binding pipelineExceptionBinding() {
         return BindingBuilder.bind(pipelineExceptionQueue()).to(pipelineExceptionExchange()).with(Constants.PIPELINE_EXCEPTION_KEY);
     }
+
+    /**
+     * 创建支付通道异常处理队列: 支付通道处理异常或没用明确的处理结果时用于做业务补偿(主动查询处理结果补偿本地事务)
+     * 队列支持持久化、非独占式且不自动删除
+     */
+    @Bean
+    public Queue pipelineCallbackQueue() {
+        return new Queue(Constants.PIPELINE_CALLBACK_QUEUE, true, false, false);
+    }
+
+    /**
+     * 创建支付通道异常处理交换机
+     */
+    @Bean
+    public DirectExchange pipelineCallbackExchange() {
+        return new DirectExchange(Constants.PIPELINE_CALLBACK_EXCHANGE, true, false);
+    }
+
+    /**
+     * 创建支付通道异常处理绑定
+     */
+    @Bean
+    public Binding pipelineCallbackBinding() {
+        return BindingBuilder.bind(pipelineCallbackQueue()).to(pipelineCallbackExchange()).with(Constants.PIPELINE_CALLBACK_KEY);
+    }
 }

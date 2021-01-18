@@ -68,7 +68,7 @@ import java.util.List;
 @Service("pipelinePaymentProcessor")
 public class PipelinePaymentProcessor implements IPipelinePaymentProcessor {
 
-    private Logger LOG = LoggerFactory.getLogger(this.getClass());
+    protected Logger LOG = LoggerFactory.getLogger(this.getClass());
 
     @Resource
     private ITradePaymentDao tradePaymentDao;
@@ -98,7 +98,7 @@ public class PipelinePaymentProcessor implements IPipelinePaymentProcessor {
     private KeyGeneratorManager keyGeneratorManager;
 
     @Resource
-    private RabbitTemplate rabbitTemplate;
+    protected RabbitTemplate rabbitTemplate;
 
     /**
      * {@inheritDoc}
