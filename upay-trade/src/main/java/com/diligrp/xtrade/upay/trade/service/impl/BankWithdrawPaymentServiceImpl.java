@@ -11,8 +11,10 @@ import com.diligrp.xtrade.upay.channel.type.ChannelType;
 import com.diligrp.xtrade.upay.core.ErrorCode;
 import com.diligrp.xtrade.upay.core.domain.MerchantPermit;
 import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
+import com.diligrp.xtrade.upay.core.model.FundAccount;
 import com.diligrp.xtrade.upay.core.model.UserAccount;
 import com.diligrp.xtrade.upay.core.service.IAccessPermitService;
+import com.diligrp.xtrade.upay.core.service.IFundAccountService;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
 import com.diligrp.xtrade.upay.pipeline.domain.IPipeline;
 import com.diligrp.xtrade.upay.pipeline.domain.PipelineRequest;
@@ -67,6 +69,9 @@ public class BankWithdrawPaymentServiceImpl implements IPaymentService {
     private IPaymentChannelService paymentChannelService;
 
     @Resource
+    private IFundAccountService fundAccountService;
+
+    @Resource
     private IPipelinePaymentProcessor pipelinePaymentProcessor;
 
     @Resource
@@ -103,6 +108,10 @@ public class BankWithdrawPaymentServiceImpl implements IPaymentService {
         UserAccount account = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), maxPwdErrors);
         accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
 
+        FundAccount fund = fundAccountService.findFundAccountById(payment.getAccountId());
+        if (fund.getBalance() - fund.getFrozenAmount() < payment.getAmount()) {
+            throw new TradePaymentException(ErrorCode.INSUFFICIENT_ACCOUNT_FUND, "账户可用余额不足");
+        }
         long mchId = merchant.getParentId() == 0 ? merchant.getMchId() : merchant.getParentId();
         IPipeline pipeline = channelRouteService.selectPaymentPipeline(mchId, payment.getChannelId(), trade.getAmount());
         // 生成"处理中"的支付记录

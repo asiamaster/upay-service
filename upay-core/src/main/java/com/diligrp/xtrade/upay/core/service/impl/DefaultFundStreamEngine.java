@@ -77,7 +77,7 @@ public class DefaultFundStreamEngine implements IFundStreamEngine {
                 long availableAmount = fundAccount.getBalance() - fundAccount.getFrozenAmount();
                 // 如果为资金支出(totalAmount<0)则判断账户余额是否充足
                 if (availableAmount + totalAmount < 0) {
-                    throw new FundAccountException(ErrorCode.INSUFFICIENT_ACCOUNT_FUND, "账户余额不足");
+                    throw new FundAccountException(ErrorCode.INSUFFICIENT_ACCOUNT_FUND, "账户可用余额不足");
                 }
                 fundAccount.setBalance(fundAccount.getBalance() + totalAmount);
                 status.setAmount(totalAmount);
@@ -87,7 +87,7 @@ public class DefaultFundStreamEngine implements IFundStreamEngine {
                 long availableAmount = fundAccount.getBalance() - fundAccount.getFrozenAmount();
                 // 判断账户余额是否充足
                 if (availableAmount - transaction.getFrozenAmount() < 0) {
-                    throw new FundAccountException(ErrorCode.INSUFFICIENT_ACCOUNT_FUND, "账户余额不足");
+                    throw new FundAccountException(ErrorCode.INSUFFICIENT_ACCOUNT_FUND, "账户可用余额不足");
                 }
                 fundAccount.setFrozenAmount(fundAccount.getFrozenAmount() + transaction.getFrozenAmount());
             }
@@ -156,7 +156,7 @@ public class DefaultFundStreamEngine implements IFundStreamEngine {
             long availableAmount = fundAccount.getBalance() - fundAccount.getFrozenAmount();
             // 如果为资金支出(totalAmount<0)则判断账户余额是否充足
             if (availableAmount + totalAmount < 0) {
-                throw new FundAccountException(ErrorCode.INSUFFICIENT_ACCOUNT_FUND, "账户余额不足");
+                throw new FundAccountException(ErrorCode.INSUFFICIENT_ACCOUNT_FUND, "账户可用余额不足");
             }
             fundAccount.setBalance(fundAccount.getBalance() + totalAmount);
             status.setAmount(totalAmount);
@@ -166,7 +166,7 @@ public class DefaultFundStreamEngine implements IFundStreamEngine {
             long availableAmount = fundAccount.getBalance() - fundAccount.getFrozenAmount();
             // 判断账户余额是否充足
             if (availableAmount - transaction.getFrozenAmount() < 0) {
-                throw new FundAccountException(ErrorCode.INSUFFICIENT_ACCOUNT_FUND, "账户余额不足");
+                throw new FundAccountException(ErrorCode.INSUFFICIENT_ACCOUNT_FUND, "账户可用余额不足");
             }
             fundAccount.setFrozenAmount(fundAccount.getFrozenAmount() + transaction.getFrozenAmount());
         }
@@ -232,7 +232,7 @@ public class DefaultFundStreamEngine implements IFundStreamEngine {
             long availableAmount = fundAccount.getBalance() - fundAccount.getFrozenAmount();
             // 如果为资金支出(totalAmount<0)则判断账户余额是否充足
             if (availableAmount + totalAmount < 0) {
-                throw new FundAccountException(ErrorCode.INSUFFICIENT_ACCOUNT_FUND, "账户余额不足");
+                throw new FundAccountException(ErrorCode.INSUFFICIENT_ACCOUNT_FUND, "账户可用余额不足");
             }
             fundAccount.setBalance(fundAccount.getBalance() + totalAmount);
             status.setAmount(totalAmount);
@@ -242,7 +242,7 @@ public class DefaultFundStreamEngine implements IFundStreamEngine {
             long availableAmount = fundAccount.getBalance() - fundAccount.getFrozenAmount();
             // 判断账户余额是否充足
             if (availableAmount - transaction.getFrozenAmount() < 0) {
-                throw new FundAccountException(ErrorCode.INSUFFICIENT_ACCOUNT_FUND, "账户余额不足");
+                throw new FundAccountException(ErrorCode.INSUFFICIENT_ACCOUNT_FUND, "账户可用余额不足");
             }
             fundAccount.setFrozenAmount(fundAccount.getFrozenAmount() + transaction.getFrozenAmount());
         }
