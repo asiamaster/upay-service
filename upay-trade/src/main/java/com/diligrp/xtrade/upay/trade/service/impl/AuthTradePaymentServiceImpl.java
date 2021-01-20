@@ -111,7 +111,9 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
 
         // 冻结资金
         LocalDateTime now = LocalDateTime.now().withNano(0);
-        UserAccount fromAccount = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
+        MerchantPermit merchant = accessPermitService.loadMerchantPermit(trade.getMchId());
+        int maxPwdErrors = merchant.configuration().maxPwdErrors();
+        UserAccount fromAccount = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), maxPwdErrors);
         UserAccount toAccount = fundAccountService.findUserAccountById(trade.getAccountId());
         if (!ObjectUtils.equals(fromAccount.getMchId(), toAccount.getMchId())) {
             throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "不能进行跨商户交易");
@@ -181,7 +183,9 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
 
         // 获取商户收益账号信息
         LocalDateTime now = LocalDateTime.now().withNano(0);
-        UserAccount fromAccount = accountChannelService.checkTradePermission(payment.getAccountId(), confirm.getPassword(), -1);
+        MerchantPermit merchant = accessPermitService.loadMerchantPermit(trade.getMchId());
+        int maxPwdErrors = merchant.configuration().maxPwdErrors();
+        UserAccount fromAccount = accountChannelService.checkTradePermission(payment.getAccountId(), confirm.getPassword(), maxPwdErrors);
         accountChannelService.checkAccountTradeState(fromAccount); // 寿光专用业务逻辑
 
         // 处理买家付款和买家佣金
@@ -251,7 +255,6 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
 
         // 处理商户收益 - 最后处理园区收益，保证尽快释放共享数据的行锁以提高系统并发
         if (!fees.isEmpty()) {
-            MerchantPermit merchant = accessPermitService.loadMerchantPermit(trade.getMchId());
             AccountChannel merChannel = AccountChannel.of(payment.getPaymentId(), merchant.getProfitAccount(), 0L);
             IFundTransaction merTransaction = merChannel.openTransaction(trade.getType(), now);
             fees.forEach(fee -> merTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName(), null));

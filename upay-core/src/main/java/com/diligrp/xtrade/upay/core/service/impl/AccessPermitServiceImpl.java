@@ -57,7 +57,7 @@ public class AccessPermitServiceImpl implements IAccessPermitService {
                 if ((permit = merchants.get(mchId)) == null) {
                     permit = merchantDao.findMerchantById(mchId)
                         .map(mer -> MerchantPermit.of(mer.getMchId(), mer.getCode(), mer.getName(), mer.getParentId(),
-                            mer.getProfitAccount(), mer.getVouchAccount(), mer.getPledgeAccount()))
+                            mer.getProfitAccount(), mer.getVouchAccount(), mer.getPledgeAccount()).config(mer.getParam()))
                         .orElseThrow(() -> new ServiceAccessException(ErrorCode.OBJECT_NOT_FOUND, "商户信息未注册"));
                     merchants.put(mchId, permit);
                 }

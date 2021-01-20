@@ -114,8 +114,10 @@ public class AllFeePaymentServiceImpl implements IPaymentService {
         LocalDateTime now = LocalDateTime.now().withNano(0);
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
         String paymentId = String.valueOf(keyGenerator.nextId());
+        MerchantPermit merchant = accessPermitService.loadMerchantPermit(trade.getMchId());
+        int maxPwdErrors = merchant.configuration().maxPwdErrors();
         if (ChannelType.ACCOUNT.equalTo(payment.getChannelId())) {
-            account = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
+            account = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), maxPwdErrors);
             accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
             AccountChannel channel = AccountChannel.of(paymentId, account.getAccountId(), account.getParentId());
             IFundTransaction transaction = channel.openTransaction(trade.getType(), now);
@@ -160,7 +162,6 @@ public class AllFeePaymentServiceImpl implements IPaymentService {
         }
 
         // 处理商户收款 - 最后处理园区收益，保证尽快释放共享数据的行锁以提高系统并发
-        MerchantPermit merchant = payment.getObject(MerchantPermit.class.getName(), MerchantPermit.class);
         AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);
         IFundTransaction feeTransaction = merChannel.openTransaction(trade.getType(), now);
         fees.forEach(fee -> feeTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName(), null));

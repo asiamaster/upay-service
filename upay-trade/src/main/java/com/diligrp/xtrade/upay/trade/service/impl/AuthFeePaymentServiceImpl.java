@@ -105,7 +105,9 @@ public class AuthFeePaymentServiceImpl extends FeePaymentServiceImpl implements 
 
         // 冻结资金
         LocalDateTime now = LocalDateTime.now().withNano(0);
-        UserAccount account = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
+        MerchantPermit merchant = accessPermitService.loadMerchantPermit(trade.getMchId());
+        int maxPwdErrors = merchant.configuration().maxPwdErrors();
+        UserAccount account = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), maxPwdErrors);
         accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
         String paymentId = String.valueOf(keyGenerator.nextId());
@@ -173,7 +175,9 @@ public class AuthFeePaymentServiceImpl extends FeePaymentServiceImpl implements 
 
         // 获取商户收益账号信息
         LocalDateTime now = LocalDateTime.now().withNano(0);
-        UserAccount account = accountChannelService.checkTradePermission(payment.getAccountId(), confirm.getPassword(), -1);
+        MerchantPermit merchant = accessPermitService.loadMerchantPermit(trade.getMchId());
+        int maxPwdErrors = merchant.configuration().maxPwdErrors();
+        UserAccount account = accountChannelService.checkTradePermission(payment.getAccountId(), confirm.getPassword(), maxPwdErrors);
         accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
         // 客户账号资金解冻并缴费
         AccountChannel channel = AccountChannel.of(payment.getPaymentId(), account.getAccountId(), account.getParentId());
@@ -216,7 +220,6 @@ public class AuthFeePaymentServiceImpl extends FeePaymentServiceImpl implements 
         userStatementDao.insertUserStatement(statement);
 
         // 园区收益账户收款 - 最后处理园区收益，保证尽快释放共享数据的行锁以提高系统并发
-        MerchantPermit merchant = accessPermitService.loadMerchantPermit(trade.getMchId());
         AccountChannel merChannel = AccountChannel.of(payment.getPaymentId(), merchant.getProfitAccount(), 0L);
         IFundTransaction feeTransaction = merChannel.openTransaction(trade.getType(), now);
         fees.forEach(fee -> feeTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName(), null));

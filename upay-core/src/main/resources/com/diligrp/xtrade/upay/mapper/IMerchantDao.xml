@@ -26,6 +26,7 @@
         <result column="profit_account" property="profitAccount"/>
         <result column="vouch_account" property="vouchAccount"/>
         <result column="pledge_account" property="pledgeAccount"/>
+        <result column="param" property="param"/>
         <result column="address" property="address"/>
         <result column="contact" property="contact"/>
         <result column="mobile" property="mobile"/>

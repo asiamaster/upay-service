@@ -22,6 +22,8 @@ public class Merchant extends BaseDo {
     private Long vouchAccount;
     // 押金账户
     private Long pledgeAccount;
+    // 参数配置
+    private String param;
     // 商户地址
     private String address;
     // 联系人
@@ -85,6 +87,14 @@ public class Merchant extends BaseDo {
 
     public void setPledgeAccount(Long pledgeAccount) {
         this.pledgeAccount = pledgeAccount;
+    }
+
+    public String getParam() {
+        return param;
+    }
+
+    public void setParam(String param) {
+        this.param = param;
     }
 
     public String getAddress() {

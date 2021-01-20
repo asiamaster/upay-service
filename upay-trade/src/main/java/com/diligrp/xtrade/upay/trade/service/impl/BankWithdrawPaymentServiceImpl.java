@@ -98,10 +98,11 @@ public class BankWithdrawPaymentServiceImpl implements IPaymentService {
         ChannelAccount channelAccount = checkChannelAccount(payment);
 
         // 检查交易权限, 并选择支付通道
-        UserAccount account = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
+        MerchantPermit merchant = accessPermitService.loadMerchantPermit(trade.getMchId());
+        int maxPwdErrors = merchant.configuration().maxPwdErrors();
+        UserAccount account = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), maxPwdErrors);
         accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
 
-        MerchantPermit merchant = accessPermitService.loadMerchantPermit(trade.getMchId());
         long mchId = merchant.getParentId() == 0 ? merchant.getMchId() : merchant.getParentId();
         IPipeline pipeline = channelRouteService.selectPaymentPipeline(mchId, payment.getChannelId(), trade.getAmount());
         // 生成"处理中"的支付记录

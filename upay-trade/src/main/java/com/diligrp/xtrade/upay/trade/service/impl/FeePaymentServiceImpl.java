@@ -94,7 +94,6 @@ public class FeePaymentServiceImpl implements IPaymentService {
             throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "缴费资金账号不一致");
         }
 
-        MerchantPermit merchant = payment.getObject(MerchantPermit.class.getName(), MerchantPermit.class);
         Optional<List<Fee>> feesOpt = payment.getObjects(Fee.class.getName());
         List<Fee> fees = feesOpt.orElseThrow(() -> new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "无收费信息"));
         long totalFee = fees.stream().mapToLong(Fee::getAmount).sum();
@@ -105,10 +104,12 @@ public class FeePaymentServiceImpl implements IPaymentService {
         // 处理账户余额缴费
         UserAccount account = null;
         LocalDateTime now = LocalDateTime.now().withNano(0);
+        MerchantPermit merchant = accessPermitService.loadMerchantPermit(trade.getMchId());
+        int maxPwdErrors = merchant.configuration().maxPwdErrors();
         if (!ChannelType.ACCOUNT.equalTo(payment.getChannelId())) { // 非账户缴费不校验密码（办卡/换卡工本费）
             account = accountChannelService.checkTradePermission(payment.getAccountId());
         } else if (payment.getProtocolId() == null) { // 交易密码校验
-            account = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
+            account = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), maxPwdErrors);
         } else { // 免密支付
             account = paymentProtocolService.checkProtocolPermission(payment.getAccountId(),
                 payment.getProtocolId(), payment.getAmount());

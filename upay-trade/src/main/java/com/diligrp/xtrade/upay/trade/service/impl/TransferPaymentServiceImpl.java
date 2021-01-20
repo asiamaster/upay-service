@@ -11,8 +11,10 @@ import com.diligrp.xtrade.upay.channel.service.IAccountChannelService;
 import com.diligrp.xtrade.upay.channel.type.ChannelType;
 import com.diligrp.xtrade.upay.channel.type.StatementType;
 import com.diligrp.xtrade.upay.core.ErrorCode;
+import com.diligrp.xtrade.upay.core.domain.MerchantPermit;
 import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
 import com.diligrp.xtrade.upay.core.model.UserAccount;
+import com.diligrp.xtrade.upay.core.service.IAccessPermitService;
 import com.diligrp.xtrade.upay.core.service.IFundAccountService;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
 import com.diligrp.xtrade.upay.trade.dao.ITradeOrderDao;
@@ -61,6 +63,9 @@ public class TransferPaymentServiceImpl implements IPaymentService {
     private IFundAccountService fundAccountService;
 
     @Resource
+    private IAccessPermitService accessPermitService;
+
+    @Resource
     private SnowflakeKeyManager snowflakeKeyManager;
 
     /**
@@ -82,7 +87,9 @@ public class TransferPaymentServiceImpl implements IPaymentService {
 
         // 交易转出
         LocalDateTime now = LocalDateTime.now().withNano(0);
-        UserAccount fromAccount = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
+        MerchantPermit merchant = accessPermitService.loadMerchantPermit(trade.getMchId());
+        int maxPwdErrors = merchant.configuration().maxPwdErrors();
+        UserAccount fromAccount = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), maxPwdErrors);
         UserAccount toAccount = fundAccountService.findUserAccountById(trade.getAccountId());
         if (!ObjectUtils.equals(fromAccount.getMchId(), toAccount.getMchId())) {
             throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "不能进行跨商户交易");

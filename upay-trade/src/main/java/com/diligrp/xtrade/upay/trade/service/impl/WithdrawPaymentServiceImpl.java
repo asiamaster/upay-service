@@ -102,6 +102,8 @@ public class WithdrawPaymentServiceImpl implements IPaymentService {
 
         // 处理个人提现
         LocalDateTime now = LocalDateTime.now().withNano(0);
+        MerchantPermit merchant = accessPermitService.loadMerchantPermit(trade.getMchId());
+        int maxPwdErrors = merchant.configuration().maxPwdErrors();
         UserAccount account = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
         accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
@@ -143,7 +145,6 @@ public class WithdrawPaymentServiceImpl implements IPaymentService {
 
         // 处理商户收益 - 最后处理园区收益，保证尽快释放共享数据的行锁以提高系统并发
         if (!fees.isEmpty()) {
-            MerchantPermit merchant = payment.getObject(MerchantPermit.class.getName(), MerchantPermit.class);
             AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);
             IFundTransaction merTransaction = merChannel.openTransaction(trade.getType(), now);
             fees.forEach(fee -> merTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName(), null));

@@ -21,6 +21,11 @@ public interface IFundAccountService {
     void freezeUserAccount(Long accountId);
 
     /**
+     * 冻结资金账号 - 独立的数据库事务
+     */
+    void freezeUserAccountNow(Long accountId);
+
+    /**
      * 解冻资金账号
      */
     void unfreezeUserAccount(Long accountId);

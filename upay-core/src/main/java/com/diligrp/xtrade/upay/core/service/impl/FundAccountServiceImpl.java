@@ -112,6 +112,17 @@ public class FundAccountServiceImpl implements IFundAccountService {
 
     /**
      * {@inheritDoc}
+     *
+     * 独立的数据库事务: 密码错误次数锁定账号时使用
+     */
+    @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
+    public void freezeUserAccountNow(Long accountId) {
+        freezeUserAccount(accountId);
+    }
+
+    /**
+     * {@inheritDoc}
      */
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
@@ -189,7 +200,7 @@ public class FundAccountServiceImpl implements IFundAccountService {
     /**
      * {@inheritDoc}
      *
-     * 重置密码不验证原密码
+     * 重置密码不验证原密码: 修改账户状态(密码错误时会冻结账户)
      */
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
@@ -199,6 +210,7 @@ public class FundAccountServiceImpl implements IFundAccountService {
         accountOpt.ifPresent(AccountStateMachine::updateAccountCheck);
         String newPassword = PasswordUtils.encrypt(password, account.getSecretKey());
         account.setPassword(newPassword);
+        account.setState(AccountState.NORMAL.getCode());
         account.setModifiedTime(LocalDateTime.now());
         userAccountDao.updateUserAccount(account);
     }

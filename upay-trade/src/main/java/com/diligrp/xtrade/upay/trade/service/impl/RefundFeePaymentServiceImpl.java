@@ -14,6 +14,7 @@ import com.diligrp.xtrade.upay.core.ErrorCode;
 import com.diligrp.xtrade.upay.core.domain.MerchantPermit;
 import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
 import com.diligrp.xtrade.upay.core.model.UserAccount;
+import com.diligrp.xtrade.upay.core.service.IAccessPermitService;
 import com.diligrp.xtrade.upay.core.service.IFundAccountService;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
 import com.diligrp.xtrade.upay.trade.dao.IPaymentFeeDao;
@@ -66,6 +67,9 @@ public class RefundFeePaymentServiceImpl implements IPaymentService {
     private IFundAccountService fundAccountService;
 
     @Resource
+    private IAccessPermitService accessPermitService;
+
+    @Resource
     private SnowflakeKeyManager snowflakeKeyManager;
 
     /**
@@ -83,7 +87,6 @@ public class RefundFeePaymentServiceImpl implements IPaymentService {
             throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "退费资金账号不一致");
         }
 
-        MerchantPermit merchant = payment.getObject(MerchantPermit.class.getName(), MerchantPermit.class);
         Optional<List<Fee>> feesOpt = payment.getObjects(Fee.class.getName());
         List<Fee> fees = feesOpt.orElseThrow(() -> new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "无退费信息"));
         long totalFee = fees.stream().mapToLong(Fee::getAmount).sum();
@@ -135,6 +138,7 @@ public class RefundFeePaymentServiceImpl implements IPaymentService {
         }
 
         // 处理商户退款 - 最后处理园区收益，保证尽快释放共享数据的行锁以提高系统并发
+        MerchantPermit merchant = accessPermitService.loadMerchantPermit(trade.getMchId());
         AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);
         IFundTransaction feeTransaction = merChannel.openTransaction(trade.getType(), now);
         fees.forEach(fee -> feeTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName(), null));

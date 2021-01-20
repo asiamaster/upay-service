@@ -102,9 +102,11 @@ public class DepositPaymentServiceImpl implements IPaymentService {
 
         // 处理个人充值 - 提供密码则校验，否则不校验密码(处理商户差异化需求)
         LocalDateTime now = LocalDateTime.now().withNano(0);
+        MerchantPermit merchant = accessPermitService.loadMerchantPermit(trade.getMchId());
+        int maxPwdErrors = merchant.configuration().maxPwdErrors();
         UserAccount account = ObjectUtils.isEmpty(payment.getPassword()) ?
             accountChannelService.checkTradePermission(payment.getAccountId()) :
-            accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
+            accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), maxPwdErrors);
         accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
         String paymentId = String.valueOf(keyGenerator.nextId());
@@ -143,7 +145,6 @@ public class DepositPaymentServiceImpl implements IPaymentService {
 
         // 处理商户收益 - 最后处理园区收益，保证尽快释放共享数据的行锁以提高系统并发
         if (!fees.isEmpty()) {
-            MerchantPermit merchant = payment.getObject(MerchantPermit.class.getName(), MerchantPermit.class);
             AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);
             IFundTransaction feeTransaction = merChannel.openTransaction(trade.getType(), now);
             fees.forEach(fee -> feeTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName(), null));

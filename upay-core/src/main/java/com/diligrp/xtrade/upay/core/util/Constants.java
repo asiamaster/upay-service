@@ -22,6 +22,8 @@ public final class Constants {
     public static final String CONFIG_MAX_PROTO_AMOUNT = "maxProtocolAmount";
     // 默认最大免密支付金额 - 100元
     public static final String DEFAULT_MAX_PROTO_AMOUNT = "10000";
+    // 默认无限制密码错误次数
+    public static final int DEFAULT_MAX_PASSWORD_ERRORS = -1;
     // 数据字典常量-参数值: 开关打开
     public static final String SWITCH_ON = "on";
     // 数据字典常量-参数值: 开关关闭

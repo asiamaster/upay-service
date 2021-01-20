@@ -171,10 +171,13 @@ public class AccountChannelServiceImpl implements IAccountChannelService {
                 Long errors = incAndGetErrors(dailyKey);
                 // 超过密码最大错误次数，冻结账户
                 if (errors >= maxPwdErrors) {
-                    fundAccountService.freezeUserAccount(accountId);
-                    throw new PaymentChannelException(ErrorCode.INVALID_ACCOUNT_PASSWORD, "交易密码错误，已经锁定账户");
+                    fundAccountService.freezeUserAccountNow(accountId);
+                    removeCachedErrors(dailyKey);
+                    throw new PaymentChannelException(ErrorCode.INVALID_ACCOUNT_PASSWORD, "交易密码错误，已经冻结账户");
                 } else if (errors == maxPwdErrors - 1) {
-                    throw new PaymentChannelException(ErrorCode.INVALID_ACCOUNT_PASSWORD, "交易密码错误，再输入错误一次将锁定账户");
+                    throw new PaymentChannelException(ErrorCode.INVALID_ACCOUNT_PASSWORD, "交易密码错误，再输入错误1次将冻结账户");
+                } else if (errors == maxPwdErrors - 2) {
+                    throw new PaymentChannelException(ErrorCode.INVALID_ACCOUNT_PASSWORD, "交易密码错误，再输入错误2次将冻结账户");
                 }
             }
             throw new PaymentChannelException(ErrorCode.INVALID_ACCOUNT_PASSWORD, "交易密码错误");
@@ -202,10 +205,15 @@ public class AccountChannelServiceImpl implements IAccountChannelService {
 
     /**
      * {@inheritDoc}
+     *
+     * 修改账户状态为正常、清除密码错误次数(密码错误时会冻结账户)
      */
     @Override
     public void resetTradePassword(long accountId, String password) {
         fundAccountService.resetTradePassword(accountId, password);
+        // 清除密码错误次数
+        String dailyKey = PASSWORD_KEY_PREFIX + DateUtils.formatDate(LocalDate.now(), DateUtils.YYYYMMDD) + accountId;
+        removeCachedErrors(dailyKey);
     }
 
     /**

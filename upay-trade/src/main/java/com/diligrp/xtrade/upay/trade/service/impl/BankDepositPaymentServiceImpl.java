@@ -14,6 +14,7 @@ import com.diligrp.xtrade.upay.core.ErrorCode;
 import com.diligrp.xtrade.upay.core.domain.MerchantPermit;
 import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
 import com.diligrp.xtrade.upay.core.model.UserAccount;
+import com.diligrp.xtrade.upay.core.service.IAccessPermitService;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
 import com.diligrp.xtrade.upay.trade.dao.IPaymentFeeDao;
 import com.diligrp.xtrade.upay.trade.dao.ITradeOrderDao;
@@ -67,6 +68,9 @@ public class BankDepositPaymentServiceImpl implements IPaymentService {
     private IAccountChannelService accountChannelService;
 
     @Resource
+    private IAccessPermitService accessPermitService;
+
+    @Resource
     private SnowflakeKeyManager snowflakeKeyManager;
 
     /**
@@ -88,7 +92,9 @@ public class BankDepositPaymentServiceImpl implements IPaymentService {
 
         // 处理网银充值
         LocalDateTime now = LocalDateTime.now().withNano(0);
-        UserAccount account = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
+        MerchantPermit merchant = accessPermitService.loadMerchantPermit(trade.getMchId());
+        int maxPwdErrors = merchant.configuration().maxPwdErrors();
+        UserAccount account = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), maxPwdErrors);
         accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
         String paymentId = String.valueOf(keyGenerator.nextId());
@@ -128,7 +134,6 @@ public class BankDepositPaymentServiceImpl implements IPaymentService {
 
         // 处理商户退费 - 最后处理园区收益，保证尽快释放共享数据的行锁以提高系统并发
         if (!fees.isEmpty()) {
-            MerchantPermit merchant = payment.getObject(MerchantPermit.class.getName(), MerchantPermit.class);
             AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);
             IFundTransaction feeTransaction = merChannel.openTransaction(trade.getType(), now);
             fees.forEach(fee -> feeTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName(), null));
