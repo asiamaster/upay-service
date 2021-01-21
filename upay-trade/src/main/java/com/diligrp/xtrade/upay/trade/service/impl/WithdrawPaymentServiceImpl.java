@@ -104,7 +104,7 @@ public class WithdrawPaymentServiceImpl implements IPaymentService {
         LocalDateTime now = LocalDateTime.now().withNano(0);
         MerchantPermit merchant = accessPermitService.loadMerchantPermit(trade.getMchId());
         int maxPwdErrors = merchant.configuration().maxPwdErrors();
-        UserAccount account = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
+        UserAccount account = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), maxPwdErrors);
         accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
         String paymentId = String.valueOf(keyGenerator.nextId());
