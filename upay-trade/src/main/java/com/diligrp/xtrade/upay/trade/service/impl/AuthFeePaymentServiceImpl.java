@@ -210,7 +210,7 @@ public class AuthFeePaymentServiceImpl extends FeePaymentServiceImpl implements 
         paymentFeeDao.insertPaymentFees(paymentFees);
 
         // 生成缴费账户的业务账单
-        String typeName = StatementType.PAY_FEE.getName() + (ObjectUtils.isNull(trade.getDescription()) ?
+        String typeName = StatementType.PAY_FEE.getName() + (ObjectUtils.isEmpty(trade.getDescription()) ?
             "" : "-" + trade.getDescription());
         UserStatement statement = UserStatement.builder().tradeId(trade.getTradeId()).paymentId(payment.getPaymentId())
             .channelId(payment.getChannelId()).accountId(payment.getAccountId(), account.getParentId())

@@ -145,7 +145,7 @@ public class FeePaymentServiceImpl implements IPaymentService {
 
         // 只有通过账户余额进行缴费才生成缴费账户业务账单
         if (payment.getChannelId() == ChannelType.ACCOUNT.getCode()) {
-            String typeName = StatementType.PAY_FEE.getName() + (ObjectUtils.isNull(trade.getDescription())
+            String typeName = StatementType.PAY_FEE.getName() + (ObjectUtils.isEmpty(trade.getDescription())
                 ? "" : "-" + trade.getDescription());
             UserStatement statement = UserStatement.builder().tradeId(trade.getTradeId()).paymentId(paymentDo.getPaymentId())
                 .channelId(paymentDo.getChannelId()).accountId(paymentDo.getAccountId(), account.getParentId())

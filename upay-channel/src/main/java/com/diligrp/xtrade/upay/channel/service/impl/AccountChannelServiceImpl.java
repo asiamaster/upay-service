@@ -64,7 +64,7 @@ public class AccountChannelServiceImpl implements IAccountChannelService {
         if (merchant.getParentId() != 0) {
             throw new FundAccountException(ErrorCode.OPERATION_NOT_ALLOWED, "不能在子商户下注册账号");
         }
-        return fundAccountService.createUserAccount(merchant.getMchId(), account);
+        return fundAccountService.createUserAccount(merchant.parentMchId(), account);
     }
 
     /**
