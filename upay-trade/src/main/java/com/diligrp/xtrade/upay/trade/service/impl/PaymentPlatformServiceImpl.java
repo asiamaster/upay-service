@@ -9,6 +9,7 @@ import com.diligrp.xtrade.upay.core.ErrorCode;
 import com.diligrp.xtrade.upay.core.domain.ApplicationPermit;
 import com.diligrp.xtrade.upay.core.domain.MerchantPermit;
 import com.diligrp.xtrade.upay.core.model.UserAccount;
+import com.diligrp.xtrade.upay.core.service.IAccessPermitService;
 import com.diligrp.xtrade.upay.core.service.IFundAccountService;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
 import com.diligrp.xtrade.upay.trade.dao.ITradeOrderDao;
@@ -45,6 +46,9 @@ public class PaymentPlatformServiceImpl implements IPaymentPlatformService, Bean
 
     @Resource
     private IAccountChannelService accountChannelService;
+
+    @Resource
+    private IAccessPermitService accessPermitService;
 
     @Resource
     private SnowflakeKeyManager snowflakeKeyManager;
@@ -92,9 +96,7 @@ public class PaymentPlatformServiceImpl implements IPaymentPlatformService, Bean
 
         Optional<TradeOrder> tradeOpt = tradeOrderDao.findTradeOrderById(request.getTradeId());
         TradeOrder trade = tradeOpt.orElseThrow(() -> new TradePaymentException(ErrorCode.TRADE_NOT_FOUND, "交易不存在"));
-        if (!ObjectUtils.equals(trade.getMchId(), application.getMerchant().getMchId())) {
-            throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "该商户下交易不存在");
-        }
+        checkTradePermission(trade, application.getMerchant());
         if (trade.getState() != TradeState.PENDING.getCode()) {
             throw new TradePaymentException(ErrorCode.INVALID_TRADE_STATE, "无效的交易状态");
         }
@@ -126,9 +128,7 @@ public class PaymentPlatformServiceImpl implements IPaymentPlatformService, Bean
     public PaymentResult confirm(ApplicationPermit application, ConfirmRequest request) {
         Optional<TradeOrder> tradeOpt = tradeOrderDao.findTradeOrderById(request.getTradeId());
         TradeOrder trade = tradeOpt.orElseThrow(() -> new TradePaymentException(ErrorCode.TRADE_NOT_FOUND, "交易不存在"));
-        if (!ObjectUtils.equals(trade.getMchId(), application.getMerchant().getMchId())) {
-            throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "该商户下交易不存在");
-        }
+        checkTradePermission(trade, application.getMerchant());
         if (!TradeState.forConfirm(trade.getState())) {
             throw new TradePaymentException(ErrorCode.INVALID_TRADE_STATE, "无效的交易状态，不能确认消费");
         }
@@ -150,9 +150,7 @@ public class PaymentPlatformServiceImpl implements IPaymentPlatformService, Bean
     public PaymentResult refund(ApplicationPermit application, RefundRequest request) {
         Optional<TradeOrder> tradeOpt = tradeOrderDao.findTradeOrderById(request.getTradeId());
         TradeOrder trade = tradeOpt.orElseThrow(() -> new TradePaymentException(ErrorCode.TRADE_NOT_FOUND, "交易不存在"));
-        if (!ObjectUtils.equals(trade.getMchId(), application.getMerchant().getMchId())) {
-            throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "该商户下交易不存在");
-        }
+        checkTradePermission(trade, application.getMerchant());
         if (!TradeState.forRefund(trade.getState())) {
             throw new TradePaymentException(ErrorCode.INVALID_TRADE_STATE, "无效的交易状态，不能进行交易退款");
         }
@@ -177,9 +175,7 @@ public class PaymentPlatformServiceImpl implements IPaymentPlatformService, Bean
     public PaymentResult cancel(ApplicationPermit application, RefundRequest request) {
         Optional<TradeOrder> tradeOpt = tradeOrderDao.findTradeOrderById(request.getTradeId());
         TradeOrder trade = tradeOpt.orElseThrow(() -> new TradePaymentException(ErrorCode.TRADE_NOT_FOUND, "交易不存在"));
-        if (!ObjectUtils.equals(trade.getMchId(), application.getMerchant().getMchId())) {
-            throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "该商户下交易不存在");
-        }
+        checkTradePermission(trade, application.getMerchant());
         if (!TradeState.forCancel(trade.getState())) {
             throw new TradePaymentException(ErrorCode.INVALID_TRADE_STATE, "无效的交易状态，不能撤销交易");
         }
@@ -202,9 +198,7 @@ public class PaymentPlatformServiceImpl implements IPaymentPlatformService, Bean
     public PaymentResult correct(ApplicationPermit application, CorrectRequest request) {
         Optional<TradeOrder> tradeOpt = tradeOrderDao.findTradeOrderById(request.getTradeId());
         TradeOrder trade = tradeOpt.orElseThrow(() -> new TradePaymentException(ErrorCode.TRADE_NOT_FOUND, "交易不存在"));
-        if (!ObjectUtils.equals(trade.getMchId(), application.getMerchant().getMchId())) {
-            throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "该商户下交易不存在");
-        }
+        checkTradePermission(trade, application.getMerchant());
         if (!TradeState.forCorrect(trade.getState())) {
             throw new TradePaymentException(ErrorCode.INVALID_TRADE_STATE, "无效的交易状态，不能进行交易冲正");
         }
@@ -217,6 +211,16 @@ public class PaymentPlatformServiceImpl implements IPaymentPlatformService, Bean
         correct.put(MerchantPermit.class.getName(), application.getMerchant());
         request.fee().ifPresent(fee -> correct.put(Fee.class.getName(), fee));
         return service.correct(trade, correct);
+    }
+
+    /**
+     * 检查商户是否有权限操作该交易订单: 接口权限商户与交易订单所属商户必须有共同的父商户
+     */
+    private void checkTradePermission(TradeOrder order, MerchantPermit permit) {
+        MerchantPermit merchant = accessPermitService.loadMerchantPermit(order.getMchId());
+        if (!ObjectUtils.equals(merchant.parentMchId(), permit.parentMchId())) {
+            throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "商户没有权限操作该交易订单");
+        }
     }
 
     @Override
