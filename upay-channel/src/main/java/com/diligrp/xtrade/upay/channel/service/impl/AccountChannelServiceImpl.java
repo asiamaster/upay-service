@@ -61,9 +61,7 @@ public class AccountChannelServiceImpl implements IAccountChannelService {
      */
     @Override
     public long registerFundAccount(MerchantPermit merchant, RegisterAccount account) {
-        if (merchant.getParentId() != 0) {
-            throw new FundAccountException(ErrorCode.OPERATION_NOT_ALLOWED, "不能在子商户下注册账号");
-        }
+        // 子商户下创建资金账号自动转为主商户
         return fundAccountService.createUserAccount(merchant.parentMchId(), account);
     }
 
