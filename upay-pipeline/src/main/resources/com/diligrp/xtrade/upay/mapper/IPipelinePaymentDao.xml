@@ -89,13 +89,16 @@
 
     <select id="listPipelineStatements" parameterType="com.diligrp.xtrade.upay.pipeline.domain.PipelineStatementQuery" resultType="com.diligrp.xtrade.upay.pipeline.domain.UserPipelineStatement">
         SELECT
-            up.`name` AS pipeline, upp.to_account AS toAccount, upp.to_name AS toName, upp.amount, upp.fee, uto.serial_no AS serialNo, upp.state, upp.created_time AS createdTime, upp.modified_time AS modifedTime
+            up.`name` AS pipeline, upp.to_account AS toAccount, upp.to_name AS toName, utp.channel_id AS channelId, upp.amount, upp.fee,
+            uto.serial_no AS serialNo, upp.state, upp.created_time AS createdTime, upp.modified_time AS modifedTime
         FROM
             upay_pipeline_payment upp
         INNER JOIN
             upay_pipeline up ON upp.`code` = up.`code`
         INNER JOIN
             upay_trade_order uto ON upp.trade_id = uto.trade_id
+        INNER JOIN
+            upay_trade_payment utp ON upp.payment_id = utp.payment_id
         WHERE
             uto.mch_id = #{mchId}
             <if test="type != null">

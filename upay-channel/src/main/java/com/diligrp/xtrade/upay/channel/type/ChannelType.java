@@ -3,8 +3,9 @@ package com.diligrp.xtrade.upay.channel.type;
 import com.diligrp.xtrade.shared.type.IEnumType;
 
 import java.util.Arrays;
-import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -69,8 +70,8 @@ public enum ChannelType implements IEnumType {
         return TYPES.filter(type -> type.name().equalsIgnoreCase(bankCode)).findFirst();
     }
 
-    public static List<ChannelType> getTypeList() {
-        return Arrays.asList(ChannelType.values());
+    public static Map<Integer, String> getTypeNameMap() {
+        return Arrays.stream(ChannelType.values()).collect(Collectors.toMap(ChannelType::getCode, ChannelType::getName));
     }
 
     /**

@@ -11,6 +11,7 @@ import com.diligrp.xtrade.upay.channel.domain.IFundTransaction;
 import com.diligrp.xtrade.upay.channel.model.FrozenOrder;
 import com.diligrp.xtrade.upay.channel.model.UserStatement;
 import com.diligrp.xtrade.upay.channel.service.IAccountChannelService;
+import com.diligrp.xtrade.upay.channel.type.ChannelType;
 import com.diligrp.xtrade.upay.channel.type.FrozenState;
 import com.diligrp.xtrade.upay.channel.type.FrozenType;
 import com.diligrp.xtrade.upay.channel.type.StatementType;
@@ -58,6 +59,7 @@ import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 通道支付回调处理服务
@@ -307,6 +309,11 @@ public class PipelinePaymentProcessor implements IPipelinePaymentProcessor {
         List<UserPipelineStatement> statements = Collections.emptyList();
         if (total > 0) {
             statements = pipelinePaymentDao.listPipelineStatements(query);
+            // 设置渠道名称
+            Map<Integer, String> typeMap = ChannelType.getTypeNameMap();
+            statements.forEach(statement -> {
+                statement.setChannel(typeMap.get(statement.getChannelId()));
+            });
         }
 
         return PageMessage.success(total, statements);

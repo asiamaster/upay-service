@@ -9,12 +9,16 @@ import java.time.LocalDateTime;
  * @date: 2020/12/22
  */
 public class UserPipelineStatement {
-    // 通道名
+    // 支付通道
     private String pipeline;
-    // 通道账户
+    // 账户
     private String toAccount;
     // 账户名
     private String toName;
+    // 渠道ID
+    private Integer channelId;
+    // 渠道名称
+    private String channel;
     // 申请金额-分
     private Long amount;
     // 费用金额-分
@@ -50,6 +54,22 @@ public class UserPipelineStatement {
 
     public void setToName(String toName) {
         this.toName = toName;
+    }
+
+    public Integer getChannelId() {
+        return channelId;
+    }
+
+    public void setChannelId(Integer channelId) {
+        this.channelId = channelId;
+    }
+
+    public String getChannel() {
+        return channel;
+    }
+
+    public void setChannel(String channel) {
+        this.channel = channel;
     }
 
     public Long getAmount() {
