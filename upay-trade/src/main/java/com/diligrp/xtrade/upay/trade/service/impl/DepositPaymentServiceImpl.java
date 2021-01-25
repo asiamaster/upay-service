@@ -213,7 +213,7 @@ public class DepositPaymentServiceImpl implements IPaymentService {
         // 计算实际操作金额, 生成交易冲正时账户业务账单
         AtomicLong totalAmount = new AtomicLong(correct.getAmount());
         feeOpt.ifPresent(fee -> totalAmount.addAndGet(Math.abs(fee.getAmount())));
-        String typeName = StatementType.DEPOSIT.getName() + "-" + StatementType.CORRECT.getName();
+        String typeName = StatementType.CORRECT.getName() + "-" + StatementType.DEPOSIT.getName();
         UserStatement statement = UserStatement.builder().tradeId(trade.getTradeId()).paymentId(paymentId)
             .channelId(payment.getChannelId()).accountId(payment.getAccountId(), account.getParentId())
             .type(StatementType.CORRECT.getCode()).typeName(typeName).amount(totalAmount.get()).fee(0L)

@@ -241,8 +241,8 @@ public class AllFeePaymentServiceImpl implements IPaymentService {
         }
 
         // 只有通过账户余额进行缴费退款时才生成账户业务账单
-        String typeName = ObjectUtils.isEmpty(trade.getDescription()) ? StatementType.PAY_FEE.getName() + "-"
-            + StatementType.REFUND.getName() : trade.getDescription() + "-" + StatementType.REFUND.getName();
+        String typeName = ObjectUtils.isEmpty(trade.getDescription()) ? StatementType.REFUND.getName() + "-"
+            + StatementType.PAY_FEE.getName() : StatementType.REFUND.getName() + "-" + trade.getDescription();
         if (ChannelType.ACCOUNT.equalTo(payment.getChannelId()) && totalFee - totalDeductAmount > 0) {
             UserStatement statement = UserStatement.builder().tradeId(trade.getTradeId()).paymentId(paymentId)
                 .channelId(ChannelType.ACCOUNT.getCode()).accountId(account.getAccountId(), account.getParentId())

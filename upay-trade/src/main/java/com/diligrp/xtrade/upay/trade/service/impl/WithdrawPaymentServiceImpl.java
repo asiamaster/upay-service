@@ -213,7 +213,7 @@ public class WithdrawPaymentServiceImpl implements IPaymentService {
         // 生成交易冲正时账户业务账单
         AtomicLong totalAmount = new AtomicLong(correct.getAmount());
         feeOpt.ifPresent(fee -> totalAmount.addAndGet(Math.abs(fee.getAmount())));
-        String typeName = StatementType.WITHDRAW.getName() + "-" + StatementType.CORRECT.getName();
+        String typeName = StatementType.CORRECT.getName() + "-" + StatementType.WITHDRAW.getName();
         UserStatement statement = UserStatement.builder().tradeId(trade.getTradeId()).paymentId(paymentId)
             .channelId(payment.getChannelId()).accountId(payment.getAccountId(), account.getParentId())
             .type(StatementType.CORRECT.getCode()).typeName(typeName).amount(totalAmount.get()).fee(0L)

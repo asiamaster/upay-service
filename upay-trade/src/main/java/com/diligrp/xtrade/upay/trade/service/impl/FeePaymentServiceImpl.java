@@ -219,8 +219,8 @@ public class FeePaymentServiceImpl implements IPaymentService {
         }
 
         // 生成退款账户业务账单
-        String typeName = ObjectUtils.isNull(trade.getDescription()) ? StatementType.PAY_FEE.getName() + "-"
-            + StatementType.REFUND.getName() : trade.getDescription() + "-" + StatementType.REFUND.getName();
+        String typeName = ObjectUtils.isEmpty(trade.getDescription()) ? StatementType.REFUND.getName()  + "-" +
+            StatementType.PAY_FEE.getName() : StatementType.REFUND.getName() + "-" + trade.getDescription();
         if (ChannelType.ACCOUNT.equalTo(payment.getChannelId())) {
             UserStatement statement = UserStatement.builder().tradeId(trade.getTradeId()).paymentId(paymentId)
                 .channelId(payment.getChannelId()).accountId(payment.getAccountId(), account.getParentId())
