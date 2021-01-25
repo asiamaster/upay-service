@@ -29,7 +29,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -219,8 +221,8 @@ public class FundAccountServiceImpl implements IFundAccountService {
      * {@inheritDoc}
      */
     @Override
-    public FundAccount sumCustomerFund(Long customerId) {
-        Optional<FundAccount> fundOpt = fundAccountDao.sumCustomerFund(customerId);
+    public FundAccount sumCustomerFund(Long mchId, Long customerId) {
+        Optional<FundAccount> fundOpt = fundAccountDao.sumCustomerFund(mchId, customerId);
         return fundOpt.orElseThrow(() -> new FundAccountException(ErrorCode.OBJECT_NOT_FOUND, "该客户无资金账号"));
     }
 
@@ -228,7 +230,7 @@ public class FundAccountServiceImpl implements IFundAccountService {
      * {@inheritDoc}
      */
     @Override
-    public List<FundAccount> listFundAccounts(Long customerId) {
-        return fundAccountDao.listFundAccounts(customerId);
+    public List<FundAccount> listFundAccounts(Long mchId, Long customerId) {
+        return fundAccountDao.listFundAccounts(mchId, customerId);
     }
 }

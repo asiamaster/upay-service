@@ -19,6 +19,7 @@ import com.diligrp.xtrade.upay.channel.model.FrozenOrder;
 import com.diligrp.xtrade.upay.channel.service.IAccountChannelService;
 import com.diligrp.xtrade.upay.channel.service.IFrozenOrderService;
 import com.diligrp.xtrade.upay.channel.type.FrozenType;
+import com.diligrp.xtrade.upay.core.domain.ApplicationPermit;
 import com.diligrp.xtrade.upay.core.model.FundAccount;
 import com.diligrp.xtrade.upay.core.model.UserAccount;
 import com.diligrp.xtrade.upay.core.service.IFundAccountService;
@@ -125,9 +126,11 @@ public class FundServiceComponent {
     public CustomerBalance customer(ServiceRequest<CustomerId> request) {
         CustomerId customer = request.getData();
         AssertUtils.notNull(customer.getCustomerId(), "customerId missed");
-        FundAccount fund = fundAccountService.sumCustomerFund(customer.getCustomerId());
-        List<FundBalance> accountFunds = fundAccountService.listFundAccounts(customer.getCustomerId()).stream()
-            .map(fundAccount -> FundBalance.of(fundAccount.getAccountId(), fundAccount.getBalance(), fundAccount.getFrozenAmount()))
+        ApplicationPermit permit = request.getContext().getObject(ApplicationPermit.class.getName(), ApplicationPermit.class);
+        FundAccount fund = fundAccountService.sumCustomerFund(permit.getMerchant().parentMchId(), customer.getCustomerId());
+        List<FundBalance> accountFunds =
+            fundAccountService.listFundAccounts(permit.getMerchant().parentMchId(), customer.getCustomerId()).stream().map(
+            fundAccount -> FundBalance.of(fundAccount.getAccountId(), fundAccount.getBalance(), fundAccount.getFrozenAmount()))
             .collect(Collectors.toList());
         return CustomerBalance.of(customer.getCustomerId(), fund.getBalance(), fund.getFrozenAmount(), accountFunds);
     }

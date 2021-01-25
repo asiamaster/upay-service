@@ -2,6 +2,7 @@ package com.diligrp.xtrade.upay.core.dao;
 
 import com.diligrp.xtrade.shared.mybatis.MybatisMapperSupport;
 import com.diligrp.xtrade.upay.core.model.FundAccount;
+import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -22,7 +23,7 @@ public interface IFundAccountDao extends MybatisMapperSupport {
 
     int compareAndSetVersion(FundAccount fundAccount);
 
-    Optional<FundAccount> sumCustomerFund(Long customerId);
+    Optional<FundAccount> sumCustomerFund(@Param("mchId") Long mchId, @Param("customerId") Long customerId);
 
-    List<FundAccount> listFundAccounts(Long customerId);
+    List<FundAccount> listFundAccounts(@Param("mchId") Long mchId, @Param("customerId") Long customerId);
 }

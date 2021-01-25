@@ -58,7 +58,7 @@
         WHERE account_id = #{accountId} AND version = #{version}
     </update>
 
-    <select id="sumCustomerFund" parameterType="long" resultType="com.diligrp.xtrade.upay.core.model.FundAccount">
+    <select id="sumCustomerFund" resultType="com.diligrp.xtrade.upay.core.model.FundAccount">
         SELECT
             SUM(ufa.balance) AS balance, SUM(ufa.frozen_amount) AS frozenAmount
         FROM
@@ -71,7 +71,7 @@
             uua.customer_id
     </select>
 
-    <select id="listFundAccounts" parameterType="long" resultType="com.diligrp.xtrade.upay.core.model.FundAccount">
+    <select id="listFundAccounts" resultType="com.diligrp.xtrade.upay.core.model.FundAccount">
         SELECT
             ufa.account_id AS accountId, ufa.balance, ufa.frozen_amount AS frozenAmount
         FROM

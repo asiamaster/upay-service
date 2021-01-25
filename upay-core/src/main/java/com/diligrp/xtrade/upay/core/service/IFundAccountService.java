@@ -58,10 +58,10 @@ public interface IFundAccountService {
     /**
      * 查询客户账户资金汇总信息
      */
-    FundAccount sumCustomerFund(Long customerId);
+    FundAccount sumCustomerFund(Long mchId, Long customerId);
 
     /**
      * 查询客户资金账户列表
      */
-    List<FundAccount> listFundAccounts(Long customerId);
+    List<FundAccount> listFundAccounts(Long mchId, Long customerId);
 }

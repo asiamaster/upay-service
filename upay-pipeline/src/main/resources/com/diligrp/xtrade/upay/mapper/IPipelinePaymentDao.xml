@@ -129,6 +129,8 @@
             upay_pipeline up ON upp.`code` = up.`code`
         INNER JOIN
             upay_trade_order uto ON upp.trade_id = uto.trade_id
+        INNER JOIN
+            upay_trade_payment utp ON upp.payment_id = utp.payment_id
         WHERE
             uto.mch_id = #{mchId}
             <if test="accountId != null">
