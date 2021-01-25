@@ -101,6 +101,9 @@
             upay_trade_payment utp ON upp.payment_id = utp.payment_id
         WHERE
             uto.mch_id = #{mchId}
+            <if test="accountId != null">
+                AND utp.`account_id` = #{accountId}
+            </if>
             <if test="type != null">
                 AND uto.`type` = #{type}
             </if>
@@ -128,6 +131,9 @@
             upay_trade_order uto ON upp.trade_id = uto.trade_id
         WHERE
             uto.mch_id = #{mchId}
+            <if test="accountId != null">
+                AND utp.`account_id` = #{accountId}
+            </if>
             <if test="type != null">
                 AND uto.`type` = #{type}
             </if>

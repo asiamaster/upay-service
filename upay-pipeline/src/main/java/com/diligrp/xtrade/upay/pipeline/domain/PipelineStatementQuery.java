@@ -17,6 +17,8 @@ public class PipelineStatementQuery extends PageQuery {
     private Integer pageSize = 20;
     // 商户ID
     private Long mchId;
+    // 资金账号ID
+    private Long accountId;
     // 通道流水类型-圈提
     private Integer type;
     // 开始日期
@@ -48,6 +50,14 @@ public class PipelineStatementQuery extends PageQuery {
 
     public void setMchId(Long mchId) {
         this.mchId = mchId;
+    }
+
+    public Long getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(Long accountId) {
+        this.accountId = accountId;
     }
 
     public Integer getType() {
