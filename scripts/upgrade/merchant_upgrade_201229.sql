@@ -5,6 +5,7 @@ ALTER TABLE `upay_merchant` ADD COLUMN `parent_id` BIGINT NOT NULL COMMENT '父�
 ALTER TABLE `upay_merchant` ADD COLUMN `param` VARCHAR(120) NULL COMMENT '参数配置' AFTER `pledge_account`;
 UPDATE `upay_merchant` SET `parent_id` = 0;
 UPDATE `upay_merchant` SET param = '{"maxPwdErrors": 5}' WHERE `code` = 'SY';
+UPDATE `upay_merchant` SET param = '{"maxPwdErrors": 5}' WHERE parent_id = 9;
 
 -- 新增沈阳市场
 DELETE FROM `upay_merchant` WHERE mch_id = 9;
