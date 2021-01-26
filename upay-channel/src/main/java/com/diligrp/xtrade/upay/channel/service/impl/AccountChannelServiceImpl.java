@@ -22,6 +22,7 @@ import com.diligrp.xtrade.upay.core.service.IFundAccountService;
 import com.diligrp.xtrade.upay.core.service.IFundStreamEngine;
 import com.diligrp.xtrade.upay.core.type.AccountState;
 import com.diligrp.xtrade.upay.core.util.AccountStateMachine;
+import com.diligrp.xtrade.upay.core.util.AsyncTaskExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -169,7 +170,7 @@ public class AccountChannelServiceImpl implements IAccountChannelService {
                 Long errors = incAndGetErrors(dailyKey);
                 // 超过密码最大错误次数，冻结账户
                 if (errors >= maxPwdErrors) {
-                    fundAccountService.freezeUserAccountNow(accountId);
+                    AsyncTaskExecutor.submit(() -> fundAccountService.freezeUserAccountNow(accountId));
                     removeCachedErrors(dailyKey);
                     throw new PaymentChannelException(ErrorCode.INVALID_ACCOUNT_PASSWORD, "交易密码错误，已经冻结账户");
                 } else if (errors == maxPwdErrors - 1) {

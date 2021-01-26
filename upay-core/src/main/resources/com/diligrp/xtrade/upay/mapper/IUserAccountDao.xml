@@ -53,6 +53,9 @@
             <if test="password != null">
                 , password = #{password}
             </if>
+            <if test="permission != null">
+                , permission = #{permission}
+            </if>
             <if test="state != null">
                 , state = #{state}
             </if>

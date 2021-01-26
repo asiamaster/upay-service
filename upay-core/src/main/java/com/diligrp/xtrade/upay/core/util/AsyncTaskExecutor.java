@@ -25,4 +25,13 @@ public class AsyncTaskExecutor {
             throw new PaymentServiceException(ErrorCode.SYSTEM_UNKNOWN_ERROR, "异步任务执行异常");
         }
     }
+
+    public static void submit(Runnable task) {
+        try {
+            Future<?> future = treadPool.submit(task);
+            future.get();
+        } catch (Exception ex) {
+            throw new PaymentServiceException(ErrorCode.SYSTEM_UNKNOWN_ERROR, "异步任务执行异常");
+        }
+    }
 }

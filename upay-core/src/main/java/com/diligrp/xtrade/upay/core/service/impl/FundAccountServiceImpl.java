@@ -14,7 +14,7 @@ import com.diligrp.xtrade.upay.core.exception.FundAccountException;
 import com.diligrp.xtrade.upay.core.model.FundAccount;
 import com.diligrp.xtrade.upay.core.model.UserAccount;
 import com.diligrp.xtrade.upay.core.service.IFundAccountService;
-import com.diligrp.xtrade.upay.core.type.AccountPermission;
+import com.diligrp.xtrade.upay.core.type.Permission;
 import com.diligrp.xtrade.upay.core.type.AccountState;
 import com.diligrp.xtrade.upay.core.type.AccountType;
 import com.diligrp.xtrade.upay.core.type.IdType;
@@ -29,9 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -72,7 +70,7 @@ public class FundAccountServiceImpl implements IFundAccountService {
         String password = PasswordUtils.encrypt(account.getPassword(), secretKey);
         long parentId = account.getParentId() == null ? 0L : account.getParentId();
         UserAccount userAccount = UserAccount.builder().customerId(account.getCustomerId()).accountId(accountId)
-            .parentId(parentId).type(account.getType()).useFor(account.getUseFor()).permission(AccountPermission.ALL_PERMISSION)
+            .parentId(parentId).type(account.getType()).useFor(account.getUseFor()).permission(Permission.ALL_PERMISSION)
             .name(account.getName()).gender(account.getGender()).mobile(account.getMobile()).email(account.getEmail())
             .idType(account.getIdType()).idCode(account.getIdCode()).address(account.getAddress()).password(password)
             .secretKey(secretKey).state(AccountState.NORMAL.getCode()).mchId(mchId).version(0).createdTime(when).build();

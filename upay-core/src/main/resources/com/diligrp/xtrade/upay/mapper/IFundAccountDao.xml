@@ -66,7 +66,7 @@
         INNER JOIN
             upay_user_account uua ON ufa.account_id = uua.account_id
         WHERE
-            uua.state != 3 AND uua.customer_id = #{customerId}
+            uua.mch_id = #{mchId} AND uua.customer_id = #{customerId} AND uua.state != 3
         GROUP BY
             uua.customer_id
     </select>
@@ -79,7 +79,7 @@
         INNER JOIN
             upay_user_account uua ON ufa.account_id = uua.account_id
         WHERE
-            uua.state != 3 AND uua.customer_id = #{customerId}
+            uua.mch_id = #{mchId} AND uua.customer_id = #{customerId} AND uua.state != 3
         ORDER BY
             ufa.id
     </select>

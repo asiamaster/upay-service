@@ -1,6 +1,9 @@
 package com.diligrp.xtrade.upay.core.model;
 
 import com.diligrp.xtrade.shared.domain.BaseDo;
+import com.diligrp.xtrade.upay.core.ErrorCode;
+import com.diligrp.xtrade.upay.core.exception.PaymentServiceException;
+import com.diligrp.xtrade.upay.core.type.Permission;
 
 import java.time.LocalDateTime;
 import java.util.function.Consumer;
@@ -202,6 +205,12 @@ public class UserAccount extends BaseDo {
         }
     }
 
+    public void checkPermission(Permission permission) {
+        if(!Permission.hasPermission(this.permission, permission)) {
+            throw new PaymentServiceException(ErrorCode.OPERATION_NOT_ALLOWED, "资金账户没有" + permission.getName());
+        }
+    }
+
     public static Builder builder() {
         return new UserAccount().new Builder();
     }
@@ -299,6 +308,11 @@ public class UserAccount extends BaseDo {
 
         public Builder createdTime(LocalDateTime createdTime) {
             UserAccount.this.createdTime = createdTime;
+            return this;
+        }
+
+        public Builder modifiedTime(LocalDateTime modifiedTime) {
+            UserAccount.this.modifiedTime = modifiedTime;
             return this;
         }
 
