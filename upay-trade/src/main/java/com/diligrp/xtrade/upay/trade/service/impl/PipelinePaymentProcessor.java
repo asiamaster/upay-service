@@ -262,6 +262,12 @@ public class PipelinePaymentProcessor implements IPipelinePaymentProcessor {
                 throw new TradePaymentException(ErrorCode.DATA_CONCURRENT_UPDATED, "系统忙，请稍后再试");
             }
         } else if (response.getState() == ProcessState.PROCESSING) {
+            // 修改通道申请为"处理中"
+            PipelinePaymentDto pipelinePaymentDto = PipelinePaymentDto.of(paymentId, response.getSerialNo(), response.getFee(),
+                ProcessState.PROCESSING.getCode(), response.getDescription(), pipelinePayment.getVersion(), now);
+            if (pipelinePaymentDao.compareAndSetState(pipelinePaymentDto) == 0) {
+                throw new TradePaymentException(ErrorCode.DATA_CONCURRENT_UPDATED, "系统忙，请稍后再试");
+            }
             // 通道接口返回"处理中"则发起第一次异常处理流程
             pipelineFailed(request);
         }
