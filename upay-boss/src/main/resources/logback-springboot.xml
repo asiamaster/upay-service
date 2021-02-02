@@ -33,10 +33,13 @@
 
 	<!-- 开发环境 -->
 	<springProfile name="dev">
-		<root level="DEBUG">
+		<root level="INFO">
 			<appender-ref ref="CONSOLE" />
-			<appender-ref ref="FILE" />
 		</root>
+
+		<logger name="com.diligrp" level="DEBUG" additivity="false">
+			<appender-ref ref="CONSOLE" />
+		</logger>
 	</springProfile>
 
 	<!-- 测试环境 -->
@@ -45,6 +48,11 @@
 			<appender-ref ref="CONSOLE" />
 			<appender-ref ref="FILE" />
 		</root>
+
+		<logger name="com.diligrp" level="DEBUG" additivity="false">
+			<appender-ref ref="CONSOLE" />
+			<appender-ref ref="FILE" />
+		</logger>
 	</springProfile>
 
 	<!-- 灰度、生产环境 -->

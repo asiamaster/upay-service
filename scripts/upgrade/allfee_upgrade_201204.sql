@@ -20,9 +20,15 @@ CREATE TABLE `upay_deduct_fee` (
 
 -- 增加费用描述
 ALTER TABLE `upay_payment_fee`
-MODIFY COLUMN `type_name` varchar(60) COMMENT '类型说明' AFTER `type`,
-ADD COLUMN `description` varchar(80) COMMENT '费用描述' AFTER `type_name`;
+MODIFY COLUMN `type_name` VARCHAR(60) COMMENT '类型说明' AFTER `type`,
+ADD COLUMN `description` VARCHAR(80) COMMENT '费用描述' AFTER `type_name`;
 
 DELETE FROM `upay_user_account` WHERE `account_id` = 0;
 INSERT INTO `upay_user_account`(`customer_id`, `account_id`, `parent_id`, `type`, `use_for`, `permission`, `name`, `mobile`, `address`, `password`, `secret_key`, `state`, `mch_id`, `version`, `created_time`)
-VALUES (0, 0, 0, 1, 1, 268435455, '虚拟客户', '13688582561', '中国地利集团', '62feeafcaee1e992b9b03bd7494719b11bd0c284', 'XPOmYmU5kjDo9raAO6Zv/Q==', 1, 0, 0, now());
+VALUES (0, 0, 0, 1, 1, 268435455, 'anonymous', '13688582561', '中国地利集团', '62feeafcaee1e992b9b03bd7494719b11bd0c284', 'XPOmYmU5kjDo9raAO6Zv/Q==', 1, 0, 0, now());
+
+-- 寿光赊销缴费免密额度
+INSERT INTO `upay_user_protocol`(`protocol_id`, `account_id`, `name`, `type`, `min_amount`, `max_amount`, `start_on`, `state`, `description`, `version`, `created_time`)
+VALUES ('9527', 0, 'anonymous', 60, 0, 999900, now(), 1, NULL, 0, now());
+INSERT INTO upay_data_dictionary(type, group_code, code, name, value, description, created_time)
+VALUES (1, 'SG', 'maxProtocolAmount60', '赊销缴费最大免密支付金额', '999900', '设置最大免密支付金额', NOW());

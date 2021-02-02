@@ -122,9 +122,9 @@ public class AccessPermitServiceImpl implements IAccessPermitService {
             .email(null).idCode(null).address(request.getAddress()).password(request.getPassword()).build();
         long pledgeId = fundAccountService.createUserAccount(request.getMchId(), pledgeAccount);
 
-        Merchant merchant = Merchant.builder().mchId(request.getMchId()).code(request.getCode()).name(request.getName())
-            .parentId(0L).profitAccount(profileId).vouchAccount(vouchId).pledgeAccount(pledgeId).address(request.getAddress())
-            .contact(request.getContact()).mobile(request.getMobile()).state(1).createdTime(now).build();
+        Merchant merchant = Merchant.builder().mchId(request.getMchId()).code(request.getCode().toUpperCase()).state(1)
+            .name(request.getName()).parentId(0L).profitAccount(profileId).vouchAccount(vouchId).pledgeAccount(pledgeId)
+            .address(request.getAddress()).contact(request.getContact()).mobile(request.getMobile()).createdTime(now).build();
         request.ifParentId(parentId -> merchant.setParentId(parentId));
         merchantDao.insertMerchant(merchant);
         return MerchantPermit.of(request.getMchId(), request.getCode(), request.getName(), merchant.getParentId(),

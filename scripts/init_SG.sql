@@ -15,6 +15,10 @@ VALUES (10002, 0, 0, 0, 0, now());
 INSERT INTO `upay_fund_account`(`account_id`, `balance`, `frozen_amount`, `vouch_amount`, `version`, `created_time`)
 VALUES (10003, 0, 0, 0, 0, now());
 
+-- 寿光赊销缴费免密额度
+INSERT INTO `upay_user_protocol`(`protocol_id`, `account_id`, `name`, `type`, `min_amount`, `max_amount`, `start_on`, `state`, `description`, `version`, `created_time`)
+VALUES ('9527', 0, 'anonymous', 60, 0, 999900, now(), 1, NULL, 0, now());
+
 -- 寿光市场数据字典配置
 INSERT INTO upay_data_dictionary(type, group_code, code, name, value, description, created_time)
 VALUES (1, 'SG', 'dataSignSwitch', '接口数据签名验签开关', 'off', 'on-开启签名验签, off-关闭签名验签', NOW());
@@ -26,3 +30,5 @@ INSERT INTO upay_data_dictionary(type, group_code, code, name, value, descriptio
 VALUES (1, 'SG', 'maxProtocolAmount40', '本地配送最大免密支付金额', '10000', '设置最大免密支付金额', NOW());
 INSERT INTO upay_data_dictionary(type, group_code, code, name, value, description, created_time)
 VALUES (1, 'SG', 'maxProtocolAmount50', '出门缴费最大免密支付金额', '10000', '设置最大免密支付金额', NOW());
+INSERT INTO upay_data_dictionary(type, group_code, code, name, value, description, created_time)
+VALUES (1, 'SG', 'maxProtocolAmount60', '赊销缴费最大免密支付金额', '999900', '设置最大免密支付金额', NOW());
