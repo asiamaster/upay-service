@@ -110,17 +110,17 @@ public class AccessPermitServiceImpl implements IAccessPermitService {
         RegisterAccount profileAccount = RegisterAccount.builder().customerId(0L).type(AccountType.MERCHANT.getCode())
             .useFor(UseFor.FOR_PROFIT.getCode()).code(null).name(request.getName()).gender(null).mobile(request.getMobile())
             .email(null).idCode(null).address(request.getAddress()).password(request.getPassword()).build();
-        long profileId = fundAccountService.createUserAccount(request.getMchId(), profileAccount);
+        long profileId = fundAccountService.createUserAccount(request.parentMchId(), profileAccount);
         // 生成担保账号
         RegisterAccount vouchAccount = RegisterAccount.builder().customerId(0L).type(AccountType.MERCHANT.getCode())
             .useFor(UseFor.FOR_VOUCH.getCode()).code(null).name(request.getName()).gender(null).mobile(request.getMobile())
             .email(null).idCode(null).address(request.getAddress()).password(request.getPassword()).build();
-        long vouchId = fundAccountService.createUserAccount(request.getMchId(), vouchAccount);
-        // 生成担保账号
+        long vouchId = fundAccountService.createUserAccount(request.parentMchId(), vouchAccount);
+        // 生成押金账号
         RegisterAccount pledgeAccount = RegisterAccount.builder().customerId(0L).type(AccountType.MERCHANT.getCode())
             .useFor(UseFor.FOR_PLEDGE.getCode()).code(null).name(request.getName()).gender(null).mobile(request.getMobile())
             .email(null).idCode(null).address(request.getAddress()).password(request.getPassword()).build();
-        long pledgeId = fundAccountService.createUserAccount(request.getMchId(), pledgeAccount);
+        long pledgeId = fundAccountService.createUserAccount(request.parentMchId(), pledgeAccount);
 
         Merchant merchant = Merchant.builder().mchId(request.getMchId()).code(request.getCode().toUpperCase()).state(1)
             .name(request.getName()).parentId(0L).profitAccount(profileId).vouchAccount(vouchId).pledgeAccount(pledgeId)

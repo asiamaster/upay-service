@@ -92,4 +92,8 @@ public class RegisterMerchant {
             consumer.accept(parentId);
         }
     }
+
+    public Long parentMchId() {
+        return parentId != null && parentId != 0 ? parentId : mchId;
+    }
 }
