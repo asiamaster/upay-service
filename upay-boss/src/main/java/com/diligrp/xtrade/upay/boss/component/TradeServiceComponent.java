@@ -1,6 +1,5 @@
 package com.diligrp.xtrade.upay.boss.component;
 
-import com.diligrp.xtrade.shared.domain.Message;
 import com.diligrp.xtrade.shared.domain.ServiceRequest;
 import com.diligrp.xtrade.shared.sapi.CallableComponent;
 import com.diligrp.xtrade.shared.util.AssertUtils;
