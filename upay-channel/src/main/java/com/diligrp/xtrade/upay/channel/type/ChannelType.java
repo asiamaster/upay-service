@@ -39,8 +39,10 @@ public enum ChannelType implements IEnumType {
 
     SJBANK("盛京银行", 28),
 
-    // 用于补单时不关心支付渠道时使用
-    VIRTUAL("虚拟渠道", 50);
+    // 用于杭州市场补单时不关心支付渠道时使用
+    VIRTUAL("虚拟渠道", 50),
+    // 用于杭州市场标记组合支付
+    MIXED("组合渠道", 51);
 
     private String name;
     private int code;
@@ -128,7 +130,7 @@ public enum ChannelType implements IEnumType {
      */
     public static boolean forAllFee(int code) {
         return code == ACCOUNT.getCode() || code == CASH.getCode() || code == POS.getCode() || code == E_BANK.getCode() ||
-            code == WXPAY.getCode() || code == ALIPAY.getCode() || code == VIRTUAL.getCode();
+            code == WXPAY.getCode() || code == ALIPAY.getCode() || code == VIRTUAL.getCode() || code == MIXED.getCode();
     }
 
     /**
