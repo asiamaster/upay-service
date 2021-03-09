@@ -21,6 +21,7 @@ public interface IUserAccountService {
     /**
      * 获取用户账户权限
      *
+     * @Deprecated 功能移至风控模块
      * @param accountId - 资金账户
      * @return 权限列表
      */
@@ -29,6 +30,7 @@ public interface IUserAccountService {
     /**
      * 设置账户权限 @see AccountPermission
      *
+     * @Deprecated 功能移至风控模块
      * @param permissions - 权限列表
      */
     void setUserAccountPermission(Long accountId, Permission... permissions);

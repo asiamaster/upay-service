@@ -17,6 +17,9 @@ import com.diligrp.xtrade.upay.core.model.UserAccount;
 import com.diligrp.xtrade.upay.core.service.IAccessPermitService;
 import com.diligrp.xtrade.upay.core.service.IFundAccountService;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
+import com.diligrp.xtrade.upay.sentinel.domain.Passport;
+import com.diligrp.xtrade.upay.sentinel.domain.RiskControlEngine;
+import com.diligrp.xtrade.upay.sentinel.service.IRiskControlService;
 import com.diligrp.xtrade.upay.trade.dao.IPaymentFeeDao;
 import com.diligrp.xtrade.upay.trade.dao.IRefundPaymentDao;
 import com.diligrp.xtrade.upay.trade.dao.ITradeOrderDao;
@@ -77,6 +80,9 @@ public class TradePaymentServiceImpl implements IPaymentService {
     private IFundAccountService fundAccountService;
 
     @Resource
+    private IRiskControlService riskControlService;
+
+    @Resource
     private IAccessPermitService accessPermitService;
 
     @Resource
@@ -110,6 +116,10 @@ public class TradePaymentServiceImpl implements IPaymentService {
             throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "不能进行跨商户交易");
         }
         accountChannelService.checkAccountTradeState(fromAccount); // 寿光专用业务逻辑
+        // 风控检查
+        RiskControlEngine riskControlEngine = riskControlService.loadRiskControlEngine(fromAccount);
+        Passport passport = Passport.ofTrade(fromAccount.getAccountId(), fromAccount.getPermission(), payment.getAmount());
+        riskControlEngine.checkPassport(passport);
 
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
         String paymentId = String.valueOf(keyGenerator.nextId());
@@ -177,6 +187,8 @@ public class TradePaymentServiceImpl implements IPaymentService {
             accountChannelService.submitExclusively(merTransaction);
         }
 
+        // 刷新风控数据
+        riskControlEngine.admitPassport(passport);
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, paymentId, status);
     }
 

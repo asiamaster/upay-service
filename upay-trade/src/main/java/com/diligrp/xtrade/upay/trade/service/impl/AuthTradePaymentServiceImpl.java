@@ -24,6 +24,9 @@ import com.diligrp.xtrade.upay.core.service.IAccessPermitService;
 import com.diligrp.xtrade.upay.core.service.IFundAccountService;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
 import com.diligrp.xtrade.upay.core.util.AsyncTaskExecutor;
+import com.diligrp.xtrade.upay.sentinel.domain.Passport;
+import com.diligrp.xtrade.upay.sentinel.domain.RiskControlEngine;
+import com.diligrp.xtrade.upay.sentinel.service.IRiskControlService;
 import com.diligrp.xtrade.upay.trade.dao.IPaymentFeeDao;
 import com.diligrp.xtrade.upay.trade.dao.ITradeOrderDao;
 import com.diligrp.xtrade.upay.trade.dao.ITradePaymentDao;
@@ -84,6 +87,9 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
     private IFundAccountService fundAccountService;
 
     @Resource
+    private IRiskControlService riskControlService;
+
+    @Resource
     private IAccessPermitService accessPermitService;
 
     @Resource
@@ -109,7 +115,6 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
         Optional<List<Fee>> feesOpt = payment.getObjects(Fee.class.getName());
         feesOpt.ifPresent(fees -> { throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "预授权冻结不支持收取费用"); });
 
-        // 冻结资金
         LocalDateTime now = LocalDateTime.now().withNano(0);
         MerchantPermit merchant = accessPermitService.loadMerchantPermit(trade.getMchId());
         int maxPwdErrors = merchant.configuration().maxPwdErrors();
@@ -118,8 +123,8 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
         if (!ObjectUtils.equals(fromAccount.getMchId(), toAccount.getMchId())) {
             throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "不能进行跨商户交易");
         }
-
         accountChannelService.checkAccountTradeState(fromAccount); // 寿光专用业务逻辑
+
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
         String paymentId = String.valueOf(keyGenerator.nextId());
         AccountChannel channel = AccountChannel.of(paymentId, fromAccount.getAccountId(), fromAccount.getParentId());
@@ -187,6 +192,10 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
         int maxPwdErrors = merchant.configuration().maxPwdErrors();
         UserAccount fromAccount = accountChannelService.checkTradePermission(payment.getAccountId(), confirm.getPassword(), maxPwdErrors);
         accountChannelService.checkAccountTradeState(fromAccount); // 寿光专用业务逻辑
+        // 风控检查
+        RiskControlEngine riskControlEngine = riskControlService.loadRiskControlEngine(fromAccount);
+        Passport passport = Passport.ofTrade(fromAccount.getAccountId(), fromAccount.getPermission(), payment.getAmount());
+        riskControlEngine.checkPassport(passport);
 
         // 处理买家付款和买家佣金
         AccountChannel fromChannel = AccountChannel.of(payment.getPaymentId(), fromAccount.getAccountId(), fromAccount.getParentId());
@@ -261,6 +270,8 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
             accountChannelService.submitExclusively(merTransaction);
         }
 
+        // 刷新风控数据
+        riskControlEngine.admitPassport(passport);
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, payment.getPaymentId(), status);
     }
 

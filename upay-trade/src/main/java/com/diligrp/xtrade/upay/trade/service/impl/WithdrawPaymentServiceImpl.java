@@ -19,6 +19,10 @@ import com.diligrp.xtrade.upay.core.service.IAccessPermitService;
 import com.diligrp.xtrade.upay.core.service.IFundAccountService;
 import com.diligrp.xtrade.upay.core.type.Permission;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
+import com.diligrp.xtrade.upay.sentinel.domain.Passport;
+import com.diligrp.xtrade.upay.sentinel.domain.RiskControlEngine;
+import com.diligrp.xtrade.upay.sentinel.service.IRiskControlService;
+import com.diligrp.xtrade.upay.sentinel.type.PassportType;
 import com.diligrp.xtrade.upay.trade.dao.IPaymentFeeDao;
 import com.diligrp.xtrade.upay.trade.dao.IRefundPaymentDao;
 import com.diligrp.xtrade.upay.trade.dao.ITradeOrderDao;
@@ -79,6 +83,9 @@ public class WithdrawPaymentServiceImpl implements IPaymentService {
     private IFundAccountService fundAccountService;
 
     @Resource
+    private IRiskControlService riskControlService;
+
+    @Resource
     private IAccessPermitService accessPermitService;
 
     @Resource
@@ -107,7 +114,10 @@ public class WithdrawPaymentServiceImpl implements IPaymentService {
         int maxPwdErrors = merchant.configuration().maxPwdErrors();
         UserAccount account = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), maxPwdErrors);
         accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
-        account.checkPermission(Permission.FOR_WITHDRAW);
+        // 风控检查
+        RiskControlEngine riskControlEngine = riskControlService.loadRiskControlEngine(account);
+        Passport passport = Passport.ofWithdraw(account.getAccountId(), account.getPermission(), payment.getAmount());
+        riskControlEngine.checkPassport(passport);
 
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
         String paymentId = String.valueOf(keyGenerator.nextId());
@@ -154,6 +164,8 @@ public class WithdrawPaymentServiceImpl implements IPaymentService {
             accountChannelService.submitExclusively(merTransaction);
         }
 
+        // 刷新风控数据
+        riskControlEngine.admitPassport(passport);
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, paymentId, status);
     }
 

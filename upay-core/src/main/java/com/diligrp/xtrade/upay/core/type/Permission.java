@@ -124,9 +124,10 @@ public enum Permission implements IEnumType {
      * 当前系统支持的全量权限
      */
     public static List<Permission> allSupportedPermissions() {
-        // 目前系统只支持设置 提现权限, 后期可能扩展
+        // 目前系统只支持设置 提现权限 交易权限, 后期可能扩展
         List<Permission> permissions = new ArrayList<>();
         permissions.add(Permission.FOR_WITHDRAW);
+        permissions.add(Permission.FOR_TRADE);
         return permissions;
     }
 

@@ -40,6 +40,8 @@ public class UserAccountServiceImpl implements IUserAccountService {
 
     /**
      * {@inheritDoc}
+     *
+     * @Deprecated 功能移至风控模块
      */
     @Override
     public List<Permission> loadUserAccountPermission(Long accountId) {
@@ -49,6 +51,8 @@ public class UserAccountServiceImpl implements IUserAccountService {
 
     /**
      * {@inheritDoc}
+     *
+     * @Deprecated 功能移至风控模块
      */
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
