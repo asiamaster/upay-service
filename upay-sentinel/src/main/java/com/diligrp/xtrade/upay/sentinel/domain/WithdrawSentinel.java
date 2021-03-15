@@ -77,7 +77,7 @@ public class WithdrawSentinel extends Sentinel {
             throw new RiskControlException(ErrorCode.OPERATION_NOT_ALLOWED, "风控提示：提现金额超过单笔提现限额");
         }
         // 获取执行上下文: 账户日提现金额，日提现次数和月提现金额
-        ExecuteContext context = executeAssistant.loadWithdrawExecuteContext(passport);
+        ExecuteContext context = sentinelAssistant.loadWithdrawExecuteContext(passport);
         if(dailyAmount != null && context.getDailyAmount() + passport.getAmount() > dailyAmount) {
             throw new RiskControlException(ErrorCode.OPERATION_NOT_ALLOWED, "风控提示：累计提现金额超过日提现限额");
         }
@@ -91,6 +91,6 @@ public class WithdrawSentinel extends Sentinel {
 
     @Override
     void admitPassport(Passport passport) {
-        executeAssistant.refreshWithdrawExecuteContext(passport);
+        sentinelAssistant.refreshWithdrawExecuteContext(passport);
     }
 }

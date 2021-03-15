@@ -1,6 +1,6 @@
 package com.diligrp.xtrade.upay.sentinel.domain;
 
-import com.diligrp.xtrade.upay.sentinel.service.IExecuteAssistant;
+import com.diligrp.xtrade.upay.sentinel.service.ISentinelAssistant;
 
 /**
  * 风控哨兵模型
@@ -9,13 +9,13 @@ import com.diligrp.xtrade.upay.sentinel.service.IExecuteAssistant;
  * @date: 2021/03/01
  */
 public abstract class Sentinel {
-    protected IExecuteAssistant executeAssistant;
+    protected ISentinelAssistant sentinelAssistant;
 
     abstract void checkPassport(Passport passport);
 
     abstract void admitPassport(Passport passport);
 
-    public void setExecuteAssistant(IExecuteAssistant executeAssistant) {
-        this.executeAssistant = executeAssistant;
+    public void setSentinelAssistant(ISentinelAssistant sentinelAssistant) {
+        this.sentinelAssistant = sentinelAssistant;
     }
 }

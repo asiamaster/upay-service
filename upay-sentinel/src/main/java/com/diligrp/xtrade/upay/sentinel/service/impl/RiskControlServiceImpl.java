@@ -14,7 +14,7 @@ import com.diligrp.xtrade.upay.sentinel.domain.WithdrawSentinel;
 import com.diligrp.xtrade.upay.sentinel.exception.RiskControlException;
 import com.diligrp.xtrade.upay.sentinel.model.GlobalPermission;
 import com.diligrp.xtrade.upay.sentinel.model.UserPermission;
-import com.diligrp.xtrade.upay.sentinel.service.IExecuteAssistant;
+import com.diligrp.xtrade.upay.sentinel.service.ISentinelAssistant;
 import com.diligrp.xtrade.upay.sentinel.service.IRiskControlService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -40,7 +40,7 @@ public class RiskControlServiceImpl implements IRiskControlService {
     private IUserAccountDao userAccountDao;
 
     @Resource
-    private IExecuteAssistant executeAssistant;
+    private ISentinelAssistant executeAssistant;
 
     @Resource
     private IAccessPermitService accessPermitService;
@@ -148,5 +148,13 @@ public class RiskControlServiceImpl implements IRiskControlService {
         if (result == 0) {
             riskManageDao.insertUserPermission(permission);
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ISentinelAssistant getSentinelAssistant() {
+        return executeAssistant;
     }
 }

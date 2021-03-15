@@ -22,6 +22,7 @@ import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
 import com.diligrp.xtrade.upay.core.model.UserAccount;
 import com.diligrp.xtrade.upay.core.service.IAccessPermitService;
 import com.diligrp.xtrade.upay.core.service.IFundAccountService;
+import com.diligrp.xtrade.upay.core.type.Permission;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
 import com.diligrp.xtrade.upay.core.util.AsyncTaskExecutor;
 import com.diligrp.xtrade.upay.sentinel.domain.Passport;
@@ -191,8 +192,11 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
         MerchantPermit merchant = accessPermitService.loadMerchantPermit(trade.getMchId());
         int maxPwdErrors = merchant.configuration().maxPwdErrors();
         UserAccount fromAccount = accountChannelService.checkTradePermission(payment.getAccountId(), confirm.getPassword(), maxPwdErrors);
+        UserAccount toAccount = fundAccountService.findUserAccountById(trade.getAccountId());
         accountChannelService.checkAccountTradeState(fromAccount); // 寿光专用业务逻辑
+        accountChannelService.checkAccountTradeState(toAccount); // 寿光专用业务逻辑
         // 风控检查
+        toAccount.checkPermission(Permission.FOR_TRADE); // 检查卖家交易权限
         RiskControlEngine riskControlEngine = riskControlService.loadRiskControlEngine(fromAccount);
         Passport passport = Passport.ofTrade(fromAccount.getAccountId(), fromAccount.getPermission(), payment.getAmount());
         riskControlEngine.checkPassport(passport);
@@ -207,8 +211,6 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
         TransactionStatus status = accountChannelService.submit(fromTransaction);
 
         // 处理卖家收款和卖家佣金
-        UserAccount toAccount = fundAccountService.findUserAccountById(trade.getAccountId());
-        accountChannelService.checkAccountTradeState(toAccount); // 寿光专用业务逻辑
         AccountChannel toChannel = AccountChannel.of(payment.getPaymentId(), toAccount.getAccountId(), toAccount.getParentId());
         IFundTransaction toTransaction = toChannel.openTransaction(trade.getType(), now);
         toTransaction.income(confirm.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName(), null);

@@ -16,6 +16,7 @@ import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
 import com.diligrp.xtrade.upay.core.model.UserAccount;
 import com.diligrp.xtrade.upay.core.service.IAccessPermitService;
 import com.diligrp.xtrade.upay.core.service.IFundAccountService;
+import com.diligrp.xtrade.upay.core.type.Permission;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
 import com.diligrp.xtrade.upay.sentinel.domain.Passport;
 import com.diligrp.xtrade.upay.sentinel.domain.RiskControlEngine;
@@ -116,7 +117,9 @@ public class TradePaymentServiceImpl implements IPaymentService {
             throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "不能进行跨商户交易");
         }
         accountChannelService.checkAccountTradeState(fromAccount); // 寿光专用业务逻辑
+        accountChannelService.checkAccountTradeState(toAccount); // 寿光专用业务逻辑
         // 风控检查
+        toAccount.checkPermission(Permission.FOR_TRADE); // 检查卖家交易权限
         RiskControlEngine riskControlEngine = riskControlService.loadRiskControlEngine(fromAccount);
         Passport passport = Passport.ofTrade(fromAccount.getAccountId(), fromAccount.getPermission(), payment.getAmount());
         riskControlEngine.checkPassport(passport);
@@ -131,7 +134,6 @@ public class TradePaymentServiceImpl implements IPaymentService {
         TransactionStatus status = accountChannelService.submit(fromTransaction);
 
         // 处理卖家收款和卖家佣金
-        accountChannelService.checkAccountTradeState(toAccount); // 寿光专用业务逻辑
         AccountChannel toChannel = AccountChannel.of(paymentId, toAccount.getAccountId(), toAccount.getParentId());
         IFundTransaction toTransaction = toChannel.openTransaction(trade.getType(), now);
         toTransaction.income(trade.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName(), null);

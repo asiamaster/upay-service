@@ -1,6 +1,6 @@
 package com.diligrp.xtrade.upay.sentinel.domain;
 
-import com.diligrp.xtrade.upay.sentinel.service.IExecuteAssistant;
+import com.diligrp.xtrade.upay.sentinel.service.ISentinelAssistant;
 
 /**
  * 风险控制上下文
@@ -16,7 +16,7 @@ public class RiskControlContext {
     // 交易风控
     private TradeSentinel trade;
     // 风控执行助手
-    private IExecuteAssistant executeAssistant;
+    private ISentinelAssistant executeAssistant;
 
     public DepositSentinel forDeposit() {
         return this.deposit;
@@ -27,7 +27,7 @@ public class RiskControlContext {
      */
     public void forDeposit(DepositSentinel deposit) {
         this.deposit = deposit;
-        this.deposit.setExecuteAssistant(executeAssistant);
+        this.deposit.setSentinelAssistant(executeAssistant);
     }
 
     public WithdrawSentinel forWithdraw() {
@@ -39,7 +39,7 @@ public class RiskControlContext {
      */
     public void forWithdraw(WithdrawSentinel withdraw) {
         this.withdraw = withdraw;
-        this.withdraw.setExecuteAssistant(executeAssistant);
+        this.withdraw.setSentinelAssistant(executeAssistant);
     }
 
     public TradeSentinel forTrade() {
@@ -51,11 +51,11 @@ public class RiskControlContext {
      */
     public void forTrade(TradeSentinel trade) {
         this.trade = trade;
-        this.trade.setExecuteAssistant(executeAssistant);
+        this.trade.setSentinelAssistant(executeAssistant);
 
     }
 
-    public void configContext(IExecuteAssistant executeAssistant) {
+    public void configContext(ISentinelAssistant executeAssistant) {
         this.executeAssistant = executeAssistant;
     }
 }

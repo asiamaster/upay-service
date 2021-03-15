@@ -3,7 +3,7 @@ package com.diligrp.xtrade.upay.sentinel.domain;
 import com.diligrp.xtrade.upay.core.ErrorCode;
 import com.diligrp.xtrade.upay.core.util.AsyncTaskExecutor;
 import com.diligrp.xtrade.upay.sentinel.exception.RiskControlException;
-import com.diligrp.xtrade.upay.sentinel.service.IExecuteAssistant;
+import com.diligrp.xtrade.upay.sentinel.service.ISentinelAssistant;
 import com.diligrp.xtrade.upay.sentinel.type.PassportType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +20,7 @@ public class RiskControlEngine {
 
     private RiskControlContext context;
 
-    public void initEngine(IExecuteAssistant executeAssistant) {
+    public void initEngine(ISentinelAssistant executeAssistant) {
         this.context = new RiskControlContext();
         this.context.configContext(executeAssistant);
     }

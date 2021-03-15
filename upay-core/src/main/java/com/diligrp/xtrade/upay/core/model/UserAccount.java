@@ -207,7 +207,7 @@ public class UserAccount extends BaseDo {
 
     public void checkPermission(Permission permission) {
         if(!Permission.hasPermission(this.permission, permission)) {
-            throw new PaymentServiceException(ErrorCode.OPERATION_NOT_ALLOWED, "资金账户没有" + permission.getName());
+            throw new PaymentServiceException(ErrorCode.OPERATION_NOT_ALLOWED, "风控提示：用户账号无" + permission.getName());
         }
     }
 

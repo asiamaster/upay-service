@@ -7,14 +7,13 @@ import com.diligrp.xtrade.shared.util.ObjectUtils;
 import com.diligrp.xtrade.upay.channel.service.IAccountChannelService;
 import com.diligrp.xtrade.upay.channel.service.IChannelRouteService;
 import com.diligrp.xtrade.upay.channel.service.IPaymentChannelService;
-import com.diligrp.xtrade.upay.channel.type.ChannelType;
 import com.diligrp.xtrade.upay.core.ErrorCode;
 import com.diligrp.xtrade.upay.core.domain.MerchantPermit;
-import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
 import com.diligrp.xtrade.upay.core.model.FundAccount;
 import com.diligrp.xtrade.upay.core.model.UserAccount;
 import com.diligrp.xtrade.upay.core.service.IAccessPermitService;
 import com.diligrp.xtrade.upay.core.service.IFundAccountService;
+import com.diligrp.xtrade.upay.core.type.Permission;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
 import com.diligrp.xtrade.upay.pipeline.domain.IPipeline;
 import com.diligrp.xtrade.upay.pipeline.domain.PipelineRequest;
@@ -22,12 +21,16 @@ import com.diligrp.xtrade.upay.pipeline.domain.PipelineResponse;
 import com.diligrp.xtrade.upay.pipeline.domain.PipelineTransactionStatus;
 import com.diligrp.xtrade.upay.pipeline.model.PipelinePayment;
 import com.diligrp.xtrade.upay.pipeline.type.ProcessState;
+import com.diligrp.xtrade.upay.sentinel.domain.Passport;
+import com.diligrp.xtrade.upay.sentinel.domain.RiskControlEngine;
+import com.diligrp.xtrade.upay.sentinel.service.IRiskControlService;
 import com.diligrp.xtrade.upay.trade.domain.ChannelAccount;
 import com.diligrp.xtrade.upay.trade.domain.Fee;
 import com.diligrp.xtrade.upay.trade.domain.Payment;
 import com.diligrp.xtrade.upay.trade.domain.PaymentResult;
 import com.diligrp.xtrade.upay.trade.exception.TradePaymentException;
 import com.diligrp.xtrade.upay.trade.model.TradeOrder;
+import com.diligrp.xtrade.upay.trade.model.TradePayment;
 import com.diligrp.xtrade.upay.trade.service.IPaymentService;
 import com.diligrp.xtrade.upay.trade.service.IPipelineExceptionProcessor;
 import com.diligrp.xtrade.upay.trade.service.IPipelinePaymentProcessor;
@@ -78,6 +81,9 @@ public class BankWithdrawPaymentServiceImpl implements IPaymentService {
     private IPipelineExceptionProcessor pipelineExceptionProcessor;
 
     @Resource
+    private IRiskControlService riskControlService;
+
+    @Resource
     private IAccessPermitService accessPermitService;
 
     @Resource
@@ -107,6 +113,10 @@ public class BankWithdrawPaymentServiceImpl implements IPaymentService {
         int maxPwdErrors = merchant.configuration().maxPwdErrors();
         UserAccount account = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), maxPwdErrors);
         accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
+        // 风控检查
+        RiskControlEngine riskControlEngine = riskControlService.loadRiskControlEngine(account);
+        Passport passport = Passport.ofWithdraw(account.getAccountId(), account.getPermission(), payment.getAmount());
+        riskControlEngine.checkPassport(passport);
 
         FundAccount fund = fundAccountService.findFundAccountById(payment.getAccountId());
         if (fund.getBalance() - fund.getFrozenAmount() < payment.getAmount()) {
@@ -125,6 +135,9 @@ public class BankWithdrawPaymentServiceImpl implements IPaymentService {
             channelAccount.getBankName(), when).attach(trade).attach(payment).attach(account);
         request.put("channelId", payment.getChannelId());
         PipelineResponse response = pipeline.sendTradeRequest(request, pipelinePaymentProcessor);
+        if (response.getState() == ProcessState.SUCCESS) { // 刷新风控数据
+            riskControlEngine.admitPassport(passport);
+        }
 
         PipelineTransactionStatus status = new PipelineTransactionStatus(response.getState().getCode(),
             response.getMessage(), response.getStatus());
@@ -157,7 +170,12 @@ public class BankWithdrawPaymentServiceImpl implements IPaymentService {
                     PipelineRequest request = PipelineRequest.of(pipeline, paymentId, pipelinePayment.getToAccount(),
                         pipelinePayment.getToName(), pipelinePayment.getToType(), pipelinePayment.getAmount(),
                         pipelinePayment.getBankNo(), pipelinePayment.getBankName(), pipelinePayment.getCreatedTime());
-                    pipeline.sendQueryRequest(request.attach(pipelinePayment), pipelineExceptionProcessor);
+                    PipelineResponse response = pipeline.sendQueryRequest(request.attach(pipelinePayment), pipelineExceptionProcessor);
+                    TradePayment payment = request.getObject(TradePayment.class);
+                    if (response.getState() == ProcessState.SUCCESS && payment != null) { // 刷新风控数据
+                        Passport passport = Passport.ofWithdraw(payment.getAccountId(), Permission.ALL_PERMISSION, payment.getAmount());
+                        riskControlService.getSentinelAssistant().refreshWithdrawExecuteContext(passport);
+                    }
                 } else {
                     LOG.warn("Ignore pipeline query request for {} because of state", paymentId);
                 }

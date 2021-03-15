@@ -77,7 +77,7 @@ public class TradeSentinel extends Sentinel {
             throw new RiskControlException(ErrorCode.OPERATION_NOT_ALLOWED, "风控提示：交易金额超过单笔交易限额");
         }
         // 获取执行上下文: 账户日提现金额，日提现次数和月提现金额
-        ExecuteContext context = executeAssistant.loadTradeExecuteContext(passport);
+        ExecuteContext context = sentinelAssistant.loadTradeExecuteContext(passport);
         if(dailyAmount != null && context.getDailyAmount() + passport.getAmount() > dailyAmount) {
             throw new RiskControlException(ErrorCode.OPERATION_NOT_ALLOWED, "风控提示：累计交易金额超过日交易限额");
         }
@@ -91,6 +91,6 @@ public class TradeSentinel extends Sentinel {
 
     @Override
     void admitPassport(Passport passport) {
-        executeAssistant.refreshTradeExecuteContext(passport);
+        sentinelAssistant.refreshTradeExecuteContext(passport);
     }
 }

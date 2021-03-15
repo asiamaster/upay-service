@@ -9,7 +9,7 @@ import com.diligrp.xtrade.upay.sentinel.domain.Passport;
  * @author: brenthuang
  * @date: 2021/03/08
  */
-public interface IExecuteAssistant {
+public interface ISentinelAssistant {
 
     /**
      * 获取账户提现的执行上下文：日提现金额，日提现次数和月提现金额

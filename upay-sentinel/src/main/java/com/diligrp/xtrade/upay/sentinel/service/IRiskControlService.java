@@ -35,4 +35,9 @@ public interface IRiskControlService {
      * 更新账户风控信息
      */
     void updateUserRiskControl(UserAccount account, RiskControlContext context);
+
+    /**
+     * 获取哨兵助手
+     */
+    ISentinelAssistant getSentinelAssistant();
 }

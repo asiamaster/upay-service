@@ -5,7 +5,7 @@ import com.diligrp.xtrade.shared.util.DateUtils;
 import com.diligrp.xtrade.shared.util.NumberUtils;
 import com.diligrp.xtrade.upay.sentinel.domain.ExecuteContext;
 import com.diligrp.xtrade.upay.sentinel.domain.Passport;
-import com.diligrp.xtrade.upay.sentinel.service.IExecuteAssistant;
+import com.diligrp.xtrade.upay.sentinel.service.ISentinelAssistant;
 import com.diligrp.xtrade.upay.sentinel.util.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,10 +24,10 @@ import java.util.List;
  * @author: brenthuang
  * @date: 2021/03/08
  */
-@Service("executeAssistant")
-public class DefaultExecuteAssistant implements IExecuteAssistant {
+@Service("sentinelAssistant")
+public class DefaultSentinelAssistant implements ISentinelAssistant {
 
-    private static Logger LOG = LoggerFactory.getLogger(DefaultExecuteAssistant.class);
+    private static Logger LOG = LoggerFactory.getLogger(DefaultSentinelAssistant.class);
 
     @Resource
     private IRedisSystemService redisSystemService;
