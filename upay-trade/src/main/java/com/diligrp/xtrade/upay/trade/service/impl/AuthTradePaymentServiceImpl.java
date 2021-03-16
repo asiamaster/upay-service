@@ -198,7 +198,7 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
         // 风控检查
         toAccount.checkPermission(Permission.FOR_TRADE); // 检查卖家交易权限
         RiskControlEngine riskControlEngine = riskControlService.loadRiskControlEngine(fromAccount);
-        Passport passport = Passport.ofTrade(fromAccount.getAccountId(), fromAccount.getPermission(), payment.getAmount());
+        Passport passport = Passport.ofTrade(fromAccount.getAccountId(), fromAccount.getPermission(), confirm.getAmount());
         riskControlEngine.checkPassport(passport);
 
         // 处理买家付款和买家佣金
