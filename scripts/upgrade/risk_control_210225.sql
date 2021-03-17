@@ -25,7 +25,6 @@ DROP TABLE IF EXISTS `upay_user_permission`;
 CREATE TABLE `upay_user_permission` (
   `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
   `account_id` BIGINT NOT NULL COMMENT '账号ID',
-  `permission` INT NOT NULL COMMENT '账号权限',
   `deposit` VARCHAR(200) NOT NULL COMMENT '充值配置',
   `withdraw` VARCHAR(200) NOT NULL COMMENT '提现配置',
   `trade` VARCHAR(200) NOT NULL COMMENT '交易配置',
@@ -35,5 +34,8 @@ CREATE TABLE `upay_user_permission` (
   UNIQUE KEY `uk_user_permission_accountId` (`account_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+-- 初始化风控数据
 INSERT INTO `upay_global_permission`(`mch_id`, `deposit`, `withdraw`, `trade`, `created_time`)
-VALUES(9, '{"maxAmount":5000000}', '{"maxAmount":5000000,"dailyAmount":25000000,"dailyTimes":5,"monthlyAmount":100000000}', '{"maxAmount":10000000,"dailyAmount":50000000,"dailyTimes":5,"monthlyAmount":500000000}', now());
+VALUES(8, '{"maxAmount":500000000}', '{"maxAmount":500000000,"dailyAmount":500000000,"dailyTimes":100,"monthlyAmount":5000000000}', '{"maxAmount":500000000,"dailyAmount":500000000,"dailyTimes":100,"monthlyAmount":10000000000}', now());
+INSERT INTO `upay_global_permission`(`mch_id`, `deposit`, `withdraw`, `trade`, `created_time`)
+VALUES(9, '{"maxAmount":500000000}', '{"maxAmount":500000000,"dailyAmount":500000000,"dailyTimes":100,"monthlyAmount":5000000000}', '{"maxAmount":500000000,"dailyAmount":500000000,"dailyTimes":100,"monthlyAmount":10000000000}', now());
