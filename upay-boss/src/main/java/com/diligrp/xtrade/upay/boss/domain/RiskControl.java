@@ -27,6 +27,8 @@ public class RiskControl {
     private WithdrawSentinel withdraw;
     // 交易风控
     private TradeSentinel trade;
+    // 交易密码
+    private String password;
 
     public Long getMchId() {
         return mchId;
@@ -82,5 +84,13 @@ public class RiskControl {
 
     public void setTrade(TradeSentinel trade) {
         this.trade = trade;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 }

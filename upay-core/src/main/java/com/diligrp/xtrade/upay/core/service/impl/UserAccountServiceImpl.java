@@ -1,8 +1,11 @@
 package com.diligrp.xtrade.upay.core.service.impl;
 
+import com.diligrp.xtrade.shared.security.PasswordUtils;
+import com.diligrp.xtrade.shared.util.ObjectUtils;
 import com.diligrp.xtrade.upay.core.ErrorCode;
 import com.diligrp.xtrade.upay.core.dao.IUserAccountDao;
 import com.diligrp.xtrade.upay.core.exception.FundAccountException;
+import com.diligrp.xtrade.upay.core.exception.PaymentServiceException;
 import com.diligrp.xtrade.upay.core.model.UserAccount;
 import com.diligrp.xtrade.upay.core.service.IUserAccountService;
 import com.diligrp.xtrade.upay.core.type.Permission;
@@ -61,5 +64,22 @@ public class UserAccountServiceImpl implements IUserAccountService {
         int mask = Permission.permissionMask(permissions);
         UserAccount.Builder updated = UserAccount.builder().accountId(accountId).permission(mask).modifiedTime(LocalDateTime.now());
         userAccountDao.updateUserAccount(updated.build());
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * 提供密码时再进行密码校验, 不进行密码错误次数检查
+     */
+    @Override
+    public UserAccount checkUserPassword(Long accountId, String password) {
+        UserAccount account = findUserAccountById(accountId);
+        if (ObjectUtils.isNotEmpty(password)) {
+            String encodedPwd = PasswordUtils.encrypt(password, account.getSecretKey());
+            if (!ObjectUtils.equals(encodedPwd, account.getPassword())) {
+                throw new PaymentServiceException(ErrorCode.INVALID_ACCOUNT_PASSWORD, "账户交易密码不正确");
+            }
+        }
+        return account;
     }
 }

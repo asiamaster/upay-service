@@ -34,4 +34,9 @@ public interface IUserAccountService {
      * @param permissions - 权限列表
      */
     void setUserAccountPermission(Long accountId, Permission... permissions);
+
+    /**
+     * 检查账户交易密码(忽略密码错误次数)
+     */
+    UserAccount checkUserPassword(Long accountId, String password);
 }

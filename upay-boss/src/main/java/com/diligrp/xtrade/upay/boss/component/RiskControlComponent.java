@@ -125,7 +125,7 @@ public class RiskControlComponent {
         AssertUtils.notNull(rc.getTrade().getDailyTimes(), "未设置日交易次数");
         AssertUtils.isTrue(rc.getTrade().getDailyTimes() > 0, "日交易次数设置非法");
 
-        UserAccount account = userAccountService.findUserAccountById(rc.getAccountId());
+        UserAccount account = userAccountService.checkUserPassword(rc.getAccountId(), rc.getPassword());
         Permission[] permissions = rc.getPermission().stream().map(Permission::getPermission)
             .map(p -> p.orElseThrow(() -> new IllegalArgumentException("Invalid permission code"))).toArray(Permission[]::new);
         int permission = Permission.permissionMask(permissions);
