@@ -41,7 +41,7 @@ public class TradePermissionComponent {
         AssertUtils.notNull(permission.getAccountId(), "accountId missed");
         AssertUtils.notEmpty(permission.getPassword(), "password missed");
 
-        ApplicationPermit permit = request.getContext().getObject(ApplicationPermit.class.getName(), ApplicationPermit.class);
+        ApplicationPermit permit = request.getContext().getObject(ApplicationPermit.class);
         MerchantPermit merchant = accessPermitService.loadMerchantPermit(permit.getMerchant().getMchId());
         int maxPwdErrors = merchant.configuration().maxPwdErrors();
         accountChannelService.checkTradePermission(permission.getAccountId(), permission.getPassword(), maxPwdErrors);

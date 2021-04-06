@@ -85,7 +85,7 @@ public class FundAccountServiceImpl implements IFundAccountService {
         // 子账户无须创建账户资金，共享主账户资金
         userAccount.ifMasterAccount(act -> {
             FundAccount fundAccount = FundAccount.builder().accountId(accountId).balance(0L).frozenAmount(0L)
-                .vouchAmount(0L).version(0).createdTime(when).build();
+                .vouchAmount(0L).mchId(mchId).version(0).createdTime(when).build();
             fundAccountDao.insertFundAccount(fundAccount);
         });
 

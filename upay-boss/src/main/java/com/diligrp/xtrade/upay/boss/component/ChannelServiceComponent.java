@@ -48,7 +48,7 @@ public class ChannelServiceComponent {
         query.setEndDate(endDate);
         query.from(query.getPageNo(), query.getPageSize());
 
-        ApplicationPermit permit = request.getContext().getObject(ApplicationPermit.class.getName(), ApplicationPermit.class);
+        ApplicationPermit permit = request.getContext().getObject(ApplicationPermit.class);
         query.setMchId(permit.getMerchant().getMchId());
         return pipelinePaymentProcessor.listPipelineStatements(query);
     }
@@ -72,7 +72,7 @@ public class ChannelServiceComponent {
         BankCard card = request.getData();
         AssertUtils.notEmpty(card.getCardNo(), "cardNo missed");
 
-        ApplicationPermit permit = request.getContext().getObject(ApplicationPermit.class.getName(), ApplicationPermit.class);
+        ApplicationPermit permit = request.getContext().getObject(ApplicationPermit.class);
         ChannelType type = paymentChannelService.bankChannelByCardNo(permit.getMerchant().getMchId(), card.getCardNo());
         return Channel.of(type.getCode(), type.getName());
     }

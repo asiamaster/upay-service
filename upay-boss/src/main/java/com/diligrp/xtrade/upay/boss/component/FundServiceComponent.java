@@ -126,7 +126,7 @@ public class FundServiceComponent {
     public CustomerBalance customer(ServiceRequest<CustomerId> request) {
         CustomerId customer = request.getData();
         AssertUtils.notNull(customer.getCustomerId(), "customerId missed");
-        ApplicationPermit permit = request.getContext().getObject(ApplicationPermit.class.getName(), ApplicationPermit.class);
+        ApplicationPermit permit = request.getContext().getObject(ApplicationPermit.class);
         FundAccount fund = fundAccountService.sumCustomerFund(permit.getMerchant().parentMchId(), customer.getCustomerId());
         List<FundBalance> accountFunds =
             fundAccountService.listFundAccounts(permit.getMerchant().parentMchId(), customer.getCustomerId()).stream().map(

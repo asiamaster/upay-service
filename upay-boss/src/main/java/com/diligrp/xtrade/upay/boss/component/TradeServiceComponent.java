@@ -37,7 +37,7 @@ public class TradeServiceComponent {
         AssertUtils.notNull(trade.getAmount(), "amount missed");
         AssertUtils.isTrue(trade.getAmount() > 0, "Invalid amount");
 
-        ApplicationPermit permit = request.getContext().getObject(ApplicationPermit.class.getName(), ApplicationPermit.class);
+        ApplicationPermit permit = request.getContext().getObject(ApplicationPermit.class);
         String tradeId = paymentPlatformService.createTrade(permit, trade);
         return TradeId.of(tradeId);
     }
@@ -68,7 +68,7 @@ public class TradeServiceComponent {
             AssertUtils.isTrue(fee.getAmount() > 0, "Invalid deduct fee amount");
         }));
 
-        ApplicationPermit permit = request.getContext().getObject(ApplicationPermit.class.getName(), ApplicationPermit.class);
+        ApplicationPermit permit = request.getContext().getObject(ApplicationPermit.class);
         PaymentResult result = paymentPlatformService.commit(permit, payment);
         // 如有余额信息则返回余额信息
         return result.getStatus();
@@ -94,7 +94,7 @@ public class TradeServiceComponent {
             AssertUtils.isTrue(fee.getAmount() > 0, "Invalid fee amount");
         }));
 
-        ApplicationPermit permit = request.getContext().getObject(ApplicationPermit.class.getName(), ApplicationPermit.class);
+        ApplicationPermit permit = request.getContext().getObject(ApplicationPermit.class);
         PaymentResult result = paymentPlatformService.confirm(permit, confirm);
         // 如有余额信息则返回余额信息
         return result.getStatus();
@@ -123,7 +123,7 @@ public class TradeServiceComponent {
             AssertUtils.isTrue(fee.getAmount() > 0, "Invalid deduct fee amount");
         }));
 
-        ApplicationPermit application = request.getContext().getObject(ApplicationPermit.class.getName(), ApplicationPermit.class);
+        ApplicationPermit application = request.getContext().getObject(ApplicationPermit.class);
         PaymentResult result = paymentPlatformService.refund(application, refund);
         return result.getStatus();
     }
@@ -137,7 +137,7 @@ public class TradeServiceComponent {
         RefundRequest cancel = request.getData();
         AssertUtils.notEmpty(cancel.getTradeId(), "tradeId missed");
 
-        ApplicationPermit application = request.getContext().getObject(ApplicationPermit.class.getName(), ApplicationPermit.class);
+        ApplicationPermit application = request.getContext().getObject(ApplicationPermit.class);
         PaymentResult result = paymentPlatformService.cancel(application, cancel);
         // 如有余额信息则返回余额信息
         return result.getStatus();
@@ -159,7 +159,7 @@ public class TradeServiceComponent {
             AssertUtils.notNull(fee.getAmount(), "fee amount missed");
         });
 
-        ApplicationPermit application = request.getContext().getObject(ApplicationPermit.class.getName(), ApplicationPermit.class);
+        ApplicationPermit application = request.getContext().getObject(ApplicationPermit.class);
         PaymentResult result = paymentPlatformService.correct(application, correct);
         return result.getStatus();
     }

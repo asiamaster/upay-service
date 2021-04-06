@@ -9,6 +9,7 @@
         <result column="balance" property="balance"/>
         <result column="frozen_amount" property="frozenAmount"/>
         <result column="vouch_amount" property="vouchAmount"/>
+        <result column="mch_id" property="mchId"/>
         <result column="version" property="version"/>
         <result column="created_time" property="createdTime"/>
         <result column="modified_time" property="modifiedTime"/>
