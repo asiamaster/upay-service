@@ -17,6 +17,7 @@ import com.diligrp.xtrade.upay.core.model.UserAccount;
 import com.diligrp.xtrade.upay.core.service.IAccessPermitService;
 import com.diligrp.xtrade.upay.core.service.IFundAccountService;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
+import com.diligrp.xtrade.upay.core.util.DataPartition;
 import com.diligrp.xtrade.upay.trade.dao.IRefundPaymentDao;
 import com.diligrp.xtrade.upay.trade.dao.ITradeOrderDao;
 import com.diligrp.xtrade.upay.trade.dao.ITradePaymentDao;
@@ -146,7 +147,7 @@ public class TransferPaymentServiceImpl implements IPaymentService {
             .amount(paymentDo.getAmount()).fee(0L).balance(relation.getBalance() + relation.getAmount())
             .frozenAmount(relation.getFrozenBalance() + relation.getFrozenAmount()).serialNo(trade.getSerialNo()).state(4)
             .createdTime(now).collect(statements);
-        userStatementDao.insertUserStatements(statements);
+        userStatementDao.insertUserStatements(DataPartition.strategy(fromAccount.getMchId()), statements);
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, paymentId, status);
     }
 
@@ -220,7 +221,7 @@ public class TransferPaymentServiceImpl implements IPaymentService {
             .balance(status.getBalance() + status.getAmount())
             .frozenAmount(status.getFrozenBalance() + status.getFrozenAmount())
             .serialNo(trade.getSerialNo()).state(4).createdTime(now).collect(statements);
-        userStatementDao.insertUserStatements(statements);
+        userStatementDao.insertUserStatements(DataPartition.strategy(fromAccount.getMchId()), statements);
 
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, paymentId, status);
     }

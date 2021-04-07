@@ -18,20 +18,20 @@ public interface IUserStatementService {
     /**
      * 分页查询客户交易明细
      */
-    List<UserStatementDto> listUserStatements(UserStatementQuery query);
+    List<UserStatementDto> listUserStatements(Long mchId, UserStatementQuery query);
 
     /**
      * 查询客户总收入和总支出
      */
-    SumUserStatement sumUserStatements(UserStatementQuery query);
+    SumUserStatement sumUserStatements(Long mchId, UserStatementQuery query);
 
     /**
      * 根据交易号和账号ID查询客户交易（非"退款"）账单
      */
-    UserStatementDto findUserStatement(UserStatementFilter filter);
+    UserStatementDto findUserStatement(Long mchId, UserStatementFilter filter);
 
     /**
      * 查询客户退款账单
      */
-    List<UserStatementDto> listRefundStatements(UserStatementFilter filter);
+    List<UserStatementDto> listRefundStatements(Long mchId, UserStatementFilter filter);
 }

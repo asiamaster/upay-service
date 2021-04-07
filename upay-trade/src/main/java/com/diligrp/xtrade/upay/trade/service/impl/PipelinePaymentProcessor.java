@@ -23,6 +23,7 @@ import com.diligrp.xtrade.upay.core.service.IAccessPermitService;
 import com.diligrp.xtrade.upay.core.type.AccountType;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
 import com.diligrp.xtrade.upay.core.util.AsyncTaskExecutor;
+import com.diligrp.xtrade.upay.core.util.DataPartition;
 import com.diligrp.xtrade.upay.pipeline.dao.IPipelinePaymentDao;
 import com.diligrp.xtrade.upay.pipeline.domain.PipelinePaymentDto;
 import com.diligrp.xtrade.upay.pipeline.domain.PipelineRequest;
@@ -214,7 +215,7 @@ public class PipelinePaymentProcessor implements IPipelinePaymentProcessor {
                 .balance(status.getBalance() + status.getAmount())
                 .frozenAmount(status.getFrozenBalance() + status.getFrozenAmount())
                 .serialNo(trade.getSerialNo()).state(4).createdTime(now).build();
-            userStatementDao.insertUserStatement(statement);
+            userStatementDao.insertUserStatement(DataPartition.strategy(account.getMchId()), statement);
 
             // 修改通道申请为"处理成功"
             PipelinePaymentDto pipelinePaymentDto = PipelinePaymentDto.of(paymentId, response.getSerialNo(),

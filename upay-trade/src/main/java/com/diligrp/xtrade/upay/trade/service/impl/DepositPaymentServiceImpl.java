@@ -18,6 +18,7 @@ import com.diligrp.xtrade.upay.core.model.UserAccount;
 import com.diligrp.xtrade.upay.core.service.IAccessPermitService;
 import com.diligrp.xtrade.upay.core.service.IFundAccountService;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
+import com.diligrp.xtrade.upay.core.util.DataPartition;
 import com.diligrp.xtrade.upay.sentinel.domain.Passport;
 import com.diligrp.xtrade.upay.sentinel.domain.RiskControlEngine;
 import com.diligrp.xtrade.upay.sentinel.service.IRiskControlService;
@@ -152,7 +153,7 @@ public class DepositPaymentServiceImpl implements IPaymentService {
             .amount(trade.getAmount() - totalFee).fee(totalFee).balance(status.getBalance() + status.getAmount())
             .frozenAmount(status.getFrozenBalance() + status.getFrozenAmount()).serialNo(trade.getSerialNo()).state(4)
             .createdTime(now).build();
-        userStatementDao.insertUserStatement(statement);
+        userStatementDao.insertUserStatement(DataPartition.strategy(account.getMchId()), statement);
 
         // 处理商户收益 - 最后处理园区收益，保证尽快释放共享数据的行锁以提高系统并发
         if (!fees.isEmpty()) {
@@ -233,7 +234,7 @@ public class DepositPaymentServiceImpl implements IPaymentService {
             .balance(status.getBalance() + status.getAmount()).frozenAmount(status.getFrozenBalance()
                 + status.getFrozenAmount()).serialNo(trade.getSerialNo()).state(4).createdTime(now).build();
         feeOpt.ifPresent(fee -> statement.setFee(fee.getAmount()));
-        userStatementDao.insertUserStatement(statement);
+        userStatementDao.insertUserStatement(DataPartition.strategy(account.getMchId()), statement);
 
         // 处理商户收益 - 最后处理园区收益，保证尽快释放共享数据的行锁以提高系统并发
         feeOpt.ifPresent(fee -> {

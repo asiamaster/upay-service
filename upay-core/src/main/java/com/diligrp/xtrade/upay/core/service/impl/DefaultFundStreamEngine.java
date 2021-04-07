@@ -12,6 +12,7 @@ import com.diligrp.xtrade.upay.core.model.FundStatement;
 import com.diligrp.xtrade.upay.core.service.IFundAccountService;
 import com.diligrp.xtrade.upay.core.service.IFundStreamEngine;
 import com.diligrp.xtrade.upay.core.type.ActionType;
+import com.diligrp.xtrade.upay.core.util.DataPartition;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,13 +55,14 @@ public class DefaultFundStreamEngine implements IFundStreamEngine {
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public TransactionStatus submit(FundTransaction transaction) {
         boolean success = true;
+        FundAccount fundAccount = null;
         TransactionStatus status = null;
         // 将子账号的交易操作主账号资金
         Long masterAccountId = transaction.getParentId() == 0 ? transaction.getAccountId() : transaction.getParentId();
         Long childAccountId = transaction.getParentId() == 0 ? null : transaction.getAccountId();
         for (int retry = 0; retry < RETRIES; retry ++) {
             // 新启事务查询账户资金及数据版本，避免数据库隔离级别和Mybatis缓存造成乐观锁重试机制无法生效
-            FundAccount fundAccount = fundAccountService.findFundAccountById(masterAccountId);
+            fundAccount = fundAccountService.findFundAccountById(masterAccountId);
             status = TransactionStatus.of(fundAccount.getAccountId(), fundAccount.getBalance(), 0L,
                 fundAccount.getFrozenAmount(), transaction.getFrozenAmount(), transaction.getWhen());
             // 处理解冻资金transaction.getFrozenAmount()<0
@@ -117,7 +119,7 @@ public class DefaultFundStreamEngine implements IFundStreamEngine {
             // 返回资金收支明细
             status.ofStreams(statements.stream().map(stmt -> TransactionStatus.FundStream.of(stmt.getBalance(), stmt.getAmount(),
                 stmt.getType(), stmt.getTypeName(), stmt.getDescription())).collect(Collectors.toList()));
-            fundStatementDao.insertFundStatements(statements);
+            fundStatementDao.insertFundStatements(DataPartition.strategy(fundAccount.getMchId()), statements);
         }
         return status;
     }
@@ -192,7 +194,7 @@ public class DefaultFundStreamEngine implements IFundStreamEngine {
             // 返回资金收支明细
             status.ofStreams(statements.stream().map(stmt -> TransactionStatus.FundStream.of(stmt.getBalance(), stmt.getAmount(),
                 stmt.getType(), stmt.getTypeName(), stmt.getDescription())).collect(Collectors.toList()));
-            fundStatementDao.insertFundStatements(statements);
+            fundStatementDao.insertFundStatements(DataPartition.strategy(fundAccount.getMchId()), statements);
         }
         return status;
     }
@@ -264,8 +266,8 @@ public class DefaultFundStreamEngine implements IFundStreamEngine {
                 .collect(Collectors.toList());
             // 返回资金收支明细
             status.ofStreams(statements.stream().map(stmt -> TransactionStatus.FundStream.of(stmt.getBalance(), stmt.getAmount(),
-                    stmt.getType(), stmt.getTypeName(), stmt.getDescription())).collect(Collectors.toList()));
-            fundStatementDao.insertFundStatements(statements);
+                stmt.getType(), stmt.getTypeName(), stmt.getDescription())).collect(Collectors.toList()));
+            fundStatementDao.insertFundStatements(DataPartition.strategy(fundAccount.getMchId()), statements);
         }
         return status;
     }

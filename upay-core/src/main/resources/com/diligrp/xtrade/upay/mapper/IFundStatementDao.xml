@@ -18,11 +18,11 @@
         <result column="created_time" property="createdTime"/>
     </resultMap>
 
-    <insert id="insertFundStatements" parameterType="java.util.List">
-        INSERT INTO upay_fund_statement(payment_id, account_id, child_id, trade_type, action, balance,
+    <insert id="insertFundStatements">
+        INSERT INTO upay_fund_statement${strategy.partition}(payment_id, account_id, child_id, trade_type, action, balance,
             amount, type, type_name, description, created_time)
         VALUES
-        <foreach collection="list" item="item" separator=",">
+        <foreach collection="statements" item="item" separator=",">
             (#{item.paymentId}, #{item.accountId}, #{item.childId}, #{item.tradeType}, #{item.action}, #{item.balance},
              #{item.amount}, #{item.type}, #{item.typeName}, #{item.description}, #{item.createdTime})
         </foreach>

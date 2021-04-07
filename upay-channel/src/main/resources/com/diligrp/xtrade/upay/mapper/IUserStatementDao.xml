@@ -4,64 +4,64 @@
 
 <mapper namespace="com.diligrp.xtrade.upay.channel.dao.IUserStatementDao">
 
-    <insert id="insertUserStatement" parameterType="com.diligrp.xtrade.upay.channel.model.UserStatement">
-        INSERT INTO upay_user_statement(`trade_id`, `payment_id`, `channel_id`, `account_id`, `child_id`, `type`,
+    <insert id="insertUserStatement">
+        INSERT INTO upay_user_statement${strategy.partition}(`trade_id`, `payment_id`, `channel_id`, `account_id`, `child_id`, `type`,
             `type_name`, `amount`, `fee`, `balance`, `frozen_amount`, `serial_no`, `state`, `created_time`)
         VALUES
-            (#{tradeId}, #{paymentId}, #{channelId}, #{accountId}, #{childId}, #{type}, #{typeName},
-             #{amount}, #{fee}, #{balance}, #{frozenAmount}, #{serialNo}, #{state}, #{createdTime})
+            (#{statement.tradeId}, #{statement.paymentId}, #{statement.channelId}, #{statement.accountId}, #{statement.childId}, #{statement.type}, #{statement.typeName},
+             #{statement.amount}, #{statement.fee}, #{statement.balance}, #{statement.frozenAmount}, #{statement.serialNo}, #{statement.state}, #{statement.createdTime})
     </insert>
 
-    <insert id="insertUserStatements" parameterType="java.util.List">
-        INSERT INTO upay_user_statement(`trade_id`, `payment_id`, `channel_id`, `account_id`, `child_id`, `type`,
+    <insert id="insertUserStatements">
+        INSERT INTO upay_user_statement${strategy.partition}(`trade_id`, `payment_id`, `channel_id`, `account_id`, `child_id`, `type`,
             `type_name`, `amount`, `fee`, `balance`, `frozen_amount`, `serial_no`, `state`, `created_time`)
         VALUES
-        <foreach collection="list" item="item" separator=",">
+        <foreach collection="statements" item="item" separator=",">
             (#{item.tradeId}, #{item.paymentId}, #{item.channelId}, #{item.accountId}, #{item.childId}, #{item.type}, #{item.typeName},
             #{item.amount}, #{item.fee}, #{item.balance}, #{item.frozenAmount}, #{item.serialNo}, #{item.state}, #{item.createdTime})
         </foreach>
     </insert>
 
-    <select id="listUserStatements" parameterType="com.diligrp.xtrade.upay.channel.domain.UserStatementQuery" resultType="com.diligrp.xtrade.upay.channel.domain.UserStatementDto">
+    <select id="listUserStatements" resultType="com.diligrp.xtrade.upay.channel.domain.UserStatementDto">
         SELECT
             uus.trade_id AS tradeId, uus.channel_id AS channelId, uus.account_id AS accountId, uus.type, uus.type_name AS typeName,
             uus.amount, uus.fee, uus.serial_no AS serialNo, uto.state, (uto.max_amount - uto.amount) AS refundAmount, uus.created_time AS createdTime
         FROM
-            upay_user_statement uus
+            upay_user_statement${strategy.partition} uus
         INNER JOIN
             upay_trade_order uto ON uus.trade_id = uto.trade_id
         WHERE
-            uus.account_id = #{accountId}
+            uus.account_id = #{query.accountId}
             <if test="type != null">
-                AND uus.type = #{type}
+                AND uus.type = #{query.type}
             </if>
             <if test="startDate != null">
-                <![CDATA[AND uus.created_time > #{startDate}]]>
+                <![CDATA[AND uus.created_time > #{query.startDate}]]>
             </if>
             <if test="endDate != null">
-                <![CDATA[AND uus.created_time < #{endDate}]]>
+                <![CDATA[AND uus.created_time < #{query.endDate}]]>
             </if>
         ORDER BY uus.created_time DESC
-        LIMIT #{start}, #{limit}
+        LIMIT #{query.start}, #{query.limit}
     </select>
 
     <select id="sumUserStatements" parameterType="com.diligrp.xtrade.upay.channel.domain.UserStatementQuery" resultType="com.diligrp.xtrade.upay.channel.domain.SumUserStatement">
         SELECT
             <![CDATA[COUNT(*) AS total, SUM(CASE WHEN uus.amount > 0 THEN uus.amount ELSE 0 END) AS income, SUM(CASE WHEN uus.amount < 0 THEN uus.amount ELSE 0 END) AS output]]>
         FROM
-            upay_user_statement uus
+            upay_user_statement${strategy.partition} uus
         INNER JOIN
             upay_trade_order uto ON uus.trade_id = uto.trade_id
         WHERE
-            uus.account_id = #{accountId}
+            uus.account_id = #{query.accountId}
         <if test="type != null">
-            AND uus.type = #{type}
+            AND uus.type = #{query.type}
         </if>
         <if test="startDate != null">
-            <![CDATA[AND uus.created_time > #{startDate}]]>
+            <![CDATA[AND uus.created_time > #{query.startDate}]]>
         </if>
         <if test="endDate != null">
-            <![CDATA[AND uus.created_time < #{endDate}]]>
+            <![CDATA[AND uus.created_time < #{query.endDate}]]>
         </if>
         GROUP BY uus.account_id
     </select>
@@ -71,11 +71,11 @@
             uus.trade_id AS tradeId, uus.channel_id AS channelId, uus.account_id AS accountId, uus.type, uus.type_name AS typeName,
             uus.amount, uus.fee, uus.serial_no AS serialNo, uto.state, (uto.max_amount - uto.amount) AS refundAmount, uus.created_time AS createdTime
         FROM
-            upay_user_statement uus
+            upay_user_statement${strategy.partition} uus
         INNER JOIN
             upay_trade_order uto ON uus.trade_id = uto.trade_id
         WHERE
-            uus.trade_id = #{tradeId} AND uus.account_id = #{accountId} AND uus.type NOT IN (70, 80)
+            uus.trade_id = #{filter.tradeId} AND uus.account_id = #{filter.accountId} AND uus.type NOT IN (70, 80)
     </select>
 
     <select id="listRefundStatements" parameterType="com.diligrp.xtrade.upay.channel.domain.UserStatementFilter" resultType="com.diligrp.xtrade.upay.channel.domain.UserStatementDto">
@@ -83,10 +83,10 @@
             uus.trade_id AS tradeId, uus.channel_id AS channelId, uus.account_id AS accountId, uus.type, uus.type_name AS typeName,
             uus.amount, uus.fee, uus.serial_no AS serialNo, uto.state, (uto.max_amount - uto.amount) AS refundAmount, uus.created_time AS createdTime
         FROM
-            upay_user_statement uus
+            upay_user_statement${strategy.partition} uus
         INNER JOIN
             upay_trade_order uto ON uus.trade_id = uto.trade_id
         WHERE
-            uus.trade_id = #{tradeId} AND uus.account_id = #{accountId} AND uus.type = 70
+            uus.trade_id = #{filter.tradeId} AND uus.account_id = #{filter.accountId} AND uus.type = 70
     </select>
 </mapper>

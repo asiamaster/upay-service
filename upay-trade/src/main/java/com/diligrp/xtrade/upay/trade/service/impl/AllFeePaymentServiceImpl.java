@@ -17,6 +17,7 @@ import com.diligrp.xtrade.upay.core.model.UserAccount;
 import com.diligrp.xtrade.upay.core.service.IAccessPermitService;
 import com.diligrp.xtrade.upay.core.service.IFundAccountService;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
+import com.diligrp.xtrade.upay.core.util.DataPartition;
 import com.diligrp.xtrade.upay.trade.dao.IPaymentFeeDao;
 import com.diligrp.xtrade.upay.trade.dao.IRefundPaymentDao;
 import com.diligrp.xtrade.upay.trade.dao.ITradeOrderDao;
@@ -158,7 +159,7 @@ public class AllFeePaymentServiceImpl implements IPaymentService {
                 .amount(totalDeductAmount - totalFee).fee(-totalDeductAmount).balance(status.getBalance() + status.getAmount())
                 .frozenAmount(status.getFrozenBalance() + status.getFrozenAmount()).serialNo(trade.getSerialNo())
                 .state(4).createdTime(now).build();
-            userStatementDao.insertUserStatement(statement);
+            userStatementDao.insertUserStatement(DataPartition.strategy(account.getMchId()), statement);
         }
 
         // 处理商户收款 - 最后处理园区收益，保证尽快释放共享数据的行锁以提高系统并发
@@ -250,7 +251,7 @@ public class AllFeePaymentServiceImpl implements IPaymentService {
                 .fee(totalDeductAmount).balance(status.getBalance() + status.getAmount())
                 .frozenAmount(status.getFrozenBalance() + status.getFrozenAmount()).serialNo(trade.getSerialNo())
                 .state(4).createdTime(now).build();
-            userStatementDao.insertUserStatement(statement);
+            userStatementDao.insertUserStatement(DataPartition.strategy(account.getMchId()), statement);
         }
 
         // 处理商户收款 - 最后处理园区收益，保证尽快释放共享数据的行锁以提高系统并发

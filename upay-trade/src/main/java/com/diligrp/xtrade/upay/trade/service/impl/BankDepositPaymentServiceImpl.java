@@ -16,6 +16,7 @@ import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
 import com.diligrp.xtrade.upay.core.model.UserAccount;
 import com.diligrp.xtrade.upay.core.service.IAccessPermitService;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
+import com.diligrp.xtrade.upay.core.util.DataPartition;
 import com.diligrp.xtrade.upay.trade.dao.IPaymentFeeDao;
 import com.diligrp.xtrade.upay.trade.dao.ITradeOrderDao;
 import com.diligrp.xtrade.upay.trade.dao.ITradePaymentDao;
@@ -130,7 +131,7 @@ public class BankDepositPaymentServiceImpl implements IPaymentService {
             .amount(trade.getAmount() + totalFee).fee(totalFee).balance(status.getBalance() + status.getAmount())
             .frozenAmount(status.getFrozenBalance() + status.getFrozenAmount()).serialNo(trade.getSerialNo()).state(4)
             .createdTime(now).build();
-        userStatementDao.insertUserStatement(statement);
+        userStatementDao.insertUserStatement(DataPartition.strategy(account.getMchId()), statement);
 
         // 处理商户退费 - 最后处理园区收益，保证尽快释放共享数据的行锁以提高系统并发
         if (!fees.isEmpty()) {
