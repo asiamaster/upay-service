@@ -60,14 +60,10 @@ public class DefaultSentinelAssistant implements ISentinelAssistant {
                 .concat(Constants.SENTINEL_WITHDRAW_MONTHLYAMOUNT);
             pipeline.get(monthlyAmountKey);
             // 使用pipeline模式一次交互获取所需值，优化访问性能
-            int dailyTimes = 0;
-            long dailyAmount = 0, monthlyAmount = 0;
             List<Object> result = pipeline.syncAndReturnAll();
-            if (result != null && result.size() == 3) {
-                dailyAmount = NumberUtils.str2Long(result.get(0).toString(), 0);
-                dailyTimes = NumberUtils.str2Int(result.get(1).toString(), 0);
-                monthlyAmount = NumberUtils.str2Long(result.get(2).toString(), 0);
-            }
+            long dailyAmount = NumberUtils.str2Long((String) result.get(0), 0);
+            int dailyTimes = NumberUtils.str2Int((String) result.get(1), 0);
+            long monthlyAmount = NumberUtils.str2Long((String) result.get(2), 0);
             context.setDailyAmount(dailyAmount);
             context.setDailyTimes(dailyTimes);
             context.setMonthlyAmount(monthlyAmount);
@@ -169,14 +165,10 @@ public class DefaultSentinelAssistant implements ISentinelAssistant {
                 .concat(Constants.SENTINEL_TRADE_MONTHLYAMOUNT);
             pipeline.get(monthlyAmountKey);
             // 使用pipeline模式一次交互获取所需值，优化访问性能
-            int dailyTimes = 0;
-            long dailyAmount = 0, monthlyAmount = 0;
             List<Object> result = pipeline.syncAndReturnAll();
-            if (result != null && result.size() == 3) {
-                dailyAmount = NumberUtils.str2Long(result.get(0).toString(), 0);
-                dailyTimes = NumberUtils.str2Int(result.get(1).toString(), 0);
-                monthlyAmount = NumberUtils.str2Long(result.get(2).toString(), 0);
-            }
+            long dailyAmount = NumberUtils.str2Long((String) result.get(0), 0);
+            int dailyTimes = NumberUtils.str2Int((String) result.get(1), 0);
+            long monthlyAmount = NumberUtils.str2Long((String) result.get(2), 0);
             context.setDailyAmount(dailyAmount);
             context.setDailyTimes(dailyTimes);
             context.setMonthlyAmount(monthlyAmount);
