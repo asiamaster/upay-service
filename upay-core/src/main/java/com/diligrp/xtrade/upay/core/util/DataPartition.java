@@ -14,11 +14,10 @@ public class DataPartition {
     private static Map<Long, DataPartition> strategies = new ConcurrentHashMap<>();
 
     static {
-        register(DataPartition.of(2L, "2"));
-        register(DataPartition.of(6L, "6"));
-        register(DataPartition.of(8L, "8"));
-        register(DataPartition.of(9L, "9"));
-        register(DataPartition.of(11L, "11"));
+        register(DataPartition.of(2L, "2")); // 哈尔滨分表配置
+        register(DataPartition.of(6L, "6")); // 贵阳分表配置
+        register(DataPartition.of(8L, "8")); // 寿光分表配置
+        register(DataPartition.of(9L, "9")); // 沈阳分表配置
     }
 
     // 商户ID
