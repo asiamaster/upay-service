@@ -14,6 +14,8 @@ public class DataPartition {
     private static Map<Long, DataPartition> strategies = new ConcurrentHashMap<>();
 
     static {
+        register(DataPartition.of(2L, "2"));
+        register(DataPartition.of(6L, "6"));
         register(DataPartition.of(8L, "8"));
         register(DataPartition.of(9L, "9"));
         register(DataPartition.of(11L, "11"));

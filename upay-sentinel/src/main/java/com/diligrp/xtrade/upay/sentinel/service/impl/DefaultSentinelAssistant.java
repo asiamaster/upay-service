@@ -127,7 +127,6 @@ public class DefaultSentinelAssistant implements ISentinelAssistant {
             pipeline.del(lastMonthlyAmountKey);
 
             pipeline.sync();
-            LOG.debug("风控提示-资金账号: {} 提现金额: {}", passport.getAccountId(), passport.getAmount());
         };
 
         try {
