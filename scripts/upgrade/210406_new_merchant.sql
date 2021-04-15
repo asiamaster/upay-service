@@ -16,6 +16,9 @@ INSERT INTO `upay_fund_account`(`account_id`, `balance`, `frozen_amount`, `vouch
 VALUES (80002, 0, 0, 0, 0, now());
 INSERT INTO `upay_fund_account`(`account_id`, `balance`, `frozen_amount`, `vouch_amount`, `version`, `created_time`)
 VALUES (80003, 0, 0, 0, 0, now());
+UPDATE `upay_merchant` SET param = '{"maxPwdErrors": 5}' WHERE mch_id = 2;
+INSERT INTO `upay_global_permission`(`mch_id`, `deposit`, `withdraw`, `trade`, `created_time`)
+VALUES(2, '{"maxAmount":500000000}', '{"maxAmount":500000000,"dailyAmount":500000000,"dailyTimes":100,"monthlyAmount":5000000000}', '{"maxAmount":500000000,"dailyAmount":500000000,"dailyTimes":100,"monthlyAmount":10000000000}', now());
 
 -- 新增齐齐哈尔地利农产品
 DELETE FROM `upay_merchant` WHERE mch_id = 4;
@@ -35,6 +38,9 @@ INSERT INTO `upay_fund_account`(`account_id`, `balance`, `frozen_amount`, `vouch
 VALUES (30002, 0, 0, 0, 0, now());
 INSERT INTO `upay_fund_account`(`account_id`, `balance`, `frozen_amount`, `vouch_amount`, `version`, `created_time`)
 VALUES (30003, 0, 0, 0, 0, now());
+UPDATE `upay_merchant` SET param = '{"maxPwdErrors": 5}' WHERE mch_id = 4;
+INSERT INTO `upay_global_permission`(`mch_id`, `deposit`, `withdraw`, `trade`, `created_time`)
+VALUES(4, '{"maxAmount":500000000}', '{"maxAmount":500000000,"dailyAmount":500000000,"dailyTimes":100,"monthlyAmount":5000000000}', '{"maxAmount":500000000,"dailyAmount":500000000,"dailyTimes":100,"monthlyAmount":10000000000}', now());
 
 -- 新增牡丹江国际农产品
 DELETE FROM `upay_merchant` WHERE mch_id = 5;
@@ -54,6 +60,9 @@ INSERT INTO `upay_fund_account`(`account_id`, `balance`, `frozen_amount`, `vouch
 VALUES (50002, 0, 0, 0, 0, now());
 INSERT INTO `upay_fund_account`(`account_id`, `balance`, `frozen_amount`, `vouch_amount`, `version`, `created_time`)
 VALUES (50003, 0, 0, 0, 0, now());
+UPDATE `upay_merchant` SET param = '{"maxPwdErrors": 5}' WHERE mch_id = 5;
+INSERT INTO `upay_global_permission`(`mch_id`, `deposit`, `withdraw`, `trade`, `created_time`)
+VALUES(5, '{"maxAmount":500000000}', '{"maxAmount":500000000,"dailyAmount":500000000,"dailyTimes":100,"monthlyAmount":5000000000}', '{"maxAmount":500000000,"dailyAmount":500000000,"dailyTimes":100,"monthlyAmount":10000000000}', now());
 
 -- 新增贵阳地利农产品
 DELETE FROM `upay_merchant` WHERE mch_id = 6;
@@ -73,6 +82,9 @@ INSERT INTO `upay_fund_account`(`account_id`, `balance`, `frozen_amount`, `vouch
 VALUES (60002, 0, 0, 0, 0, now());
 INSERT INTO `upay_fund_account`(`account_id`, `balance`, `frozen_amount`, `vouch_amount`, `version`, `created_time`)
 VALUES (60003, 0, 0, 0, 0, now());
+UPDATE `upay_merchant` SET param = '{"maxPwdErrors": 5}' WHERE mch_id = 6;
+INSERT INTO `upay_global_permission`(`mch_id`, `deposit`, `withdraw`, `trade`, `created_time`)
+VALUES(6, '{"maxAmount":500000000}', '{"maxAmount":500000000,"dailyAmount":500000000,"dailyTimes":100,"monthlyAmount":5000000000}', '{"maxAmount":500000000,"dailyAmount":500000000,"dailyTimes":100,"monthlyAmount":10000000000}', now());
 
 -- 新增长春地利农副产品
 DELETE FROM `upay_merchant` WHERE mch_id = 7;
@@ -92,6 +104,9 @@ INSERT INTO `upay_fund_account`(`account_id`, `balance`, `frozen_amount`, `vouch
 VALUES (70002, 0, 0, 0, 0, now());
 INSERT INTO `upay_fund_account`(`account_id`, `balance`, `frozen_amount`, `vouch_amount`, `version`, `created_time`)
 VALUES (70003, 0, 0, 0, 0, now());
+UPDATE `upay_merchant` SET param = '{"maxPwdErrors": 5}' WHERE mch_id = 7;
+INSERT INTO `upay_global_permission`(`mch_id`, `deposit`, `withdraw`, `trade`, `created_time`)
+VALUES(7, '{"maxAmount":500000000}', '{"maxAmount":500000000,"dailyAmount":500000000,"dailyTimes":100,"monthlyAmount":5000000000}', '{"maxAmount":500000000,"dailyAmount":500000000,"dailyTimes":100,"monthlyAmount":10000000000}', now());
 
 -- 新增成都聚合市场
 DELETE FROM `upay_merchant` WHERE mch_id = 3;
@@ -111,3 +126,6 @@ INSERT INTO `upay_fund_account`(`account_id`, `balance`, `frozen_amount`, `vouch
 VALUES (90002, 0, 0, 0, 0, now());
 INSERT INTO `upay_fund_account`(`account_id`, `balance`, `frozen_amount`, `vouch_amount`, `version`, `created_time`)
 VALUES (90003, 0, 0, 0, 0, now());
+UPDATE `upay_merchant` SET param = '{"maxPwdErrors": 5}' WHERE mch_id = 3;
+INSERT INTO `upay_global_permission`(`mch_id`, `deposit`, `withdraw`, `trade`, `created_time`)
+VALUES(3, '{"maxAmount":500000000}', '{"maxAmount":500000000,"dailyAmount":500000000,"dailyTimes":100,"monthlyAmount":5000000000}', '{"maxAmount":500000000,"dailyAmount":500000000,"dailyTimes":100,"monthlyAmount":10000000000}', now());

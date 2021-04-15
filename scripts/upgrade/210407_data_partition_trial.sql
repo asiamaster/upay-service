@@ -1,9 +1,3 @@
-SELECT DISTINCT uua.mch_id FROM upay_user_statement uus INNER JOIN upay_user_account uua ON uus.account_id = uua.account_id;
---  结果为[8]时才往下执行
-
-SELECT DISTINCT uua.mch_id FROM upay_fund_statement ufs INNER JOIN upay_user_account uua ON ufs.account_id = uua.account_id;
---  结果为[8, 11]时才往下执行
-
 -- 资金账号表添加商户ID，用于数据分区(表)存储
 ALTER TABLE `upay_fund_account`
 ADD COLUMN `mch_id` BIGINT NOT NULL COMMENT '商户ID' AFTER `vouch_amount`;
@@ -11,13 +5,9 @@ ADD COLUMN `mch_id` BIGINT NOT NULL COMMENT '商户ID' AFTER `vouch_amount`;
 UPDATE `upay_fund_account` ufa
 SET mch_id = (SELECT mch_id FROM `upay_user_account` uua WHERE uua.account_id = ufa.account_id);
 
--- 生成寿光市场分区表
-RENAME TABLE upay_fund_statement to upay_fund_statement8;
-RENAME TABLE upay_user_statement to upay_user_statement8; 
-
--- 创建默认表
-DROP TABLE IF EXISTS `upay_fund_statement`;
-CREATE TABLE `upay_fund_statement` (
+-- 寿光市场分区表
+DROP TABLE IF EXISTS `upay_fund_statement8`;
+CREATE TABLE `upay_fund_statement8` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
     `payment_id` VARCHAR(40) NOT NULL COMMENT '支付ID',
     `account_id` BIGINT NOT NULL COMMENT '账号ID',
@@ -36,8 +26,8 @@ CREATE TABLE `upay_fund_statement` (
     KEY `idx_fund_stmt_createdTime` (`created_time`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-DROP TABLE IF EXISTS `upay_user_statement`;
-CREATE TABLE `upay_user_statement` (
+DROP TABLE IF EXISTS `upay_user_statement8`;
+CREATE TABLE `upay_user_statement8` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
     `trade_id` VARCHAR(40) NOT NULL COMMENT '交易ID',
     `payment_id` VARCHAR(40) NOT NULL COMMENT '支付ID',
@@ -59,15 +49,15 @@ CREATE TABLE `upay_user_statement` (
     KEY `idx_user_statement_createdTime` (`created_time`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-INSERT INTO upay_fund_statement(`payment_id`, `account_id`, `child_id`, `trade_type`, `action`, `balance`, `amount`, `type`, `type_name`, `description`, `created_time`)
-SELECT ufs.`payment_id`, ufs.`account_id`, ufs.`child_id`, ufs.`trade_type`, ufs.`action`, ufs.`balance`, ufs.`amount`, ufs.`type`, ufs.`type_name`, ufs.`description`, ufs.`created_time` FROM upay_fund_statement8 ufs INNER JOIN upay_fund_account ufa ON ufs.account_id = ufa.account_id WHERE ufa.mch_id=11;
+INSERT INTO upay_fund_statement8(`payment_id`, `account_id`, `child_id`, `trade_type`, `action`, `balance`, `amount`, `type`, `type_name`, `description`, `created_time`)
+SELECT ufs.`payment_id`, ufs.`account_id`, ufs.`child_id`, ufs.`trade_type`, ufs.`action`, ufs.`balance`, ufs.`amount`, ufs.`type`, ufs.`type_name`, ufs.`description`, ufs.`created_time` FROM upay_fund_statement ufs INNER JOIN upay_fund_account ufa ON ufs.account_id = ufa.account_id WHERE ufa.mch_id=8;
 
-DELETE ufs FROM upay_fund_statement8 ufs INNER JOIN upay_fund_account ufa ON ufs.account_id = ufa.account_id WHERE ufa.mch_id=11;
+DELETE ufs FROM upay_fund_statement ufs INNER JOIN upay_fund_account ufa ON ufs.account_id = ufa.account_id WHERE ufa.mch_id=8;
 
-INSERT INTO upay_user_statement(`trade_id`, `payment_id`, `channel_id`, `account_id`, `child_id`, `type`, `type_name`, `amount`, `fee`, `balance`, `frozen_amount`, `serial_no`, `state`, `created_time`)
-SELECT uus.`trade_id`, uus.`payment_id`, uus.`channel_id`, uus.`account_id`, uus.`child_id`, uus.`type`, uus.`type_name`, uus.`amount`, uus.`fee`, uus.`balance`, uus.`frozen_amount`, uus.`serial_no`, uus.`state`, uus.`created_time` FROM upay_user_statement8 uus INNER JOIN upay_fund_account ufa ON uus.account_id = ufa.account_id WHERE ufa.mch_id=11;
+INSERT INTO upay_user_statement8(`trade_id`, `payment_id`, `channel_id`, `account_id`, `child_id`, `type`, `type_name`, `amount`, `fee`, `balance`, `frozen_amount`, `serial_no`, `state`, `created_time`)
+SELECT uus.`trade_id`, uus.`payment_id`, uus.`channel_id`, uus.`account_id`, uus.`child_id`, uus.`type`, uus.`type_name`, uus.`amount`, uus.`fee`, uus.`balance`, uus.`frozen_amount`, uus.`serial_no`, uus.`state`, uus.`created_time` FROM upay_user_statement uus INNER JOIN upay_fund_account ufa ON uus.account_id = ufa.account_id WHERE ufa.mch_id=8;
 
-DELETE uus FROM upay_user_statement8 uus INNER JOIN upay_fund_account ufa ON uus.account_id = ufa.account_id WHERE ufa.mch_id=11;
+DELETE uus FROM upay_user_statement uus INNER JOIN upay_fund_account ufa ON uus.account_id = ufa.account_id WHERE ufa.mch_id=8;
 
 -- 沈阳市场分区表
 DROP TABLE IF EXISTS `upay_fund_statement9`;
@@ -113,6 +103,16 @@ CREATE TABLE `upay_user_statement9` (
    KEY `idx_user_statement_createdTime` (`created_time`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+INSERT INTO upay_fund_statement9(`payment_id`, `account_id`, `child_id`, `trade_type`, `action`, `balance`, `amount`, `type`, `type_name`, `description`, `created_time`)
+SELECT ufs.`payment_id`, ufs.`account_id`, ufs.`child_id`, ufs.`trade_type`, ufs.`action`, ufs.`balance`, ufs.`amount`, ufs.`type`, ufs.`type_name`, ufs.`description`, ufs.`created_time` FROM upay_fund_statement ufs INNER JOIN upay_fund_account ufa ON ufs.account_id = ufa.account_id WHERE ufa.mch_id=9;
+
+DELETE ufs FROM upay_fund_statement ufs INNER JOIN upay_fund_account ufa ON ufs.account_id = ufa.account_id WHERE ufa.mch_id=9;
+
+INSERT INTO upay_user_statement9(`trade_id`, `payment_id`, `channel_id`, `account_id`, `child_id`, `type`, `type_name`, `amount`, `fee`, `balance`, `frozen_amount`, `serial_no`, `state`, `created_time`)
+SELECT uus.`trade_id`, uus.`payment_id`, uus.`channel_id`, uus.`account_id`, uus.`child_id`, uus.`type`, uus.`type_name`, uus.`amount`, uus.`fee`, uus.`balance`, uus.`frozen_amount`, uus.`serial_no`, uus.`state`, uus.`created_time` FROM upay_user_statement uus INNER JOIN upay_fund_account ufa ON uus.account_id = ufa.account_id WHERE ufa.mch_id=9;
+
+DELETE uus FROM upay_user_statement uus INNER JOIN upay_fund_account ufa ON uus.account_id = ufa.account_id WHERE ufa.mch_id=9;
+
 -- 哈尔滨市场分区表
 DROP TABLE IF EXISTS `upay_fund_statement2`;
 CREATE TABLE `upay_fund_statement2` (
@@ -157,6 +157,16 @@ CREATE TABLE `upay_user_statement2` (
    KEY `idx_user_statement_createdTime` (`created_time`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+INSERT INTO upay_fund_statement2(`payment_id`, `account_id`, `child_id`, `trade_type`, `action`, `balance`, `amount`, `type`, `type_name`, `description`, `created_time`)
+SELECT ufs.`payment_id`, ufs.`account_id`, ufs.`child_id`, ufs.`trade_type`, ufs.`action`, ufs.`balance`, ufs.`amount`, ufs.`type`, ufs.`type_name`, ufs.`description`, ufs.`created_time` FROM upay_fund_statement ufs INNER JOIN upay_fund_account ufa ON ufs.account_id = ufa.account_id WHERE ufa.mch_id=2;
+
+DELETE ufs FROM upay_fund_statement ufs INNER JOIN upay_fund_account ufa ON ufs.account_id = ufa.account_id WHERE ufa.mch_id=2;
+
+INSERT INTO upay_user_statement2(`trade_id`, `payment_id`, `channel_id`, `account_id`, `child_id`, `type`, `type_name`, `amount`, `fee`, `balance`, `frozen_amount`, `serial_no`, `state`, `created_time`)
+SELECT uus.`trade_id`, uus.`payment_id`, uus.`channel_id`, uus.`account_id`, uus.`child_id`, uus.`type`, uus.`type_name`, uus.`amount`, uus.`fee`, uus.`balance`, uus.`frozen_amount`, uus.`serial_no`, uus.`state`, uus.`created_time` FROM upay_user_statement uus INNER JOIN upay_fund_account ufa ON uus.account_id = ufa.account_id WHERE ufa.mch_id=2;
+
+DELETE uus FROM upay_user_statement uus INNER JOIN upay_fund_account ufa ON uus.account_id = ufa.account_id WHERE ufa.mch_id=2;
+
 -- 贵阳市场分区表
 DROP TABLE IF EXISTS `upay_fund_statement6`;
 CREATE TABLE `upay_fund_statement6` (
@@ -200,3 +210,13 @@ CREATE TABLE `upay_user_statement6` (
    KEY `idx_user_statement_accountId` (`account_id`, `type`) USING BTREE,
    KEY `idx_user_statement_createdTime` (`created_time`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT INTO upay_fund_statement6(`payment_id`, `account_id`, `child_id`, `trade_type`, `action`, `balance`, `amount`, `type`, `type_name`, `description`, `created_time`)
+SELECT ufs.`payment_id`, ufs.`account_id`, ufs.`child_id`, ufs.`trade_type`, ufs.`action`, ufs.`balance`, ufs.`amount`, ufs.`type`, ufs.`type_name`, ufs.`description`, ufs.`created_time` FROM upay_fund_statement ufs INNER JOIN upay_fund_account ufa ON ufs.account_id = ufa.account_id WHERE ufa.mch_id=6;
+
+DELETE ufs FROM upay_fund_statement ufs INNER JOIN upay_fund_account ufa ON ufs.account_id = ufa.account_id WHERE ufa.mch_id=6;
+
+INSERT INTO upay_user_statement6(`trade_id`, `payment_id`, `channel_id`, `account_id`, `child_id`, `type`, `type_name`, `amount`, `fee`, `balance`, `frozen_amount`, `serial_no`, `state`, `created_time`)
+SELECT uus.`trade_id`, uus.`payment_id`, uus.`channel_id`, uus.`account_id`, uus.`child_id`, uus.`type`, uus.`type_name`, uus.`amount`, uus.`fee`, uus.`balance`, uus.`frozen_amount`, uus.`serial_no`, uus.`state`, uus.`created_time` FROM upay_user_statement uus INNER JOIN upay_fund_account ufa ON uus.account_id = ufa.account_id WHERE ufa.mch_id=6;
+
+DELETE uus FROM upay_user_statement uus INNER JOIN upay_fund_account ufa ON uus.account_id = ufa.account_id WHERE ufa.mch_id=6;
