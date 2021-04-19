@@ -16,10 +16,10 @@
     </resultMap>
 
     <insert id="insertFundAccount" parameterType="com.diligrp.xtrade.upay.core.model.FundAccount">
-        INSERT INTO upay_fund_account(account_id, balance, frozen_amount, vouch_amount,
+        INSERT INTO upay_fund_account(account_id, balance, frozen_amount, vouch_amount, mch_id,
             version, created_time, modified_time)
         VALUES
-          (#{accountId}, #{balance}, #{frozenAmount}, #{vouchAmount}, #{version},
+          (#{accountId}, #{balance}, #{frozenAmount}, #{vouchAmount}, #{mchId}, #{version},
           #{createdTime}, #{modifiedTime})
     </insert>
 
