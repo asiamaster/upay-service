@@ -127,4 +127,21 @@ public final class AccountStateMachine {
             throw new FundAccountException(ErrorCode.INVALID_ACCOUNT_STATE, account.getName() + "的资金账户状态异常");
         }
     }
+
+    /**
+     * 校验主资金账户状态是否允许交易, 寿光市场专用
+     */
+    public static void parentAccountStateCheck(UserAccount parent) {
+        if (parent.getState() == AccountState.VOID.getCode()) {
+            throw new FundAccountException(ErrorCode.INVALID_ACCOUNT_STATE, parent.getName() + "的主资金账户已注销");
+        }
+
+        if (parent.getState() == AccountState.FROZEN.getCode()) {
+            throw new FundAccountException(ErrorCode.INVALID_ACCOUNT_STATE, parent.getName() + "的主资金账户已冻结");
+        }
+
+        if (parent.getState() != AccountState.NORMAL.getCode()) {
+            throw new FundAccountException(ErrorCode.INVALID_ACCOUNT_STATE, parent.getName() + "的主资金账户状态异常");
+        }
+    }
 }

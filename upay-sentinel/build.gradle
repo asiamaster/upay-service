@@ -1,0 +1,9 @@
+group = 'com.diligrp'
+archivesBaseName = 'upay-sentinel'
+
+jar.enabled = true
+bootJar.enabled = false
+
+dependencies {
+    api project(':upay-core')
+}

@@ -5,6 +5,7 @@ import com.diligrp.xtrade.upay.core.model.Application;
 import com.diligrp.xtrade.upay.core.model.Merchant;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -21,4 +22,6 @@ public interface IMerchantDao extends MybatisMapperSupport {
     int updateMerchant(Merchant merchant);
 
     void insertApplication(Application application);
+
+    List<Integer> supportedChannels(Long mchId);
 }

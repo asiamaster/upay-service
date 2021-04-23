@@ -14,8 +14,10 @@ import com.diligrp.xtrade.upay.core.ErrorCode;
 import com.diligrp.xtrade.upay.core.domain.MerchantPermit;
 import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
 import com.diligrp.xtrade.upay.core.model.UserAccount;
+import com.diligrp.xtrade.upay.core.service.IAccessPermitService;
 import com.diligrp.xtrade.upay.core.service.IFundAccountService;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
+import com.diligrp.xtrade.upay.core.util.DataPartition;
 import com.diligrp.xtrade.upay.trade.dao.IPaymentFeeDao;
 import com.diligrp.xtrade.upay.trade.dao.ITradeOrderDao;
 import com.diligrp.xtrade.upay.trade.dao.ITradePaymentDao;
@@ -66,6 +68,9 @@ public class RefundFeePaymentServiceImpl implements IPaymentService {
     private IFundAccountService fundAccountService;
 
     @Resource
+    private IAccessPermitService accessPermitService;
+
+    @Resource
     private SnowflakeKeyManager snowflakeKeyManager;
 
     /**
@@ -83,7 +88,6 @@ public class RefundFeePaymentServiceImpl implements IPaymentService {
             throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "退费资金账号不一致");
         }
 
-        MerchantPermit merchant = payment.getObject(MerchantPermit.class.getName(), MerchantPermit.class);
         Optional<List<Fee>> feesOpt = payment.getObjects(Fee.class.getName());
         List<Fee> fees = feesOpt.orElseThrow(() -> new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "无退费信息"));
         long totalFee = fees.stream().mapToLong(Fee::getAmount).sum();
@@ -91,18 +95,20 @@ public class RefundFeePaymentServiceImpl implements IPaymentService {
             throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "实际退费金额与申请退费金额不一致");
         }
 
-        // 退费业务只支持账户/余额渠道
+        // 退费业务只支持多种支付渠道
+        UserAccount account = null;
+        TransactionStatus status = null;
         LocalDateTime now = LocalDateTime.now().withNano(0);
-        UserAccount account = fundAccountService.findUserAccountById(payment.getAccountId());
-        accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
         String paymentId = String.valueOf(keyGenerator.nextId());
-        AccountChannel channel = AccountChannel.of(paymentId, account.getAccountId(), account.getParentId());
-        IFundTransaction transaction = channel.openTransaction(trade.getType(), now);
-        fees.forEach(fee ->
-            transaction.income(fee.getAmount(), fee.getType(), fee.getTypeName())
-        );
-        TransactionStatus status = accountChannelService.submit(transaction);
+        if (ChannelType.ACCOUNT.equalTo(payment.getChannelId())) {
+            account = fundAccountService.findUserAccountById(payment.getAccountId());
+            accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
+            AccountChannel channel = AccountChannel.of(paymentId, account.getAccountId(), account.getParentId());
+            IFundTransaction transaction = channel.openTransaction(trade.getType(), now);
+            fees.forEach(fee -> transaction.income(fee.getAmount(), fee.getType(), fee.getTypeName(), fee.getDescription()));
+            status = accountChannelService.submit(transaction);
+        }
 
         TradeStateDto tradeState = TradeStateDto.of(trade.getTradeId(), TradeState.SUCCESS.getCode(), trade.getVersion(), now);
         int result = tradeOrderDao.compareAndSetState(tradeState);
@@ -117,26 +123,27 @@ public class RefundFeePaymentServiceImpl implements IPaymentService {
         tradePaymentDao.insertTradePayment(paymentDo);
 
         List<PaymentFee> paymentFeeDos = fees.stream().map(fee ->
-            PaymentFee.of(paymentId, fee.getAmount(), fee.getType(), fee.getTypeName(), now)
+            PaymentFee.of(paymentId, fee.getAmount(), fee.getType(), fee.getTypeName(), fee.getDescription(), now)
         ).collect(Collectors.toList());
         paymentFeeDao.insertPaymentFees(paymentFeeDos);
 
         // 处理退费账户业务账单
-        UserStatement statement = UserStatement.builder().tradeId(trade.getTradeId()).paymentId(paymentDo.getPaymentId())
-            .channelId(paymentDo.getChannelId()).accountId(paymentDo.getAccountId(), account.getParentId())
-            .type(StatementType.REFUND_FEE.getCode()).typeName(StatementType.REFUND_FEE.getName())
-            .amount(totalFee).fee(0L).balance(status.getBalance() + status.getAmount())
-            .frozenAmount(status.getFrozenBalance() + status.getFrozenAmount()).serialNo(trade.getSerialNo()).state(4)
-            .createdTime(now).build();
-        userStatementDao.insertUserStatement(statement);
+        if (ChannelType.ACCOUNT.equalTo(payment.getChannelId())) {
+            UserStatement statement = UserStatement.builder().tradeId(trade.getTradeId()).paymentId(paymentDo.getPaymentId())
+                .channelId(paymentDo.getChannelId()).accountId(paymentDo.getAccountId(), account.getParentId())
+                .type(StatementType.REFUND_FEE.getCode()).typeName(StatementType.REFUND_FEE.getName())
+                .amount(totalFee).fee(0L).balance(status.getBalance() + status.getAmount())
+                .frozenAmount(status.getFrozenBalance() + status.getFrozenAmount()).serialNo(trade.getSerialNo()).state(4)
+                .createdTime(now).build();
+            userStatementDao.insertUserStatement(DataPartition.strategy(account.getMchId()), statement);
+        }
 
         // 处理商户退款 - 最后处理园区收益，保证尽快释放共享数据的行锁以提高系统并发
+        MerchantPermit merchant = accessPermitService.loadMerchantPermit(trade.getMchId());
         AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);
         IFundTransaction feeTransaction = merChannel.openTransaction(trade.getType(), now);
-        fees.forEach(fee ->
-            feeTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName())
-        );
-        accountChannelService.submitOne(feeTransaction);
+        fees.forEach(fee -> feeTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName(), null));
+        accountChannelService.submitExclusively(feeTransaction);
 
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, paymentId, status);
     }

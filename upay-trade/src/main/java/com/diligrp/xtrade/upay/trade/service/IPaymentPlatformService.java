@@ -2,6 +2,7 @@ package com.diligrp.xtrade.upay.trade.service;
 
 import com.diligrp.xtrade.upay.core.domain.ApplicationPermit;
 import com.diligrp.xtrade.upay.trade.domain.ConfirmRequest;
+import com.diligrp.xtrade.upay.trade.domain.CorrectRequest;
 import com.diligrp.xtrade.upay.trade.domain.PaymentRequest;
 import com.diligrp.xtrade.upay.trade.domain.PaymentResult;
 import com.diligrp.xtrade.upay.trade.domain.RefundRequest;
@@ -39,6 +40,15 @@ public interface IPaymentPlatformService {
     PaymentResult confirm(ApplicationPermit application, ConfirmRequest request);
 
     /**
+     * 交易退款：支持部分退款或全额退款
+     *
+     * @param application - 应用接入许可
+     * @param request - 退款交易申请
+     * @return 支付结果
+     */
+    PaymentResult refund(ApplicationPermit application, RefundRequest request);
+
+    /**
      * 撤销交易：撤销预授权业务时将解冻冻结资金，撤销普通业务时将进行资金逆向操作
      *
      * @param application - 应用接入许可
@@ -46,4 +56,13 @@ public interface IPaymentPlatformService {
      * @return 支付结果
      */
     PaymentResult cancel(ApplicationPermit application, RefundRequest request);
+
+    /**
+     * 交易冲正：目前只有充值、提现允许进行交易冲正
+     *
+     * @param application - 应用接入许可
+     * @param request - 交易冲正申请
+     * @return 处理结果
+     */
+    PaymentResult correct(ApplicationPermit application, CorrectRequest request);
 }

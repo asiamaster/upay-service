@@ -14,11 +14,13 @@ import java.util.stream.Stream;
  * @date: 2020/10/10
  */
 public enum ProtocolType implements IEnumType {
-    ENTRY_FEE("进门收费", 30),
+    ENTRY_FEE("进门缴费", 30),
 
     LOCAL_DELIVER("本地配送", 40),
 
-    EXIT_FEE("出门缴费", 50);
+    EXIT_FEE("出门缴费", 50),
+
+    CREDIT_FEE("赊销缴费", 60);
 
     private String name;
     private int code;

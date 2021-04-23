@@ -34,6 +34,10 @@ public enum TradeState implements IEnumType {
         this.code = code;
     }
 
+    public boolean equalTo(int code) {
+        return this.code == code;
+    }
+
     public static Optional<TradeState> getState(int code) {
         Stream<TradeState> STATES = Arrays.stream(TradeState.values());
         return STATES.filter(state -> state.getCode() == code).findFirst();
@@ -50,12 +54,44 @@ public enum TradeState implements IEnumType {
         return Arrays.asList(TradeState.values());
     }
 
+    /**
+     * 交易订单是否允许确认交易
+     *
+     * @param state - 交易订单状态
+     * @return 是否允许确认交易
+     */
+    public static boolean forConfirm(int state) {
+        return state == TradeState.FROZEN.getCode();
+    }
+
+    /**
+     * 交易订单是否允许退款; 允许多次交易退款
+     *
+     * @param state - 交易订单状态
+     * @return 是否允许交易退款
+     */
+    public static boolean forRefund(int state) {
+        return state == TradeState.SUCCESS.getCode() || state == TradeState.REFUND.getCode();
+    }
+
+    /**
+     * 交易订单是否允许撤销
+     *
+     * @param state - 交易订单状态
+     * @return 是否允许撤销
+     */
     public static boolean forCancel(int state) {
         return state == TradeState.FROZEN.getCode() || state == TradeState.SUCCESS.getCode();
     }
 
-    public static boolean forConfirm(int state) {
-        return state == TradeState.FROZEN.getCode();
+    /**
+     * 交易订单是否允许交易冲正
+     *
+     * @param state - 交易订单状态
+     * @return 是否允许交易冲正
+     */
+    public static boolean forCorrect(int state) {
+        return state == TradeState.SUCCESS.getCode();
     }
 
     @Override

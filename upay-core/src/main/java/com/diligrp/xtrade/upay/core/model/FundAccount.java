@@ -16,6 +16,8 @@ public class FundAccount extends BaseDo {
     private Long frozenAmount;
     // 担保金额-分
     private Long vouchAmount;
+    // 商户ID
+    private Long mchId;
     // 数据版本号
     private Integer version;
 
@@ -51,6 +53,14 @@ public class FundAccount extends BaseDo {
         this.vouchAmount = vouchAmount;
     }
 
+    public Long getMchId() {
+        return mchId;
+    }
+
+    public void setMchId(Long mchId) {
+        this.mchId = mchId;
+    }
+
     public Integer getVersion() {
         return version;
     }
@@ -81,6 +91,11 @@ public class FundAccount extends BaseDo {
 
         public Builder vouchAmount(Long vouchAmount) {
             FundAccount.this.vouchAmount = vouchAmount;
+            return this;
+        }
+
+        public Builder mchId(Long mchId) {
+            FundAccount.this.mchId = mchId;
             return this;
         }
 

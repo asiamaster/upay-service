@@ -1,26 +1,20 @@
 package com.diligrp.xtrade.upay.trade.domain;
 
+import java.util.List;
+import java.util.Optional;
+
 /**
- * 交易退款申请，包括：交易撤销、交易退款和交易冲正
+ * 交易退款申请，包括：交易撤销、交易退款
  */
 public class RefundRequest {
     // 原交易ID
     private String tradeId;
-    // 交易账户ID
-    private Long accountId;
     // 处理金额
     private Long amount;
-    // 支付密码
-    private String password;
-
-    public static RefundRequest of(String tradeId, Long accountId, Long amount, String password) {
-        RefundRequest refund = new RefundRequest();
-        refund.setTradeId(tradeId);
-        refund.setAccountId(accountId);
-        refund.setAmount(amount);
-        refund.setPassword(password);
-        return refund;
-    }
+    // 费用列表 - "综合收费"退款时使用
+    private List<Fee> fees;
+    // 抵扣费用 - "综合收费"退款时使用
+    private List<Fee> deductFees;
 
     public String getTradeId() {
         return tradeId;
@@ -28,14 +22,6 @@ public class RefundRequest {
 
     public void setTradeId(String tradeId) {
         this.tradeId = tradeId;
-    }
-
-    public Long getAccountId() {
-        return accountId;
-    }
-
-    public void setAccountId(Long accountId) {
-        this.accountId = accountId;
     }
 
     public Long getAmount() {
@@ -46,11 +32,27 @@ public class RefundRequest {
         this.amount = amount;
     }
 
-    public String getPassword() {
-        return password;
+    public List<Fee> getFees() {
+        return fees;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
+    public void setFees(List<Fee> fees) {
+        this.fees = fees;
+    }
+
+    public List<Fee> getDeductFees() {
+        return deductFees;
+    }
+
+    public void setDeductFees(List<Fee> deductFees) {
+        this.deductFees = deductFees;
+    }
+
+    public Optional<List<Fee>> fees() {
+        return fees != null && fees.size() > 0 ? Optional.of(fees) : Optional.empty();
+    }
+
+    public Optional<List<Fee>> deductFees() {
+        return deductFees != null && deductFees.size() > 0 ? Optional.of(deductFees) : Optional.empty();
     }
 }

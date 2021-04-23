@@ -62,6 +62,7 @@ CREATE TABLE `upay_merchant` (
   `mch_id` BIGINT NOT NULL COMMENT '商户ID',
   `code` VARCHAR(20) NOT NULL COMMENT '商户编码',
   `name` VARCHAR(80) NOT NULL COMMENT '商户名称',
+  `parent_id` BIGINT NOT NULL COMMENT '父商户ID',
   `profit_account` BIGINT NOT NULL COMMENT '收益账户',
   `vouch_account` BIGINT NOT NULL COMMENT '担保账户',
   `pledge_account` BIGINT NOT NULL COMMENT '押金账户',
@@ -286,10 +287,29 @@ CREATE TABLE `upay_payment_fee` (
   `use_for` TINYINT UNSIGNED COMMENT '费用用途',
   `amount` BIGINT NOT NULL COMMENT '金额-分',
   `type` INT NOT NULL COMMENT '费用类型',
-  `type_name` VARCHAR(80) COMMENT '费用描述',
+  `type_name` VARCHAR(60) COMMENT '类型说明',
+  `description` VARCHAR(80) COMMENT '费用描述',
   `created_time` DATETIME COMMENT '创建时间',
   PRIMARY KEY (`id`),
   KEY `idx_payment_fee_paymentId` (`payment_id`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------------------
+-- 抵扣项费用表
+-- 说明：缴费时允许使用订金等进行抵扣
+-- --------------------------------------------------------------------
+DROP TABLE IF EXISTS `upay_deduct_fee`;
+CREATE TABLE `upay_deduct_fee` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `payment_id` VARCHAR(40) NOT NULL COMMENT '支付ID',
+  `use_for` TINYINT UNSIGNED COMMENT '费用用途',
+  `amount` BIGINT NOT NULL COMMENT '金额-分',
+  `type` INT NOT NULL COMMENT '费用类型',
+  `type_name` VARCHAR(60) COMMENT '类型说明',
+  `description` VARCHAR(80) COMMENT '费用描述',
+  `created_time` DATETIME COMMENT '创建时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_deduct_fee_paymentId` (`payment_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------------------
@@ -358,6 +378,42 @@ CREATE TABLE `upay_user_statement` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------------------
+-- 全局资金风控数据模型
+-- 说明：用于对某个商户下的账户资金进行全局风险控制，目前支持充值、提现和交易三大类交易风控；
+-- 全局风控采用JSON进行数据存储便于后期扩展，当账户未设置风控时，将使用商户级的全局风控设置；
+-- --------------------------------------------------------------------
+DROP TABLE IF EXISTS `upay_merchant_permission`;
+CREATE TABLE `upay_global_permission` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `mch_id` BIGINT NOT NULL COMMENT '商户ID',
+  `deposit` VARCHAR(200) NOT NULL COMMENT '充值配置',
+  `withdraw` VARCHAR(200) NOT NULL COMMENT '提现配置',
+  `trade` VARCHAR(200) NOT NULL COMMENT '交易配置',
+  `created_time` DATETIME COMMENT '创建时间',
+  `modified_time` DATETIME COMMENT '修改时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_global_permission_mchId` (`mch_id`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------------------
+-- 资金风控数据模型
+-- 说明：用于账户资金的风险控制，目前支持充值、提现和交易三大类交易风控；
+-- 风控可细化至单笔限额、日限额、日次数和月限额等，各类风控采用JSON进行数据存储便于后期扩展；
+-- --------------------------------------------------------------------
+DROP TABLE IF EXISTS `upay_user_permission`;
+CREATE TABLE `upay_user_permission` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `account_id` BIGINT NOT NULL COMMENT '账号ID',
+  `deposit` VARCHAR(200) NOT NULL COMMENT '充值配置',
+  `withdraw` VARCHAR(200) NOT NULL COMMENT '提现配置',
+  `trade` VARCHAR(200) NOT NULL COMMENT '交易配置',
+  `created_time` DATETIME COMMENT '创建时间',
+  `modified_time` DATETIME COMMENT '修改时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_user_permission_accountId` (`account_id`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------------------
 -- 免密支付协议表
 -- 说明：一个资金账号可以有多个不同类型的免密协议，且免密协议只能在指定金额范围内有效；
 -- --------------------------------------------------------------------
@@ -412,5 +468,62 @@ CREATE TABLE `upay_snapshot_guard` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------------------
--- 银行和第三方通道数据模型暂不设计
+-- 新增通道管理配置数据模型
 -- --------------------------------------------------------------------
+DROP TABLE IF EXISTS `upay_pipeline`;
+CREATE TABLE `upay_pipeline` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `mch_id` BIGINT NOT NULL COMMENT '商户ID',
+  `code` VARCHAR(20) NOT NULL COMMENT '通道编码',
+  `name` VARCHAR(40) NOT NULL COMMENT '通道名称',
+  `uri` VARCHAR(60) NOT NULL COMMENT '通道访问URI',
+  `param` VARCHAR(250) NULL COMMENT '通道参数',
+  `state` TINYINT UNSIGNED NOT NULL COMMENT '通道状态',
+  `created_time` DATETIME COMMENT '创建时间',
+  `modified_time` DATETIME COMMENT '修改时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY  `uk_payment_pipeline_code` (`code`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------------------
+-- 新增通道支付申请数据模型
+-- --------------------------------------------------------------------
+DROP TABLE IF EXISTS `upay_pipeline_payment`;
+CREATE TABLE `upay_pipeline_payment` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `payment_id` VARCHAR(40) NOT NULL COMMENT '支付ID',
+  `trade_id` VARCHAR(40) NOT NULL COMMENT '交易ID',
+  `code` VARCHAR(20) NOT NULL COMMENT '通道编码',
+  `to_account` VARCHAR(20) NOT NULL COMMENT '通道账户',
+  `to_name` VARCHAR(40) COMMENT '通道账户名',
+  `to_type` TINYINT UNSIGNED COMMENT '账户类型',
+  `serial_no` VARCHAR(40) COMMENT '通道流水号',
+  `amount` BIGINT NOT NULL COMMENT '申请金额-分',
+  `fee` BIGINT NOT NULL COMMENT '费用金额-分',
+  `state` TINYINT UNSIGNED NOT NULL COMMENT '申请状态',
+  `description` VARCHAR(128) COMMENT '备注',
+  `retry_count` INTEGER UNSIGNED NOT NULL COMMENT '重试次数',
+  `version` INTEGER UNSIGNED NOT NULL COMMENT '数据版本号',
+  `created_time` DATETIME COMMENT '创建时间',
+  `modified_time` DATETIME COMMENT '修改时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_pipeline_payment_paymentId` (`payment_id`) USING BTREE,
+  KEY `idx_pipeline_payment_tradeId` (`trade_id`) USING BTREE,
+  KEY `idx_pipeline_payment_serialNo` (`serial_no`) USING BTREE,
+  KEY `idx_pipeline_payment_createdTime` (`created_time`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------------------
+-- 商户支付渠道数据模型
+-- --------------------------------------------------------------------
+DROP TABLE IF EXISTS `upay_merchant_channel`;
+CREATE TABLE `upay_merchant_channel` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `mch_id` BIGINT NOT NULL COMMENT '商户ID',
+  `channel_id` INT NOT NULL COMMENT '支付渠道ID',
+  `channel_name` VARCHAR(40) COMMENT '支付渠道名称',
+  `description` VARCHAR(128) COMMENT '备注',
+  `created_time` DATETIME COMMENT '创建时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_merchant_channel_channelId` (`channel_id`, `mch_id`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

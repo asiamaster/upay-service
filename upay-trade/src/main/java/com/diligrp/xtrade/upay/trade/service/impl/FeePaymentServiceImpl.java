@@ -16,6 +16,7 @@ import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
 import com.diligrp.xtrade.upay.core.model.UserAccount;
 import com.diligrp.xtrade.upay.core.service.IAccessPermitService;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
+import com.diligrp.xtrade.upay.core.util.DataPartition;
 import com.diligrp.xtrade.upay.trade.dao.IPaymentFeeDao;
 import com.diligrp.xtrade.upay.trade.dao.IRefundPaymentDao;
 import com.diligrp.xtrade.upay.trade.dao.ITradeOrderDao;
@@ -94,7 +95,6 @@ public class FeePaymentServiceImpl implements IPaymentService {
             throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "缴费资金账号不一致");
         }
 
-        MerchantPermit merchant = payment.getObject(MerchantPermit.class.getName(), MerchantPermit.class);
         Optional<List<Fee>> feesOpt = payment.getObjects(Fee.class.getName());
         List<Fee> fees = feesOpt.orElseThrow(() -> new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "无收费信息"));
         long totalFee = fees.stream().mapToLong(Fee::getAmount).sum();
@@ -105,10 +105,12 @@ public class FeePaymentServiceImpl implements IPaymentService {
         // 处理账户余额缴费
         UserAccount account = null;
         LocalDateTime now = LocalDateTime.now().withNano(0);
-        if (payment.getChannelId() == ChannelType.CASH.getCode()) { // 现金缴费不校验密码（办卡/换卡工本费）
+        MerchantPermit merchant = accessPermitService.loadMerchantPermit(trade.getMchId());
+        int maxPwdErrors = merchant.configuration().maxPwdErrors();
+        if (!ChannelType.ACCOUNT.equalTo(payment.getChannelId())) { // 非账户缴费不校验密码（办卡/换卡工本费）
             account = accountChannelService.checkTradePermission(payment.getAccountId());
         } else if (payment.getProtocolId() == null) { // 交易密码校验
-            account = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
+            account = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), maxPwdErrors);
         } else { // 免密支付
             account = paymentProtocolService.checkProtocolPermission(payment.getAccountId(),
                 payment.getProtocolId(), payment.getAmount());
@@ -121,9 +123,7 @@ public class FeePaymentServiceImpl implements IPaymentService {
         if (payment.getChannelId() == ChannelType.ACCOUNT.getCode()) {
             AccountChannel channel = AccountChannel.of(paymentId, account.getAccountId(), account.getParentId());
             IFundTransaction transaction = channel.openTransaction(trade.getType(), now);
-            fees.forEach(fee ->
-                transaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName())
-            );
+            fees.forEach(fee -> transaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName(), fee.getDescription()));
             status = accountChannelService.submit(transaction);
         }
 
@@ -140,29 +140,27 @@ public class FeePaymentServiceImpl implements IPaymentService {
         tradePaymentDao.insertTradePayment(paymentDo);
 
         List<PaymentFee> paymentFeeDos = fees.stream().map(fee ->
-            PaymentFee.of(paymentId, fee.getAmount(), fee.getType(), fee.getTypeName(), now)
+            PaymentFee.of(paymentId, fee.getAmount(), fee.getType(), fee.getTypeName(), fee.getDescription(), now)
         ).collect(Collectors.toList());
         paymentFeeDao.insertPaymentFees(paymentFeeDos);
 
         // 只有通过账户余额进行缴费才生成缴费账户业务账单
         if (payment.getChannelId() == ChannelType.ACCOUNT.getCode()) {
-            String typeName = StatementType.PAY_FEE.getName() + (ObjectUtils.isNull(trade.getDescription())
+            String typeName = StatementType.PAY_FEE.getName() + (ObjectUtils.isEmpty(trade.getDescription())
                 ? "" : "-" + trade.getDescription());
             UserStatement statement = UserStatement.builder().tradeId(trade.getTradeId()).paymentId(paymentDo.getPaymentId())
                 .channelId(paymentDo.getChannelId()).accountId(paymentDo.getAccountId(), account.getParentId())
                 .type(StatementType.PAY_FEE.getCode()).typeName(typeName).amount(- totalFee).fee(0L)
                 .balance(status.getBalance() + status.getAmount()).frozenAmount(status.getFrozenBalance() + status.getFrozenAmount())
                 .serialNo(trade.getSerialNo()).state(4).createdTime(now).build();
-            userStatementDao.insertUserStatement(statement);
+            userStatementDao.insertUserStatement(DataPartition.strategy(account.getMchId()), statement);
         }
 
         // 处理商户收款 - 最后处理园区收益，保证尽快释放共享数据的行锁以提高系统并发
         AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);
         IFundTransaction feeTransaction = merChannel.openTransaction(trade.getType(), now);
-        fees.forEach(fee ->
-            feeTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName())
-        );
-        accountChannelService.submitOne(feeTransaction);
+        fees.forEach(fee -> feeTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName(), null));
+        accountChannelService.submitExclusively(feeTransaction);
 
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, paymentId, status);
     }
@@ -173,6 +171,7 @@ public class FeePaymentServiceImpl implements IPaymentService {
      * 撤销交易-资金做逆向操作，商户退缴费金额
      */
     @Override
+    @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public PaymentResult cancel(TradeOrder trade, Refund cancel) {
         if (trade.getState() != TradeState.SUCCESS.getCode()) {
             throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "无效的交易状态，不能进行撤销操作");
@@ -191,19 +190,15 @@ public class FeePaymentServiceImpl implements IPaymentService {
         LocalDateTime now = LocalDateTime.now().withNano(0);
         UserAccount account = accountChannelService.checkTradePermission(trade.getAccountId());
         accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
-        // 获取交易订单中的商户收益账号信息
-        MerchantPermit merchant = accessPermitService.loadMerchantPermit(trade.getMchId());
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
         String paymentId = String.valueOf(keyGenerator.nextId());
 
         // 处理客户收款
         TransactionStatus status = null;
-        if (payment.getChannelId() == ChannelType.ACCOUNT.getCode()) {
+        if (ChannelType.ACCOUNT.equalTo(payment.getChannelId())) {
             AccountChannel channel = AccountChannel.of(paymentId, account.getAccountId(), account.getParentId());
             IFundTransaction transaction = channel.openTransaction(TradeType.CANCEL_TRADE.getCode(), now);
-            fees.forEach(fee ->
-                transaction.income(fee.getAmount(), fee.getType(), fee.getTypeName())
-            );
+            fees.forEach(fee -> transaction.income(fee.getAmount(), fee.getType(), fee.getTypeName(), fee.getDescription()));
             status = accountChannelService.submit(transaction);
         }
 
@@ -225,24 +220,23 @@ public class FeePaymentServiceImpl implements IPaymentService {
         }
 
         // 生成退款账户业务账单
-        String typeName = ObjectUtils.isNull(trade.getDescription()) ? StatementType.PAY_FEE.getName() + "-"
-            + StatementType.REFUND.getName() : trade.getDescription() + "-" + StatementType.REFUND.getName();
-        if (payment.getChannelId() == ChannelType.ACCOUNT.getCode()) {
+        String typeName = ObjectUtils.isEmpty(trade.getDescription()) ? StatementType.REFUND.getName()  + "-" +
+            StatementType.PAY_FEE.getName() : StatementType.REFUND.getName() + "-" + trade.getDescription();
+        if (ChannelType.ACCOUNT.equalTo(payment.getChannelId())) {
             UserStatement statement = UserStatement.builder().tradeId(trade.getTradeId()).paymentId(paymentId)
                 .channelId(payment.getChannelId()).accountId(payment.getAccountId(), account.getParentId())
                 .type(StatementType.REFUND.getCode()).typeName(typeName).amount(totalFees).fee(0L)
                 .balance(status.getBalance() + status.getAmount()).frozenAmount(status.getFrozenBalance()
                 + status.getFrozenAmount()).serialNo(trade.getSerialNo()).state(4).createdTime(now).build();
-            userStatementDao.insertUserStatement(statement);
+            userStatementDao.insertUserStatement(DataPartition.strategy(account.getMchId()), statement);
         }
 
         // 处理商户退款 - 最后处理园区收益，保证尽快释放共享数据的行锁以提高系统并发
+        MerchantPermit merchant = accessPermitService.loadMerchantPermit(trade.getMchId());
         AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);
         IFundTransaction feeTransaction = merChannel.openTransaction(TradeType.CANCEL_TRADE.getCode(), now);
-        fees.forEach(fee ->
-            feeTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName())
-        );
-        accountChannelService.submitOne(feeTransaction);
+        fees.forEach(fee -> feeTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName(), null));
+        accountChannelService.submitExclusively(feeTransaction);
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, paymentId, status);
     }
 

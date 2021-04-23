@@ -14,7 +14,9 @@ import com.diligrp.xtrade.upay.core.ErrorCode;
 import com.diligrp.xtrade.upay.core.domain.MerchantPermit;
 import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
 import com.diligrp.xtrade.upay.core.model.UserAccount;
+import com.diligrp.xtrade.upay.core.service.IAccessPermitService;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
+import com.diligrp.xtrade.upay.core.util.DataPartition;
 import com.diligrp.xtrade.upay.trade.dao.IPaymentFeeDao;
 import com.diligrp.xtrade.upay.trade.dao.ITradeOrderDao;
 import com.diligrp.xtrade.upay.trade.dao.ITradePaymentDao;
@@ -67,6 +69,9 @@ public class BankDepositPaymentServiceImpl implements IPaymentService {
     private IAccountChannelService accountChannelService;
 
     @Resource
+    private IAccessPermitService accessPermitService;
+
+    @Resource
     private SnowflakeKeyManager snowflakeKeyManager;
 
     /**
@@ -88,17 +93,17 @@ public class BankDepositPaymentServiceImpl implements IPaymentService {
 
         // 处理网银充值
         LocalDateTime now = LocalDateTime.now().withNano(0);
-        UserAccount account = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
+        MerchantPermit merchant = accessPermitService.loadMerchantPermit(trade.getMchId());
+        int maxPwdErrors = merchant.configuration().maxPwdErrors();
+        UserAccount account = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), maxPwdErrors);
         accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
         String paymentId = String.valueOf(keyGenerator.nextId());
         AccountChannel channel = AccountChannel.of(paymentId, account.getAccountId(), account.getParentId());
         IFundTransaction transaction = channel.openTransaction(trade.getType(), now);
-        transaction.income(trade.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName());
+        transaction.income(trade.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName(), null);
         // 网银充值退手续费
-        fees.forEach(fee -> {
-            transaction.income(fee.getAmount(), fee.getType(), fee.getTypeName());
-        });
+        fees.forEach(fee -> transaction.income(fee.getAmount(), fee.getType(), fee.getTypeName(), fee.getDescription()));
         TransactionStatus status = accountChannelService.submit(transaction);
 
         TradeStateDto tradeState = TradeStateDto.of(trade.getTradeId(), TradeState.SUCCESS.getCode(), trade.getVersion(), now);
@@ -114,7 +119,7 @@ public class BankDepositPaymentServiceImpl implements IPaymentService {
         tradePaymentDao.insertTradePayment(paymentDo);
         if (!fees.isEmpty()) {
             List<PaymentFee> paymentFeeDos = fees.stream().map(fee ->
-                PaymentFee.of(paymentId, fee.getAmount(), fee.getType(), fee.getTypeName(), now)
+                PaymentFee.of(paymentId, fee.getAmount(), fee.getType(), fee.getTypeName(), fee.getDescription(), now)
             ).collect(Collectors.toList());
             paymentFeeDao.insertPaymentFees(paymentFeeDos);
         }
@@ -126,17 +131,14 @@ public class BankDepositPaymentServiceImpl implements IPaymentService {
             .amount(trade.getAmount() + totalFee).fee(totalFee).balance(status.getBalance() + status.getAmount())
             .frozenAmount(status.getFrozenBalance() + status.getFrozenAmount()).serialNo(trade.getSerialNo()).state(4)
             .createdTime(now).build();
-        userStatementDao.insertUserStatement(statement);
+        userStatementDao.insertUserStatement(DataPartition.strategy(account.getMchId()), statement);
 
         // 处理商户退费 - 最后处理园区收益，保证尽快释放共享数据的行锁以提高系统并发
         if (!fees.isEmpty()) {
-            MerchantPermit merchant = payment.getObject(MerchantPermit.class.getName(), MerchantPermit.class);
             AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);
             IFundTransaction feeTransaction = merChannel.openTransaction(trade.getType(), now);
-            fees.forEach(fee ->
-                feeTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName())
-            );
-            accountChannelService.submitOne(feeTransaction);
+            fees.forEach(fee -> feeTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName(), null));
+            accountChannelService.submitExclusively(feeTransaction);
         }
 
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, paymentId, status);

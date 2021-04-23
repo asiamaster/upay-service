@@ -22,9 +22,11 @@
         <result column="mch_id" property="mchId"/>
         <result column="code" property="code"/>
         <result column="name" property="name"/>
+        <result column="parent_id" property="parentId"/>
         <result column="profit_account" property="profitAccount"/>
         <result column="vouch_account" property="vouchAccount"/>
         <result column="pledge_account" property="pledgeAccount"/>
+        <result column="param" property="param"/>
         <result column="address" property="address"/>
         <result column="contact" property="contact"/>
         <result column="mobile" property="mobile"/>
@@ -42,10 +44,10 @@
     </select>
     
     <insert id="insertMerchant" parameterType="com.diligrp.xtrade.upay.core.model.Merchant">
-        INSERT INTO upay_merchant(mch_id, code, name, profit_account, vouch_account, pledge_account,
+        INSERT INTO upay_merchant(mch_id, code, name, parent_id, profit_account, vouch_account, pledge_account,
             address, contact, mobile, state, created_time)
         VALUES
-            (#{mchId}, #{code}, #{name}, #{profitAccount}, #{vouchAccount}, #{pledgeAccount},
+            (#{mchId}, #{code}, #{name}, #{parentId}, #{profitAccount}, #{vouchAccount}, #{pledgeAccount},
              #{address}, #{contact}, #{mobile}, #{state}, #{createdTime})
     </insert>
 
@@ -73,4 +75,13 @@
         INSERT INTO upay_application(app_id, mch_id, name, access_token, app_private_key, app_public_key, private_key, public_key, created_time)
         VALUES (#{appId}, #{mchId}, #{name}, #{accessToken}, #{appPrivateKey}, #{appPublicKey}, #{privateKey}, #{publicKey}, #{createdTime})
     </insert>
+
+    <select id="supportedChannels" parameterType="long" resultType="int">
+        SELECT
+            channel_id
+        FROM
+            upay_merchant_channel
+        WHERE
+            mch_id = #{mchId}
+    </select>
 </mapper>

@@ -1,5 +1,7 @@
 package com.diligrp.xtrade.upay.core.domain;
 
+import java.util.function.Consumer;
+
 /**
  * 商户注册申请模型
  */
@@ -10,6 +12,8 @@ public class RegisterMerchant {
     private String code;
     // 商户名称
     private String name;
+    // 父商户ID
+    private Long parentId;
     // 商户地址
     private String address;
     // 联系人
@@ -43,6 +47,14 @@ public class RegisterMerchant {
         this.name = name;
     }
 
+    public Long getParentId() {
+        return parentId;
+    }
+
+    public void setParentId(Long parentId) {
+        this.parentId = parentId;
+    }
+
     public String getAddress() {
         return address;
     }
@@ -73,5 +85,15 @@ public class RegisterMerchant {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public void ifParentId(Consumer<Long> consumer) {
+        if (parentId != null && parentId != 0) {
+            consumer.accept(parentId);
+        }
+    }
+
+    public Long parentMchId() {
+        return parentId != null && parentId != 0 ? parentId : mchId;
     }
 }

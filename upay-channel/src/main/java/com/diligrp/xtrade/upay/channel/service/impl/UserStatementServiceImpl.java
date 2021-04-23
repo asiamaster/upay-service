@@ -6,6 +6,7 @@ import com.diligrp.xtrade.upay.channel.domain.UserStatementDto;
 import com.diligrp.xtrade.upay.channel.domain.UserStatementFilter;
 import com.diligrp.xtrade.upay.channel.domain.UserStatementQuery;
 import com.diligrp.xtrade.upay.channel.service.IUserStatementService;
+import com.diligrp.xtrade.upay.core.util.DataPartition;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -27,16 +28,16 @@ public class UserStatementServiceImpl implements IUserStatementService {
      * {@inheritDoc}
      */
     @Override
-    public List<UserStatementDto> listUserStatements(UserStatementQuery query) {
-        return userStatementDao.listUserStatements(query);
+    public List<UserStatementDto> listUserStatements(Long mchId, UserStatementQuery query) {
+        return userStatementDao.listUserStatements(DataPartition.strategy(mchId), query);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public SumUserStatement sumUserStatements(UserStatementQuery query) {
-        return userStatementDao.sumUserStatements(query);
+    public SumUserStatement sumUserStatements(Long mchId, UserStatementQuery query) {
+        return userStatementDao.sumUserStatements(DataPartition.strategy(mchId), query);
     }
 
     /**
@@ -45,8 +46,8 @@ public class UserStatementServiceImpl implements IUserStatementService {
      * 某个资金账号的某笔交易有且只有一条(非退款的)交易账单
      */
     @Override
-    public UserStatementDto findUserStatement(UserStatementFilter filter) {
-        return userStatementDao.findUserStatement(filter);
+    public UserStatementDto findUserStatement(Long mchId, UserStatementFilter filter) {
+        return userStatementDao.findUserStatement(DataPartition.strategy(mchId), filter);
     }
 
     /**
@@ -55,7 +56,7 @@ public class UserStatementServiceImpl implements IUserStatementService {
      * 某个资金账号的某笔交易有一条或多条退款账单
      */
     @Override
-    public List<UserStatementDto> listRefundStatements(UserStatementFilter filter) {
-        return userStatementDao.listRefundStatements(filter);
+    public List<UserStatementDto> listRefundStatements(Long mchId, UserStatementFilter filter) {
+        return userStatementDao.listRefundStatements(DataPartition.strategy(mchId), filter);
     }
 }

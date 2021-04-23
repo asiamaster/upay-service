@@ -12,7 +12,16 @@ import java.util.List;
  */
 @Repository("paymentFeeDao")
 public interface IPaymentFeeDao extends MybatisMapperSupport {
+    void insertPaymentFee(PaymentFee fee);
+
     void insertPaymentFees(List<PaymentFee> fees);
 
     List<PaymentFee> findPaymentFees(String paymentId);
+
+    void insertDeductFee(PaymentFee fee);
+
+    void insertDeductFees(List<PaymentFee> fees);
+
+    List<PaymentFee> findDeductFees(String paymentId);
+
 }

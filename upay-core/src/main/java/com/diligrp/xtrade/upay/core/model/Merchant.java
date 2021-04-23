@@ -14,12 +14,16 @@ public class Merchant extends BaseDo {
     private String code;
     // 商户名称
     private String name;
+    // 父商户ID
+    private Long parentId;
     // 收益账户
     private Long profitAccount;
     // 担保账户
     private Long vouchAccount;
     // 押金账户
     private Long pledgeAccount;
+    // 参数配置
+    private String param;
     // 商户地址
     private String address;
     // 联系人
@@ -53,6 +57,14 @@ public class Merchant extends BaseDo {
         this.name = name;
     }
 
+    public Long getParentId() {
+        return parentId;
+    }
+
+    public void setParentId(Long parentId) {
+        this.parentId = parentId;
+    }
+
     public Long getProfitAccount() {
         return profitAccount;
     }
@@ -75,6 +87,14 @@ public class Merchant extends BaseDo {
 
     public void setPledgeAccount(Long pledgeAccount) {
         this.pledgeAccount = pledgeAccount;
+    }
+
+    public String getParam() {
+        return param;
+    }
+
+    public void setParam(String param) {
+        this.param = param;
     }
 
     public String getAddress() {
@@ -126,6 +146,11 @@ public class Merchant extends BaseDo {
 
         public Builder name(String name) {
             Merchant.this.name = name;
+            return this;
+        }
+
+        public Builder parentId(Long parentId) {
+            Merchant.this.parentId = parentId;
             return this;
         }
 

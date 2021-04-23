@@ -13,13 +13,16 @@ import com.diligrp.xtrade.upay.channel.service.IAccountChannelService;
 import com.diligrp.xtrade.upay.channel.service.IFrozenOrderService;
 import com.diligrp.xtrade.upay.core.ErrorCode;
 import com.diligrp.xtrade.upay.core.domain.FundTransaction;
+import com.diligrp.xtrade.upay.core.domain.MerchantPermit;
 import com.diligrp.xtrade.upay.core.domain.RegisterAccount;
 import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
+import com.diligrp.xtrade.upay.core.exception.FundAccountException;
 import com.diligrp.xtrade.upay.core.model.UserAccount;
 import com.diligrp.xtrade.upay.core.service.IFundAccountService;
 import com.diligrp.xtrade.upay.core.service.IFundStreamEngine;
 import com.diligrp.xtrade.upay.core.type.AccountState;
 import com.diligrp.xtrade.upay.core.util.AccountStateMachine;
+import com.diligrp.xtrade.upay.core.util.AsyncTaskExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -58,16 +61,17 @@ public class AccountChannelServiceImpl implements IAccountChannelService {
      * 注册平台账户需指定商户
      */
     @Override
-    public long registerFundAccount(Long mchId, RegisterAccount account) {
-        return fundAccountService.createUserAccount(mchId, account);
+    public long registerFundAccount(MerchantPermit merchant, RegisterAccount account) {
+        // 子商户下创建资金账号自动转为主商户
+        return fundAccountService.createUserAccount(merchant.parentMchId(), account);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void unregisterFundAccount(Long mchId, Long accountId) {
-        fundAccountService.unregisterUserAccount(mchId, accountId);
+    public void unregisterFundAccount(MerchantPermit merchant, Long accountId) {
+        fundAccountService.unregisterUserAccount(merchant.getMchId(), accountId);
     }
 
     /**
@@ -89,11 +93,24 @@ public class AccountChannelServiceImpl implements IAccountChannelService {
      * 如果没有任何资金变动（资金收支或资金冻结）将抛出异常
      */
     @Override
-    public TransactionStatus submitOne(IFundTransaction transaction) {
+    public TransactionStatus submitOnce(IFundTransaction transaction) {
         Optional<FundTransaction> transactionOpt = transaction.fundTransaction();
         FundTransaction fundTransaction = transactionOpt.orElseThrow(
             () -> new PaymentChannelException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "无效资金事务"));
-        return fundStreamEngine.submitOne(fundTransaction);
+        return fundStreamEngine.submitOnce(fundTransaction);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * 如果没有任何资金变动（资金收支或资金冻结）将抛出异常
+     */
+    @Override
+    public TransactionStatus submitExclusively(IFundTransaction transaction) {
+        Optional<FundTransaction> transactionOpt = transaction.fundTransaction();
+        FundTransaction fundTransaction = transactionOpt.orElseThrow(
+            () -> new PaymentChannelException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "无效资金事务"));
+        return fundStreamEngine.submitExclusively(fundTransaction);
     }
 
     /**
@@ -153,10 +170,13 @@ public class AccountChannelServiceImpl implements IAccountChannelService {
                 Long errors = incAndGetErrors(dailyKey);
                 // 超过密码最大错误次数，冻结账户
                 if (errors >= maxPwdErrors) {
-                    fundAccountService.freezeUserAccount(accountId);
-                    throw new PaymentChannelException(ErrorCode.INVALID_ACCOUNT_PASSWORD, "交易密码错误，已经锁定账户");
+                    AsyncTaskExecutor.submit(() -> fundAccountService.freezeUserAccountNow(accountId));
+                    removeCachedErrors(dailyKey);
+                    throw new PaymentChannelException(ErrorCode.INVALID_ACCOUNT_PASSWORD, "交易密码错误，已经冻结账户");
                 } else if (errors == maxPwdErrors - 1) {
-                    throw new PaymentChannelException(ErrorCode.INVALID_ACCOUNT_PASSWORD, "交易密码错误，再输入错误一次将锁定账户");
+                    throw new PaymentChannelException(ErrorCode.INVALID_ACCOUNT_PASSWORD, "交易密码错误，再输入错误1次将冻结账户");
+                } else if (errors == maxPwdErrors - 2) {
+                    throw new PaymentChannelException(ErrorCode.INVALID_ACCOUNT_PASSWORD, "交易密码错误，再输入错误2次将冻结账户");
                 }
             }
             throw new PaymentChannelException(ErrorCode.INVALID_ACCOUNT_PASSWORD, "交易密码错误");
@@ -184,10 +204,15 @@ public class AccountChannelServiceImpl implements IAccountChannelService {
 
     /**
      * {@inheritDoc}
+     *
+     * 修改账户状态为正常、清除密码错误次数(密码错误时会冻结账户)
      */
     @Override
     public void resetTradePassword(long accountId, String password) {
         fundAccountService.resetTradePassword(accountId, password);
+        // 清除密码错误次数
+        String dailyKey = PASSWORD_KEY_PREFIX + DateUtils.formatDate(LocalDate.now(), DateUtils.YYYYMMDD) + accountId;
+        removeCachedErrors(dailyKey);
     }
 
     /**
@@ -200,7 +225,7 @@ public class AccountChannelServiceImpl implements IAccountChannelService {
         AccountStateMachine.accountStateCheck(account);
         if (account.getParentId() != 0) {
             UserAccount parent = fundAccountService.findUserAccountById(account.getParentId());
-            AccountStateMachine.accountStateCheck(parent);
+            AccountStateMachine.parentAccountStateCheck(parent);
         }
     }
 

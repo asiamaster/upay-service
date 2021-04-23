@@ -22,8 +22,13 @@ import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
 import com.diligrp.xtrade.upay.core.model.UserAccount;
 import com.diligrp.xtrade.upay.core.service.IAccessPermitService;
 import com.diligrp.xtrade.upay.core.service.IFundAccountService;
+import com.diligrp.xtrade.upay.core.type.Permission;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
 import com.diligrp.xtrade.upay.core.util.AsyncTaskExecutor;
+import com.diligrp.xtrade.upay.core.util.DataPartition;
+import com.diligrp.xtrade.upay.sentinel.domain.Passport;
+import com.diligrp.xtrade.upay.sentinel.domain.RiskControlEngine;
+import com.diligrp.xtrade.upay.sentinel.service.IRiskControlService;
 import com.diligrp.xtrade.upay.trade.dao.IPaymentFeeDao;
 import com.diligrp.xtrade.upay.trade.dao.ITradeOrderDao;
 import com.diligrp.xtrade.upay.trade.dao.ITradePaymentDao;
@@ -84,6 +89,9 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
     private IFundAccountService fundAccountService;
 
     @Resource
+    private IRiskControlService riskControlService;
+
+    @Resource
     private IAccessPermitService accessPermitService;
 
     @Resource
@@ -109,10 +117,16 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
         Optional<List<Fee>> feesOpt = payment.getObjects(Fee.class.getName());
         feesOpt.ifPresent(fees -> { throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "预授权冻结不支持收取费用"); });
 
-        // 冻结资金
         LocalDateTime now = LocalDateTime.now().withNano(0);
-        UserAccount fromAccount = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
+        MerchantPermit merchant = accessPermitService.loadMerchantPermit(trade.getMchId());
+        int maxPwdErrors = merchant.configuration().maxPwdErrors();
+        UserAccount fromAccount = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), maxPwdErrors);
+        UserAccount toAccount = fundAccountService.findUserAccountById(trade.getAccountId());
+        if (!ObjectUtils.equals(fromAccount.getMchId(), toAccount.getMchId())) {
+            throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "不能进行跨商户交易");
+        }
         accountChannelService.checkAccountTradeState(fromAccount); // 寿光专用业务逻辑
+
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
         String paymentId = String.valueOf(keyGenerator.nextId());
         AccountChannel channel = AccountChannel.of(paymentId, fromAccount.getAccountId(), fromAccount.getParentId());
@@ -176,32 +190,33 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
 
         // 获取商户收益账号信息
         LocalDateTime now = LocalDateTime.now().withNano(0);
-        UserAccount fromAccount = accountChannelService.checkTradePermission(payment.getAccountId(), confirm.getPassword(), -1);
-        accountChannelService.checkAccountTradeState(fromAccount); // 寿光专用业务逻辑
-        if (!ObjectUtils.equals(fromAccount.getMchId(), trade.getMchId())) {
-            throw new TradePaymentException(ErrorCode.OPERATION_NOT_ALLOWED, "不能进行跨商户交易");
-        }
         MerchantPermit merchant = accessPermitService.loadMerchantPermit(trade.getMchId());
+        int maxPwdErrors = merchant.configuration().maxPwdErrors();
+        UserAccount fromAccount = accountChannelService.checkTradePermission(payment.getAccountId(), confirm.getPassword(), maxPwdErrors);
+        UserAccount toAccount = fundAccountService.findUserAccountById(trade.getAccountId());
+        accountChannelService.checkAccountTradeState(fromAccount); // 寿光专用业务逻辑
+        accountChannelService.checkAccountTradeState(toAccount); // 寿光专用业务逻辑
+        // 风控检查
+        toAccount.checkPermission(Permission.FOR_TRADE); // 检查卖家交易权限
+        RiskControlEngine riskControlEngine = riskControlService.loadRiskControlEngine(fromAccount);
+        Passport passport = Passport.ofTrade(fromAccount.getAccountId(), fromAccount.getPermission(), confirm.getAmount());
+        riskControlEngine.checkPassport(passport);
 
         // 处理买家付款和买家佣金
         AccountChannel fromChannel = AccountChannel.of(payment.getPaymentId(), fromAccount.getAccountId(), fromAccount.getParentId());
         IFundTransaction fromTransaction = fromChannel.openTransaction(trade.getType(), now);
         fromTransaction.unfreeze(frozenOrder.getAmount());
-        fromTransaction.outgo(confirm.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName());
-        fees.stream().filter(Fee::forBuyer).forEach(fee -> {
-            fromTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName());
-        });
+        fromTransaction.outgo(confirm.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName(), null);
+        fees.stream().filter(Fee::forBuyer)
+            .forEach(fee -> fromTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName(), fee.getDescription()));
         TransactionStatus status = accountChannelService.submit(fromTransaction);
 
         // 处理卖家收款和卖家佣金
-        UserAccount toAccount = fundAccountService.findUserAccountById(trade.getAccountId());
-        accountChannelService.checkAccountTradeState(toAccount); // 寿光专用业务逻辑
         AccountChannel toChannel = AccountChannel.of(payment.getPaymentId(), toAccount.getAccountId(), toAccount.getParentId());
         IFundTransaction toTransaction = toChannel.openTransaction(trade.getType(), now);
-        toTransaction.income(confirm.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName());
-        fees.stream().filter(Fee::forSeller).forEach(fee -> {
-            toTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName());
-        });
+        toTransaction.income(confirm.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName(), null);
+        fees.stream().filter(Fee::forSeller)
+            .forEach(fee -> toTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName(), fee.getDescription()));
         status.setRelation(accountChannelService.submit(toTransaction));
 
         // 修改冻结订单"已解冻"状态
@@ -227,8 +242,8 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
             throw new TradePaymentException(ErrorCode.DATA_CONCURRENT_UPDATED, "系统正忙，请稍后重试");
         }
         if (!fees.isEmpty()) {
-            List<PaymentFee> paymentFeeDos = fees.stream().map(fee ->
-                PaymentFee.of(payment.getPaymentId(), fee.getUseFor(), fee.getAmount(), fee.getType(), fee.getTypeName(), now)
+            List<PaymentFee> paymentFeeDos = fees.stream().map(fee -> PaymentFee.of(payment.getPaymentId(),
+                fee.getUseFor(), fee.getAmount(), fee.getType(), fee.getTypeName(), fee.getDescription(), now)
             ).collect(Collectors.toList());
             paymentFeeDao.insertPaymentFees(paymentFeeDos);
         }
@@ -248,18 +263,18 @@ public class AuthTradePaymentServiceImpl extends TradePaymentServiceImpl impleme
             .amount(confirm.getAmount() - toFee).fee(toFee).balance(relation.getBalance() + relation.getAmount())
             .frozenAmount(relation.getFrozenBalance() + relation.getFrozenAmount()).serialNo(trade.getSerialNo()).state(4)
             .createdTime(now).collect(statements);
-        userStatementDao.insertUserStatements(statements);
+        userStatementDao.insertUserStatements(DataPartition.strategy(fromAccount.getMchId()), statements);
 
         // 处理商户收益 - 最后处理园区收益，保证尽快释放共享数据的行锁以提高系统并发
         if (!fees.isEmpty()) {
             AccountChannel merChannel = AccountChannel.of(payment.getPaymentId(), merchant.getProfitAccount(), 0L);
             IFundTransaction merTransaction = merChannel.openTransaction(trade.getType(), now);
-            fees.forEach(fee ->
-                merTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName())
-            );
-            accountChannelService.submitOne(merTransaction);
+            fees.forEach(fee -> merTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName(), null));
+            accountChannelService.submitExclusively(merTransaction);
         }
 
+        // 刷新风控数据
+        riskControlEngine.admitPassport(passport);
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, payment.getPaymentId(), status);
     }
 

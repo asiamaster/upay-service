@@ -113,6 +113,8 @@ public class TransactionStatus {
         private Integer type;
         // 类型名称
         private String typeName;
+        // 资金描述
+        private String description;
 
         public Long getBalance() {
             return balance;
@@ -146,12 +148,21 @@ public class TransactionStatus {
             this.typeName = typeName;
         }
 
-        public static FundStream of(Long balance, Long amount, Integer type, String typeName) {
+        public String getDescription() {
+            return description;
+        }
+
+        public void setDescription(String description) {
+            this.description = description;
+        }
+
+        public static FundStream of(Long balance, Long amount, Integer type, String typeName, String description) {
             FundStream stream = new FundStream();
             stream.setBalance(balance);
             stream.setAmount(amount);
             stream.setType(type);
             stream.setTypeName(typeName);
+            stream.setDescription(description);
             return stream;
         }
     }

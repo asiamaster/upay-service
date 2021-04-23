@@ -1,0 +1,12 @@
+group = 'com.diligrp'
+archivesBaseName = 'upay-pipeline'
+
+jar.enabled = true
+bootJar.enabled = false
+
+dependencies {
+    api project(':upay-core')
+    implementation 'org.apache.commons:commons-text:1.9'
+    implementation 'dom4j:dom4j:1.6.1'
+    implementation 'jaxen:jaxen:1.2.0'
+}

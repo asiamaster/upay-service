@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.diligrp.xtrade.upay.pipeline.dao.IPipelinePaymentDao">
+
+    <resultMap id="PaymentPipelineMap" type="com.diligrp.xtrade.upay.pipeline.model.PaymentPipeline">
+        <id column="id" property="id"/>
+        <result column="mch_id" property="mchId"/>
+        <result column="code" property="code"/>
+        <result column="name" property="name"/>
+        <result column="uri" property="uri"/>
+        <result column="param" property="param"/>
+        <result column="state" property="state"/>
+        <result column="created_time" property="createdTime"/>
+        <result column="modified_time" property="modifiedTime"/>
+    </resultMap>
+
+    <resultMap id="PipelinePaymentMap" type="com.diligrp.xtrade.upay.pipeline.model.PipelinePayment">
+        <id column="id" property="id"/>
+        <result column="payment_id" property="paymentId"/>
+        <result column="trade_id" property="tradeId"/>
+        <result column="code" property="code"/>
+        <result column="to_account" property="toAccount"/>
+        <result column="to_name" property="toName"/>
+        <result column="to_type" property="toType"/>
+        <result column="bank_no" property="bankNo"/>
+        <result column="bank_name" property="bankName"/>
+        <result column="serial_no" property="serialNo"/>
+        <result column="amount" property="amount"/>
+        <result column="fee" property="fee"/>
+        <result column="state" property="state"/>
+        <result column="description" property="description"/>
+        <result column="retry_count" property="retryCount"/>
+        <result column="version" property="version"/>
+        <result column="created_time" property="createdTime"/>
+        <result column="modified_time" property="modifiedTime"/>
+    </resultMap>
+
+    <select id="findPipelineByCode" parameterType="string" resultMap="PaymentPipelineMap">
+        SELECT * FROM upay_pipeline WHERE code = #{code}
+    </select>
+
+    <insert id="insertPipelinePayment" parameterType="com.diligrp.xtrade.upay.pipeline.model.PipelinePayment">
+        INSERT INTO
+            upay_pipeline_payment(payment_id, trade_id, code, to_account, to_name, to_type, bank_no, bank_name, serial_no,
+                amount, fee, state, description, version, retry_count, created_time)
+        VALUES
+            (#{paymentId}, #{tradeId}, #{code}, #{toAccount}, #{toName}, #{toType}, #{bankNo}, #{bankName}, #{serialNo},
+             #{amount}, #{fee}, #{state}, #{description}, #{version}, #{retryCount}, #{createdTime})
+    </insert>
+
+    <select id="findPipelinePayment" parameterType="string" resultMap="PipelinePaymentMap">
+        SELECT * FROM upay_pipeline_payment WHERE payment_id = #{paymentId}
+    </select>
+
+    <update id="compareAndSetState" parameterType="com.diligrp.xtrade.upay.pipeline.domain.PipelinePaymentDto">
+        UPDATE upay_pipeline_payment SET version = version + 1
+        <if test="serialNo != null">
+            , serial_no = #{serialNo}
+        </if>
+        <if test="fee != null">
+            , fee = #{fee}
+        </if>
+        <if test="state != null">
+            , state = #{state}
+        </if>
+        <if test="description != null">
+            , description = #{description}
+        </if>
+        <if test="retryCount != null">
+            , retry_count = #{retryCount}
+        </if>
+        <if test="modifiedTime != null">
+            , modified_time = #{modifiedTime}
+        </if>
+        WHERE
+            payment_id = #{paymentId} AND version = #{version}
+    </update>
+
+    <update id="incPipelineTryCount" parameterType="map">
+        UPDATE
+            upay_pipeline_payment
+        SET
+            retry_count = retry_count + 1, modified_time = #{when}, version = version + 1
+        WHERE
+            payment_id = #{paymentId}
+    </update>
+
+    <select id="listPipelineStatements" parameterType="com.diligrp.xtrade.upay.pipeline.domain.PipelineStatementQuery" resultType="com.diligrp.xtrade.upay.pipeline.domain.UserPipelineStatement">
+        SELECT
+            up.`name` AS pipeline, upp.to_account AS toAccount, upp.to_name AS toName, utp.channel_id AS channelId, upp.amount, upp.fee,
+            uto.serial_no AS serialNo, upp.state, upp.created_time AS createdTime, upp.modified_time AS modifedTime
+        FROM
+            upay_pipeline_payment upp
+        INNER JOIN
+            upay_pipeline up ON upp.`code` = up.`code`
+        INNER JOIN
+            upay_trade_order uto ON upp.trade_id = uto.trade_id
+        INNER JOIN
+            upay_trade_payment utp ON upp.payment_id = utp.payment_id
+        WHERE
+            uto.mch_id = #{mchId}
+            <if test="accountId != null">
+                AND utp.`account_id` = #{accountId}
+            </if>
+            <if test="type != null">
+                AND uto.`type` = #{type}
+            </if>
+            <if test="state != null">
+                AND upp.`state` = #{state}
+            </if>
+            <if test="startDate != null">
+                <![CDATA[AND upp.created_time > #{startDate}]]>
+            </if>
+            <if test="endDate != null">
+                <![CDATA[AND upp.created_time < #{endDate}]]>
+            </if>
+        ORDER BY upp.created_time DESC
+        LIMIT #{start}, #{limit}
+    </select>
+
+    <select id="countPipelineStatements" parameterType="com.diligrp.xtrade.upay.pipeline.domain.PipelineStatementQuery" resultType="long">
+        SELECT
+            COUNT(*)
+        FROM
+            upay_pipeline_payment upp
+        INNER JOIN
+            upay_pipeline up ON upp.`code` = up.`code`
+        INNER JOIN
+            upay_trade_order uto ON upp.trade_id = uto.trade_id
+        INNER JOIN
+            upay_trade_payment utp ON upp.payment_id = utp.payment_id
+        WHERE
+            uto.mch_id = #{mchId}
+            <if test="accountId != null">
+                AND utp.`account_id` = #{accountId}
+            </if>
+            <if test="type != null">
+                AND uto.`type` = #{type}
+            </if>
+            <if test="state != null">
+                AND upp.`state` = #{state}
+            </if>
+            <if test="startDate != null">
+                <![CDATA[AND upp.created_time > #{startDate}]]>
+            </if>
+            <if test="endDate != null">
+                <![CDATA[AND upp.created_time < #{endDate}]]>
+            </if>
+    </select>
+</mapper>

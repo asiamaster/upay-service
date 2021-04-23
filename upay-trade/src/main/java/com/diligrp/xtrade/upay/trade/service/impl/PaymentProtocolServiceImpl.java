@@ -120,6 +120,10 @@ public class PaymentProtocolServiceImpl implements IPaymentProtocolService {
 
         Optional<UserProtocol> protoOpt = userProtocolDao.findUserProtocolById(protocolId);
         UserProtocol proto = protoOpt.orElseThrow(() -> new UserProtocolException(ErrorCode.OBJECT_NOT_FOUND, "免密支付协议不存在"));
+        // 免密协议中accountId=0时，表示适用于任何资金账号
+        if (proto.getAccountId() > 0 && proto.getAccountId() != accountId) {
+            throw new UserProtocolException(ErrorCode.OPERATION_NOT_ALLOWED, "账号未开通免密支付协议");
+        }
         if (proto.getState() != ProtocolState.NORMAL.getCode()) {
             throw new UserProtocolException(ErrorCode.OPERATION_NOT_ALLOWED, "不允许使用免密支付，协议状态异常");
         }

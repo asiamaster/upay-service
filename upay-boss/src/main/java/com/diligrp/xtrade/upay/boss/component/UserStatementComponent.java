@@ -36,6 +36,8 @@ public class UserStatementComponent {
     public UserStatementResult list(ServiceRequest<ListUserStatement> request) {
         ListUserStatement data = request.getData();
         AssertUtils.notNull(data.getAccountId(), "accountId missed");
+        AssertUtils.notNull(data.getPageNo(), "pageNo missed");
+        AssertUtils.notNull(data.getPageSize(), "pageSize missed");
         AssertUtils.isTrue(data.getPageNo() > 0, "invalid pageNo");
         AssertUtils.isTrue(data.getPageSize() > 0, "invalid pageSize");
         LocalDate endDate = data.getEndDate() != null ? data.getEndDate().plusDays(1) : data.getEndDate();
@@ -44,9 +46,9 @@ public class UserStatementComponent {
 
         UserAccount userAccount = fundAccountService.findUserAccountById(data.getAccountId());
         userAccount.ifChildAccount(account -> query.setAccountId(account.getParentId()));
-        SumUserStatement sum = userStatementService.sumUserStatements(query);
+        SumUserStatement sum = userStatementService.sumUserStatements(userAccount.getMchId(), query);
         if (sum != null && sum.getTotal() > 0) {
-            List<UserStatementDto> statements = userStatementService.listUserStatements(query);
+            List<UserStatementDto> statements = userStatementService.listUserStatements(userAccount.getMchId(), query);
             return UserStatementResult.success(sum.getTotal(), statements, sum.getIncome(), sum.getOutput());
         }
         return UserStatementResult.success(0, Collections.emptyList(), 0, 0);
@@ -63,7 +65,7 @@ public class UserStatementComponent {
         UserStatementFilter filter = UserStatementFilter.of(data.getTradeId(), data.getAccountId());
         UserAccount userAccount = fundAccountService.findUserAccountById(data.getAccountId());
         userAccount.ifChildAccount(account -> filter.setAccountId(account.getParentId()));
-        return userStatementService.findUserStatement(filter);
+        return userStatementService.findUserStatement(userAccount.getMchId(), filter);
     }
 
     /**
@@ -77,6 +79,6 @@ public class UserStatementComponent {
         UserStatementFilter filter = UserStatementFilter.of(data.getTradeId(), data.getAccountId());
         UserAccount userAccount = fundAccountService.findUserAccountById(data.getAccountId());
         userAccount.ifChildAccount(account -> filter.setAccountId(account.getParentId()));
-        return userStatementService.listRefundStatements(filter);
+        return userStatementService.listRefundStatements(userAccount.getMchId(), filter);
     }
 }

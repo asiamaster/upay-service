@@ -14,6 +14,7 @@ import com.diligrp.xtrade.upay.core.ErrorCode;
 import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
 import com.diligrp.xtrade.upay.core.model.UserAccount;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
+import com.diligrp.xtrade.upay.core.util.DataPartition;
 import com.diligrp.xtrade.upay.trade.dao.ITradeOrderDao;
 import com.diligrp.xtrade.upay.trade.dao.ITradePaymentDao;
 import com.diligrp.xtrade.upay.trade.domain.Fee;
@@ -83,7 +84,7 @@ public class PredepositPaymentServiceImpl implements IPaymentService {
         String paymentId = String.valueOf(keyGenerator.nextId());
         AccountChannel channel = AccountChannel.of(paymentId, account.getAccountId(), account.getParentId());
         IFundTransaction transaction = channel.openTransaction(trade.getType(), now);
-        transaction.income(trade.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName());
+        transaction.income(trade.getAmount(), FundType.FUND.getCode(), FundType.FUND.getName(), null);
         TransactionStatus status = accountChannelService.submit(transaction);
 
         TradeStateDto tradeState = TradeStateDto.of(trade.getTradeId(), TradeState.SUCCESS.getCode(), trade.getVersion(), now);
@@ -104,7 +105,7 @@ public class PredepositPaymentServiceImpl implements IPaymentService {
             .amount(trade.getAmount()).fee(0L).balance(status.getBalance() + status.getAmount())
             .frozenAmount(status.getFrozenBalance() + status.getFrozenAmount()).serialNo(trade.getSerialNo()).state(4)
             .createdTime(now).build();
-        userStatementDao.insertUserStatement(statement);
+        userStatementDao.insertUserStatement(DataPartition.strategy(account.getMchId()), statement);
 
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, paymentId, status);
     }

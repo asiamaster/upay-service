@@ -7,6 +7,7 @@ import com.diligrp.xtrade.upay.boss.domain.TradeId;
 import com.diligrp.xtrade.upay.core.domain.ApplicationPermit;
 import com.diligrp.xtrade.upay.core.domain.TransactionStatus;
 import com.diligrp.xtrade.upay.trade.domain.ConfirmRequest;
+import com.diligrp.xtrade.upay.trade.domain.CorrectRequest;
 import com.diligrp.xtrade.upay.trade.domain.PaymentRequest;
 import com.diligrp.xtrade.upay.trade.domain.PaymentResult;
 import com.diligrp.xtrade.upay.trade.domain.RefundRequest;
@@ -36,7 +37,7 @@ public class TradeServiceComponent {
         AssertUtils.notNull(trade.getAmount(), "amount missed");
         AssertUtils.isTrue(trade.getAmount() > 0, "Invalid amount");
 
-        ApplicationPermit permit = request.getContext().getObject(ApplicationPermit.class.getName(), ApplicationPermit.class);
+        ApplicationPermit permit = request.getContext().getObject(ApplicationPermit.class);
         String tradeId = paymentPlatformService.createTrade(permit, trade);
         return TradeId.of(tradeId);
     }
@@ -59,8 +60,15 @@ public class TradeServiceComponent {
             AssertUtils.notNull(fee.getAmount(), "fee amount missed");
             AssertUtils.isTrue(fee.getAmount() > 0, "Invalid fee amount");
         }));
+        // 抵扣费用参数校验 - 综合收费使用
+        payment.deductFees().ifPresent(fees -> fees.stream().forEach(fee -> {
+            AssertUtils.notNull(fee.getType(), "deduct fee type missed");
+            AssertUtils.notNull(fee.getTypeName(), "deduct fee name missed");
+            AssertUtils.notNull(fee.getAmount(), "deduct fee amount missed");
+            AssertUtils.isTrue(fee.getAmount() > 0, "Invalid deduct fee amount");
+        }));
 
-        ApplicationPermit permit = request.getContext().getObject(ApplicationPermit.class.getName(), ApplicationPermit.class);
+        ApplicationPermit permit = request.getContext().getObject(ApplicationPermit.class);
         PaymentResult result = paymentPlatformService.commit(permit, payment);
         // 如有余额信息则返回余额信息
         return result.getStatus();
@@ -86,9 +94,37 @@ public class TradeServiceComponent {
             AssertUtils.isTrue(fee.getAmount() > 0, "Invalid fee amount");
         }));
 
-        ApplicationPermit permit = request.getContext().getObject(ApplicationPermit.class.getName(), ApplicationPermit.class);
+        ApplicationPermit permit = request.getContext().getObject(ApplicationPermit.class);
         PaymentResult result = paymentPlatformService.confirm(permit, confirm);
         // 如有余额信息则返回余额信息
+        return result.getStatus();
+    }
+
+    /**
+     * 交易冲正, 只有充值和提现才允许交易冲正
+     */
+    public TransactionStatus refund(ServiceRequest<RefundRequest> request) {
+        RefundRequest refund = request.getData();
+        AssertUtils.notEmpty(refund.getTradeId(), "tradeId missed");
+        // 退款金额有效性检查放在各服务内判断
+        AssertUtils.notNull(refund.getAmount(), "amount missed");
+        // 费用参数校验
+        refund.fees().ifPresent(fees -> fees.stream().forEach(fee -> {
+            AssertUtils.notNull(fee.getType(), "fee type missed");
+            AssertUtils.notNull(fee.getTypeName(), "fee name missed");
+            AssertUtils.notNull(fee.getAmount(), "fee amount missed");
+            AssertUtils.isTrue(fee.getAmount() > 0, "Invalid fee amount");
+        }));
+        // 抵扣费用参数校验 - 综合收费使用
+        refund.deductFees().ifPresent(fees -> fees.stream().forEach(fee -> {
+            AssertUtils.notNull(fee.getType(), "deduct fee type missed");
+            AssertUtils.notNull(fee.getTypeName(), "deduct fee name missed");
+            AssertUtils.notNull(fee.getAmount(), "deduct fee amount missed");
+            AssertUtils.isTrue(fee.getAmount() > 0, "Invalid deduct fee amount");
+        }));
+
+        ApplicationPermit application = request.getContext().getObject(ApplicationPermit.class);
+        PaymentResult result = paymentPlatformService.refund(application, refund);
         return result.getStatus();
     }
 
@@ -101,9 +137,30 @@ public class TradeServiceComponent {
         RefundRequest cancel = request.getData();
         AssertUtils.notEmpty(cancel.getTradeId(), "tradeId missed");
 
-        ApplicationPermit application = request.getContext().getObject(ApplicationPermit.class.getName(), ApplicationPermit.class);
+        ApplicationPermit application = request.getContext().getObject(ApplicationPermit.class);
         PaymentResult result = paymentPlatformService.cancel(application, cancel);
         // 如有余额信息则返回余额信息
+        return result.getStatus();
+    }
+
+    /**
+     * 交易冲正, 只有充值和提现才允许交易冲正
+     */
+    public TransactionStatus correct(ServiceRequest<CorrectRequest> request) {
+        CorrectRequest correct = request.getData();
+        AssertUtils.notEmpty(correct.getTradeId(), "tradeId missed");
+        AssertUtils.notNull(correct.getAccountId(), "accountId missed");
+        // 冲正金额有效性检查放在各服务内判断，充值和提现冲正金额有效性校验不同
+        AssertUtils.notNull(correct.getAmount(), "amoamountunt missed");
+        correct.fee().ifPresent(fee -> {
+            AssertUtils.notNull(fee.getType(), "fee type missed");
+            AssertUtils.notNull(fee.getTypeName(), "fee name missed");
+            // 费用有效性检查放在各服务内判断，充值和提现冲正费用有效性校验不同
+            AssertUtils.notNull(fee.getAmount(), "fee amount missed");
+        });
+
+        ApplicationPermit application = request.getContext().getObject(ApplicationPermit.class);
+        PaymentResult result = paymentPlatformService.correct(application, correct);
         return result.getStatus();
     }
 }

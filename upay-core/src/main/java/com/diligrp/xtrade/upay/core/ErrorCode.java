@@ -28,6 +28,10 @@ public class ErrorCode {
     public static final int TRADE_NOT_FOUND = 502003;
     // 无效的交易状态
     public static final int INVALID_TRADE_STATE = 502004;
+    // 支付通道不支持
+    public static final int PIPELINE_NOT_SUPPORTED = 502005;
+    // 支付通道不可用
+    public static final int PIPELINE_NOT_READY = 502006;
     // 资金账号不存在
     public static final int ACCOUNT_NOT_FOUND = 503001;
     // 无效资金账号状态

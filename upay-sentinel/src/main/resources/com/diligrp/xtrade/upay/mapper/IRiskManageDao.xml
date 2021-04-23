@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.diligrp.xtrade.upay.sentinel.dao.IRiskManageDao">
+
+    <resultMap id="GlobalPermissionMap" type="com.diligrp.xtrade.upay.sentinel.model.GlobalPermission">
+        <id column="id" property="id"/>
+        <result column="mch_id" property="mchId"/>
+        <result column="deposit" property="deposit"/>
+        <result column="withdraw" property="withdraw"/>
+        <result column="trade" property="trade"/>
+        <result column="created_time" property="createdTime"/>
+        <result column="modified_time" property="modifiedTime"/>
+    </resultMap>
+
+    <resultMap id="UserPermissionMap" type="com.diligrp.xtrade.upay.sentinel.model.UserPermission">
+        <id column="id" property="id"/>
+        <result column="account_id" property="accountId"/>
+        <result column="deposit" property="deposit"/>
+        <result column="withdraw" property="withdraw"/>
+        <result column="trade" property="trade"/>
+        <result column="created_time" property="createdTime"/>
+        <result column="modified_time" property="modifiedTime"/>
+    </resultMap>
+
+    <select id="findGlobalPermissionById" parameterType="long" resultMap="GlobalPermissionMap">
+        SELECT * FROM upay_global_permission WHERE mch_id = #{mchId}
+    </select>
+
+    <insert id="insertGlobalPermission" parameterType="com.diligrp.xtrade.upay.sentinel.model.GlobalPermission">
+        INSERT INTO
+            upay_global_permission(mch_id, deposit, withdraw, trade, created_time)
+        VALUES
+            (#{mchId}, #{deposit}, #{withdraw}, #{trade}, #{createdTime})
+    </insert>
+
+    <update id="updateGlobalPermission" parameterType="com.diligrp.xtrade.upay.sentinel.model.GlobalPermission">
+        UPDATE
+            upay_global_permission
+        SET
+            modified_time = #{modifiedTime}
+        <if test="deposit != null">
+            , deposit = #{deposit}
+        </if>
+        <if test="withdraw != null">
+            , withdraw = #{withdraw}
+        </if>
+        <if test="trade != null">
+            , trade = #{trade}
+        </if>
+        WHERE
+            mch_id = #{mchId}
+    </update>
+
+    <select id="findUserPermissionById" parameterType="long" resultMap="UserPermissionMap">
+        SELECT * FROM upay_user_permission WHERE account_id = #{accountId}
+    </select>
+
+    <insert id="insertUserPermission" parameterType="com.diligrp.xtrade.upay.sentinel.model.UserPermission">
+        INSERT INTO
+            upay_user_permission(account_id, deposit, withdraw, trade, created_time)
+        VALUES
+            (#{accountId}, #{deposit}, #{withdraw}, #{trade}, #{createdTime})
+    </insert>
+
+    <update id="updateUserPermission" parameterType="com.diligrp.xtrade.upay.sentinel.model.UserPermission">
+        UPDATE
+            upay_user_permission
+        SET
+            modified_time = #{modifiedTime}
+            <if test="deposit != null">
+                , deposit = #{deposit}
+            </if>
+            <if test="withdraw != null">
+                , withdraw = #{withdraw}
+            </if>
+            <if test="trade != null">
+                , trade = #{trade}
+            </if>
+        WHERE
+            account_id = #{accountId}
+    </update>
+</mapper>

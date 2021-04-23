@@ -5,6 +5,8 @@ import com.diligrp.xtrade.shared.domain.ServiceRequest;
 import com.diligrp.xtrade.shared.sapi.CallableComponent;
 import com.diligrp.xtrade.shared.util.AssertUtils;
 import com.diligrp.xtrade.upay.boss.domain.AccountId;
+import com.diligrp.xtrade.upay.boss.domain.CustomerBalance;
+import com.diligrp.xtrade.upay.boss.domain.CustomerId;
 import com.diligrp.xtrade.upay.boss.domain.FrozenId;
 import com.diligrp.xtrade.upay.boss.domain.FrozenOrderDto;
 import com.diligrp.xtrade.upay.boss.domain.FundBalance;
@@ -17,6 +19,7 @@ import com.diligrp.xtrade.upay.channel.model.FrozenOrder;
 import com.diligrp.xtrade.upay.channel.service.IAccountChannelService;
 import com.diligrp.xtrade.upay.channel.service.IFrozenOrderService;
 import com.diligrp.xtrade.upay.channel.type.FrozenType;
+import com.diligrp.xtrade.upay.core.domain.ApplicationPermit;
 import com.diligrp.xtrade.upay.core.model.FundAccount;
 import com.diligrp.xtrade.upay.core.model.UserAccount;
 import com.diligrp.xtrade.upay.core.service.IFundAccountService;
@@ -115,5 +118,20 @@ public class FundServiceComponent {
             frozenOrder.getModifiedTime(), frozenOrder.getDescription())
         ).collect(Collectors.toList());
         return PageMessage.success(result.getTotal(), frozenOrders);
+    }
+
+    /**
+     * 查询客户资金情况
+     */
+    public CustomerBalance customer(ServiceRequest<CustomerId> request) {
+        CustomerId customer = request.getData();
+        AssertUtils.notNull(customer.getCustomerId(), "customerId missed");
+        ApplicationPermit permit = request.getContext().getObject(ApplicationPermit.class);
+        FundAccount fund = fundAccountService.sumCustomerFund(permit.getMerchant().parentMchId(), customer.getCustomerId());
+        List<FundBalance> accountFunds =
+            fundAccountService.listFundAccounts(permit.getMerchant().parentMchId(), customer.getCustomerId()).stream().map(
+            fundAccount -> FundBalance.of(fundAccount.getAccountId(), fundAccount.getBalance(), fundAccount.getFrozenAmount()))
+            .collect(Collectors.toList());
+        return CustomerBalance.of(customer.getCustomerId(), fund.getBalance(), fund.getFrozenAmount(), accountFunds);
     }
 }

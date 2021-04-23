@@ -9,16 +9,17 @@
         <result column="balance" property="balance"/>
         <result column="frozen_amount" property="frozenAmount"/>
         <result column="vouch_amount" property="vouchAmount"/>
+        <result column="mch_id" property="mchId"/>
         <result column="version" property="version"/>
         <result column="created_time" property="createdTime"/>
         <result column="modified_time" property="modifiedTime"/>
     </resultMap>
 
     <insert id="insertFundAccount" parameterType="com.diligrp.xtrade.upay.core.model.FundAccount">
-        INSERT INTO upay_fund_account(account_id, balance, frozen_amount, vouch_amount,
+        INSERT INTO upay_fund_account(account_id, balance, frozen_amount, vouch_amount, mch_id,
             version, created_time, modified_time)
         VALUES
-          (#{accountId}, #{balance}, #{frozenAmount}, #{vouchAmount}, #{version},
+          (#{accountId}, #{balance}, #{frozenAmount}, #{vouchAmount}, #{mchId}, #{version},
           #{createdTime}, #{modifiedTime})
     </insert>
 
@@ -57,4 +58,30 @@
         </if>
         WHERE account_id = #{accountId} AND version = #{version}
     </update>
+
+    <select id="sumCustomerFund" resultType="com.diligrp.xtrade.upay.core.model.FundAccount">
+        SELECT
+            SUM(ufa.balance) AS balance, SUM(ufa.frozen_amount) AS frozenAmount
+        FROM
+            upay_fund_account ufa
+        INNER JOIN
+            upay_user_account uua ON ufa.account_id = uua.account_id
+        WHERE
+            uua.mch_id = #{mchId} AND uua.customer_id = #{customerId} AND uua.state != 3
+        GROUP BY
+            uua.customer_id
+    </select>
+
+    <select id="listFundAccounts" resultType="com.diligrp.xtrade.upay.core.model.FundAccount">
+        SELECT
+            ufa.account_id AS accountId, ufa.balance, ufa.frozen_amount AS frozenAmount
+        FROM
+            upay_fund_account ufa
+        INNER JOIN
+            upay_user_account uua ON ufa.account_id = uua.account_id
+        WHERE
+            uua.mch_id = #{mchId} AND uua.customer_id = #{customerId} AND uua.state != 3
+        ORDER BY
+            ufa.id
+    </select>
 </mapper>

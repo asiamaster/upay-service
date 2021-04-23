@@ -37,24 +37,31 @@
     </insert>
 
     <update id="updateUserAccount" parameterType="com.diligrp.xtrade.upay.core.model.UserAccount">
-        UPDATE upay_user_account
-        <set>
+        UPDATE
+            upay_user_account
+        SET
+            version = version + 1
             <if test="name != null">
-                name = #{name},
+                , name = #{name}
             </if>
             <if test="mobile != null">
-                mobile = #{mobile},
+                , mobile = #{mobile}
             </if>
             <if test="address != null">
-                address = #{address},
+                , address = #{address}
             </if>
             <if test="password != null">
-                password = #{password},
+                , password = #{password}
+            </if>
+            <if test="permission != null">
+                , permission = #{permission}
+            </if>
+            <if test="state != null">
+                , state = #{state}
             </if>
             <if test="modifiedTime != null">
-                modified_time = #{modifiedTime},
+                , modified_time = #{modifiedTime}
             </if>
-        </set>
         where account_id = #{accountId}
     </update>
 

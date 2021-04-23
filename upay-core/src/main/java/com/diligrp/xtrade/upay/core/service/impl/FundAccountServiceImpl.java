@@ -14,7 +14,7 @@ import com.diligrp.xtrade.upay.core.exception.FundAccountException;
 import com.diligrp.xtrade.upay.core.model.FundAccount;
 import com.diligrp.xtrade.upay.core.model.UserAccount;
 import com.diligrp.xtrade.upay.core.service.IFundAccountService;
-import com.diligrp.xtrade.upay.core.type.AccountPermission;
+import com.diligrp.xtrade.upay.core.type.Permission;
 import com.diligrp.xtrade.upay.core.type.AccountState;
 import com.diligrp.xtrade.upay.core.type.AccountType;
 import com.diligrp.xtrade.upay.core.type.IdType;
@@ -70,7 +70,7 @@ public class FundAccountServiceImpl implements IFundAccountService {
         String password = PasswordUtils.encrypt(account.getPassword(), secretKey);
         long parentId = account.getParentId() == null ? 0L : account.getParentId();
         UserAccount userAccount = UserAccount.builder().customerId(account.getCustomerId()).accountId(accountId)
-            .parentId(parentId).type(account.getType()).useFor(account.getUseFor()).permission(AccountPermission.ALL_PERMISSION)
+            .parentId(parentId).type(account.getType()).useFor(account.getUseFor()).permission(Permission.ALL_PERMISSION)
             .name(account.getName()).gender(account.getGender()).mobile(account.getMobile()).email(account.getEmail())
             .idType(account.getIdType()).idCode(account.getIdCode()).address(account.getAddress()).password(password)
             .secretKey(secretKey).state(AccountState.NORMAL.getCode()).mchId(mchId).version(0).createdTime(when).build();
@@ -85,7 +85,7 @@ public class FundAccountServiceImpl implements IFundAccountService {
         // 子账户无须创建账户资金，共享主账户资金
         userAccount.ifMasterAccount(act -> {
             FundAccount fundAccount = FundAccount.builder().accountId(accountId).balance(0L).frozenAmount(0L)
-                .vouchAmount(0L).version(0).createdTime(when).build();
+                .vouchAmount(0L).mchId(mchId).version(0).createdTime(when).build();
             fundAccountDao.insertFundAccount(fundAccount);
         });
 
@@ -108,6 +108,17 @@ public class FundAccountServiceImpl implements IFundAccountService {
         if (result == 0) {
             throw new FundAccountException(ErrorCode.DATA_CONCURRENT_UPDATED, "系统正忙，请稍后重试");
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * 独立的数据库事务: 密码错误次数锁定账号时使用
+     */
+    @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
+    public void freezeUserAccountNow(Long accountId) {
+        freezeUserAccount(accountId);
     }
 
     /**
@@ -189,7 +200,7 @@ public class FundAccountServiceImpl implements IFundAccountService {
     /**
      * {@inheritDoc}
      *
-     * 重置密码不验证原密码
+     * 重置密码不验证原密码: 修改账户状态(密码错误时会冻结账户)
      */
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
@@ -199,7 +210,25 @@ public class FundAccountServiceImpl implements IFundAccountService {
         accountOpt.ifPresent(AccountStateMachine::updateAccountCheck);
         String newPassword = PasswordUtils.encrypt(password, account.getSecretKey());
         account.setPassword(newPassword);
+        account.setState(AccountState.NORMAL.getCode());
         account.setModifiedTime(LocalDateTime.now());
         userAccountDao.updateUserAccount(account);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public FundAccount sumCustomerFund(Long mchId, Long customerId) {
+        Optional<FundAccount> fundOpt = fundAccountDao.sumCustomerFund(mchId, customerId);
+        return fundOpt.orElseThrow(() -> new FundAccountException(ErrorCode.OBJECT_NOT_FOUND, "该客户无资金账号"));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List<FundAccount> listFundAccounts(Long mchId, Long customerId) {
+        return fundAccountDao.listFundAccounts(mchId, customerId);
     }
 }

@@ -17,8 +17,10 @@ public class PaymentFee extends BaseDo {
     private Long amount;
     // 费用类型
     private Integer type;
-    // 费用描述
+    // 类型说明
     private String typeName;
+    // 费用描述
+    private String description;
 
     public String getPaymentId() {
         return paymentId;
@@ -60,6 +62,14 @@ public class PaymentFee extends BaseDo {
         this.typeName = typeName;
     }
 
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
     /**
      * 费用是否应用于买家, 规则同PaymentFee.forBuyer
      */
@@ -74,17 +84,20 @@ public class PaymentFee extends BaseDo {
         return useFor == null ? true : useFor == Constants.FOR_SELLER;
     }
 
-    public static PaymentFee of(String paymentId, Long amount, Integer type, String typeName, LocalDateTime when) {
-        return of(paymentId, null, amount, type, typeName, when);
+    public static PaymentFee of(String paymentId, Long amount, Integer type, String typeName,
+                                String description, LocalDateTime when) {
+        return of(paymentId, null, amount, type, typeName, description, when);
     }
 
-    public static PaymentFee of(String paymentId, Integer useFor, Long amount, Integer type, String typeName, LocalDateTime when) {
+    public static PaymentFee of(String paymentId, Integer useFor, Long amount, Integer type,
+                                String typeName, String description, LocalDateTime when) {
         PaymentFee fee = new PaymentFee();
         fee.setPaymentId(paymentId);
         fee.setUseFor(useFor);
         fee.setAmount(amount);
         fee.setType(type);
         fee.setTypeName(typeName);
+        fee.setDescription(description);
         fee.setCreatedTime(when);
         return fee;
     }

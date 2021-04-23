@@ -23,6 +23,7 @@ import com.diligrp.xtrade.upay.core.model.UserAccount;
 import com.diligrp.xtrade.upay.core.service.IAccessPermitService;
 import com.diligrp.xtrade.upay.core.type.SequenceKey;
 import com.diligrp.xtrade.upay.core.util.AsyncTaskExecutor;
+import com.diligrp.xtrade.upay.core.util.DataPartition;
 import com.diligrp.xtrade.upay.trade.dao.IPaymentFeeDao;
 import com.diligrp.xtrade.upay.trade.dao.ITradeOrderDao;
 import com.diligrp.xtrade.upay.trade.dao.ITradePaymentDao;
@@ -105,7 +106,9 @@ public class AuthFeePaymentServiceImpl extends FeePaymentServiceImpl implements 
 
         // 冻结资金
         LocalDateTime now = LocalDateTime.now().withNano(0);
-        UserAccount account = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), -1);
+        MerchantPermit merchant = accessPermitService.loadMerchantPermit(trade.getMchId());
+        int maxPwdErrors = merchant.configuration().maxPwdErrors();
+        UserAccount account = accountChannelService.checkTradePermission(payment.getAccountId(), payment.getPassword(), maxPwdErrors);
         accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
         IKeyGenerator keyGenerator = snowflakeKeyManager.getKeyGenerator(SequenceKey.PAYMENT_ID);
         String paymentId = String.valueOf(keyGenerator.nextId());
@@ -173,15 +176,15 @@ public class AuthFeePaymentServiceImpl extends FeePaymentServiceImpl implements 
 
         // 获取商户收益账号信息
         LocalDateTime now = LocalDateTime.now().withNano(0);
-        UserAccount account = accountChannelService.checkTradePermission(payment.getAccountId(), confirm.getPassword(), -1);
+        MerchantPermit merchant = accessPermitService.loadMerchantPermit(trade.getMchId());
+        int maxPwdErrors = merchant.configuration().maxPwdErrors();
+        UserAccount account = accountChannelService.checkTradePermission(payment.getAccountId(), confirm.getPassword(), maxPwdErrors);
         accountChannelService.checkAccountTradeState(account); // 寿光专用业务逻辑
         // 客户账号资金解冻并缴费
         AccountChannel channel = AccountChannel.of(payment.getPaymentId(), account.getAccountId(), account.getParentId());
         IFundTransaction transaction = channel.openTransaction(trade.getType(), now);
         transaction.unfreeze(frozenOrder.getAmount());
-        fees.forEach(fee ->
-            transaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName())
-        );
+        fees.forEach(fee -> transaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName(), fee.getDescription()));
         TransactionStatus status = accountChannelService.submit(transaction);
 
         // 修改冻结订单"已解冻"状态
@@ -203,28 +206,25 @@ public class AuthFeePaymentServiceImpl extends FeePaymentServiceImpl implements 
             throw new TradePaymentException(ErrorCode.DATA_CONCURRENT_UPDATED, "系统忙，请稍后再试");
         }
         List<PaymentFee> paymentFees = fees.stream().map(fee ->
-            PaymentFee.of(payment.getPaymentId(), fee.getAmount(), fee.getType(), fee.getTypeName(), now)
+            PaymentFee.of(payment.getPaymentId(), fee.getAmount(), fee.getType(), fee.getTypeName(), fee.getDescription(), now)
         ).collect(Collectors.toList());
         paymentFeeDao.insertPaymentFees(paymentFees);
 
         // 生成缴费账户的业务账单
-        String typeName = StatementType.PAY_FEE.getName() + (ObjectUtils.isNull(trade.getDescription()) ?
+        String typeName = StatementType.PAY_FEE.getName() + (ObjectUtils.isEmpty(trade.getDescription()) ?
             "" : "-" + trade.getDescription());
         UserStatement statement = UserStatement.builder().tradeId(trade.getTradeId()).paymentId(payment.getPaymentId())
             .channelId(payment.getChannelId()).accountId(payment.getAccountId(), account.getParentId())
             .type(StatementType.PAY_FEE.getCode()).typeName(typeName).amount(-totalFee).fee(0L)
             .balance(status.getBalance() + status.getAmount()).frozenAmount(status.getFrozenBalance() + status.getFrozenAmount())
             .serialNo(trade.getSerialNo()).state(4).createdTime(now).build();
-        userStatementDao.insertUserStatement(statement);
+        userStatementDao.insertUserStatement(DataPartition.strategy(account.getMchId()), statement);
 
         // 园区收益账户收款 - 最后处理园区收益，保证尽快释放共享数据的行锁以提高系统并发
-        MerchantPermit merchant = accessPermitService.loadMerchantPermit(trade.getMchId());
         AccountChannel merChannel = AccountChannel.of(payment.getPaymentId(), merchant.getProfitAccount(), 0L);
         IFundTransaction feeTransaction = merChannel.openTransaction(trade.getType(), now);
-        fees.forEach(fee ->
-            feeTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName())
-        );
-        accountChannelService.submitOne(feeTransaction);
+        fees.forEach(fee -> feeTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName(), null));
+        accountChannelService.submitExclusively(feeTransaction);
 
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, payment.getPaymentId(), status);
     }
@@ -245,9 +245,7 @@ public class AuthFeePaymentServiceImpl extends FeePaymentServiceImpl implements 
         // "预授权缴费"不存在组合支付的情况, 因此一个交易订单只对应一条支付记录
         Optional<TradePayment> paymentOpt = tradePaymentDao.findOneTradePayment(trade.getTradeId());
         TradePayment payment = paymentOpt.orElseThrow(() -> new TradePaymentException(ErrorCode.OBJECT_NOT_FOUND, "支付记录不存在"));
-        if (!payment.getAccountId().equals(cancel.getAccountId())) {
-            throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "缴费资金账号不一致");
-        }
+
         // 撤销预授权，需验证缴费账户状态无须验证密码
         LocalDateTime when = LocalDateTime.now().withNano(0);
         UserAccount account = accountChannelService.checkTradePermission(payment.getAccountId());

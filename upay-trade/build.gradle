@@ -5,5 +5,7 @@ jar.enabled = true
 bootJar.enabled = false
 
 dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-amqp'
+    api project(':upay-sentinel')
     api project(':upay-channel')
 }
