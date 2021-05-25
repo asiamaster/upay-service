@@ -20,7 +20,9 @@ public enum ProtocolType implements IEnumType {
 
     EXIT_FEE("出门缴费", 50),
 
-    CREDIT_FEE("赊销缴费", 60);
+    CREDIT_FEE("赊销缴费", 60),
+
+    ETC_FEE("ETC缴费", 70);
 
     private String name;
     private int code;
