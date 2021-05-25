@@ -99,7 +99,7 @@ public class RefundFeePaymentServiceImpl implements IPaymentService {
         Optional<List<Fee>> deductFeesOpt = payment.getObjects(Fee.class.getName() + ".deduct");
         List<Fee> deductFees = deductFeesOpt.orElse(Collections.emptyList());
         long totalDeductAmount = deductFees.stream().mapToLong(Fee::getAmount).sum();
-        if (totalFee < totalDeductAmount) {
+        if (totalFee < totalDeductAmount) { // 业务上扣除费用包括：转底抵扣和(保证金的)赔偿金
             throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "退费金额应不小于扣除金额");
         }
 
