@@ -39,6 +39,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -95,6 +96,13 @@ public class RefundFeePaymentServiceImpl implements IPaymentService {
             throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "实际退费金额与申请退费金额不一致");
         }
 
+        Optional<List<Fee>> deductFeesOpt = payment.getObjects(Fee.class.getName() + ".deduct");
+        List<Fee> deductFees = deductFeesOpt.orElse(Collections.emptyList());
+        long totalDeductAmount = deductFees.stream().mapToLong(Fee::getAmount).sum();
+        if (totalFee < totalDeductAmount) { // 业务上扣除费用包括：转底抵扣和(保证金的)赔偿金
+            throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "退费金额应不小于扣除金额");
+        }
+
         // 退费业务只支持多种支付渠道
         UserAccount account = null;
         TransactionStatus status = null;
@@ -107,6 +115,7 @@ public class RefundFeePaymentServiceImpl implements IPaymentService {
             AccountChannel channel = AccountChannel.of(paymentId, account.getAccountId(), account.getParentId());
             IFundTransaction transaction = channel.openTransaction(trade.getType(), now);
             fees.forEach(fee -> transaction.income(fee.getAmount(), fee.getType(), fee.getTypeName(), fee.getDescription()));
+            deductFees.forEach(fee -> transaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName(), fee.getDescription()));
             status = accountChannelService.submit(transaction);
         }
 
@@ -126,13 +135,19 @@ public class RefundFeePaymentServiceImpl implements IPaymentService {
             PaymentFee.of(paymentId, fee.getAmount(), fee.getType(), fee.getTypeName(), fee.getDescription(), now)
         ).collect(Collectors.toList());
         paymentFeeDao.insertPaymentFees(paymentFeeDos);
+        List<PaymentFee> deductList = deductFees.stream().map(fee ->
+            PaymentFee.of(paymentId, fee.getAmount(), fee.getType(), fee.getTypeName(), fee.getDescription(), now)
+        ).collect(Collectors.toList());
+        if (!deductList.isEmpty()) {
+            paymentFeeDao.insertDeductFees(deductList);
+        }
 
         // 处理退费账户业务账单
         if (ChannelType.ACCOUNT.equalTo(payment.getChannelId())) {
             UserStatement statement = UserStatement.builder().tradeId(trade.getTradeId()).paymentId(paymentDo.getPaymentId())
                 .channelId(paymentDo.getChannelId()).accountId(paymentDo.getAccountId(), account.getParentId())
                 .type(StatementType.REFUND_FEE.getCode()).typeName(StatementType.REFUND_FEE.getName())
-                .amount(totalFee).fee(0L).balance(status.getBalance() + status.getAmount())
+                .amount(totalFee - totalDeductAmount).fee(totalDeductAmount).balance(status.getBalance() + status.getAmount())
                 .frozenAmount(status.getFrozenBalance() + status.getFrozenAmount()).serialNo(trade.getSerialNo()).state(4)
                 .createdTime(now).build();
             userStatementDao.insertUserStatement(DataPartition.strategy(account.getMchId()), statement);
@@ -143,6 +158,7 @@ public class RefundFeePaymentServiceImpl implements IPaymentService {
         AccountChannel merChannel = AccountChannel.of(paymentId, merchant.getProfitAccount(), 0L);
         IFundTransaction feeTransaction = merChannel.openTransaction(trade.getType(), now);
         fees.forEach(fee -> feeTransaction.outgo(fee.getAmount(), fee.getType(), fee.getTypeName(), null));
+        deductFees.forEach(fee -> feeTransaction.income(fee.getAmount(), fee.getType(), fee.getTypeName(), null));
         accountChannelService.submitExclusively(feeTransaction);
 
         return PaymentResult.of(PaymentResult.CODE_SUCCESS, paymentId, status);

@@ -105,7 +105,7 @@ public class AllFeePaymentServiceImpl implements IPaymentService {
         Optional<List<Fee>> deductFeesOpt = payment.getObjects(Fee.class.getName() + ".deduct");
         List<Fee> deductFees = deductFeesOpt.orElse(Collections.emptyList());
         long totalDeductAmount = deductFees.stream().mapToLong(Fee::getAmount).sum();
-        if (totalFee < totalDeductAmount) {
+        if (totalFee < totalDeductAmount) { // 业务上抵扣费用包括：订金抵扣和转底抵扣
             throw new TradePaymentException(ErrorCode.ILLEGAL_ARGUMENT_ERROR, "缴费金额应不小于抵扣金额");
         }
 
