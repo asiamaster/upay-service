@@ -31,7 +31,7 @@ public class DepositSentinel extends Sentinel {
     @Override
     void checkPassport(Passport passport) {
         if (!Permission.hasPermission(passport.getPermission(), Permission.FOR_DEPOSIT)) {
-            throw new RiskControlException(ErrorCode.OPERATION_NOT_ALLOWED, "风控提示：用户账号无提现权限");
+            throw new RiskControlException(ErrorCode.OPERATION_NOT_ALLOWED, "风控提示：用户账号无充值权限");
         }
         // 充值金额不能超过单笔充值限额
         if (maxAmount != null && passport.getAmount() > maxAmount) {
